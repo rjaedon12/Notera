@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+/* Quizlet-inspired color system */
+:root {
+  /* Light mode: Clean off-white background, white cards */
+  --background: 228 38% 97%;        /* #F6F7FB - subtle off-white page background */
+  --foreground: 222 47% 11%;        /* #0F172A - dark navy text */
+  
+  --card: 0 0% 100%;                /* #FFFFFF - pure white cards */
+  --card-foreground: 222 47% 11%;   /* #0F172A - dark text on cards */
+  
+  --popover: 0 0% 100%;             /* #FFFFFF - white popovers */
+  --popover-foreground: 222 47% 11%;
+  
+  --muted: 210 40% 96%;             /* #F1F5F9 - subtle background for inputs/chips */
+  --muted-foreground: 215 16% 47%;  /* #64748B - secondary text */
+  
+  --border: 220 13% 91%;            /* #E2E8F0 - clear but subtle borders */
+  --input: 210 40% 96%;             /* #F1F5F9 - input backgrounds */
+  --input-foreground: 222 47% 11%;
+  
+  --primary: 234 89% 63%;           /* #4255FF - Quizlet-like blue accent */
+  --primary-foreground: 0 0% 100%;  /* White text on primary */
+  
+  --secondary: 226 100% 97%;        /* #EEF2FF - light indigo background */
+  --secondary-foreground: 222 47% 11%;
+  
+  --accent: 210 40% 96%;            /* #F1F5F9 - accent surface (same as muted) */
+  --accent-foreground: 222 47% 11%;
+  
+  --destructive: 0 84% 60%;         /* #EF4444 - red for destructive actions */
+  --destructive-foreground: 0 0% 100%;
+  
+  --ring: 234 89% 63%;              /* #4255FF - focus ring matches primary */
+}
+
+.dark {
+  /* Dark mode: Navy background (slightly lighter), lighter navy cards */
+  --background: 226 42% 11%;        /* #0F1419 - slightly lighter navy page background */
+  --foreground: 220 13% 91%;        /* #E2E8F0 - light text */
+  
+  --card: 225 48% 14%;              /* #111827 - slightly lighter navy cards */
+  --card-foreground: 220 13% 91%;   /* #E2E8F0 - light text on cards */
+  
+  --popover: 225 48% 14%;           /* #111827 - popover surface */
+  --popover-foreground: 220 13% 91%;
+  
+  --muted: 225 41% 21%;             /* #1F2937 - muted surface (visible, not blending) */
+  --muted-foreground: 215 20% 65%;  /* #94A3B8 - secondary text */
+  
+  --border: 224 40% 24%;            /* #273651 - visible borders in dark mode */
+  --input: 225 41% 21%;             /* #1F2937 - input backgrounds */
+  --input-foreground: 220 13% 91%;
+  
+  --primary: 234 89% 63%;           /* #4255FF - same vibrant blue accent */
+  --primary-foreground: 0 0% 100%;  /* White text on primary */
+  
+  --secondary: 225 41% 21%;         /* #1F2937 - dark secondary surface */
+  --secondary-foreground: 220 13% 91%;
+  
+  --accent: 225 41% 21%;            /* #1F2937 - accent surface */
+  --accent-foreground: 220 13% 91%;
+  
+  --destructive: 0 72% 51%;         /* #DC2626 - slightly darker red for dark mode */
+  --destructive-foreground: 0 0% 100%;
+  
+  --ring: 234 89% 63%;              /* #4255FF - focus ring */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-foreground: var(--input-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-inter);
+}
+
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans), system-ui, sans-serif;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Custom utilities */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus visible styles */
+:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
