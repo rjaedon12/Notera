@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import { resolveSessionUserId } from "@/lib/session-user"
 
 // GET /api/sessions - Get study sessions for the user
 export async function GET() {
@@ -11,8 +12,13 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userId = await resolveSessionUserId(session.user)
+    if (!userId) {
+      return NextResponse.json([], { status: 200 })
+    }
+
     const sessions = await prisma.studySession.findMany({
-      where: { userId: session.user.id },
+      where: { userId },
       include: {
         studySet: {
           select: { id: true, title: true }
@@ -53,6 +59,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userId = await resolveSessionUserId(session.user)
+    if (!userId) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+
     const body = await request.json()
     const { setId, mode, stats } = body
 
@@ -65,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     const studySession = await prisma.studySession.create({
       data: {
-        userId: session.user.id,
+        userId,
         setId,
         mode,
         stats: JSON.stringify(stats || {}),
@@ -78,7 +89,7 @@ export async function POST(request: NextRequest) {
     const yesterday = getYesterdayDate()
 
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       select: {
         currentStreak: true,
         longestStreak: true,
@@ -102,7 +113,7 @@ export async function POST(request: NextRequest) {
         const newLongestStreak = Math.max(newStreak, user.longestStreak)
 
         await prisma.user.update({
-          where: { id: session.user.id },
+          where: { id: userId },
           data: {
             currentStreak: newStreak,
             longestStreak: newLongestStreak,
@@ -114,13 +125,13 @@ export async function POST(request: NextRequest) {
         await prisma.studyDay.upsert({
           where: {
             userId_date: {
-              userId: session.user.id,
+              userId,
               date: today
             }
           },
           update: {},
           create: {
-            userId: session.user.id,
+            userId,
             date: today
           }
         })

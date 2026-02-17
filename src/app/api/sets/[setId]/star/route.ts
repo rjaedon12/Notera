@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import { resolveSessionUserId } from "@/lib/session-user"
 
 // POST /api/sets/[setId]/star - Star a study set
 export async function POST(
@@ -13,13 +14,18 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userId = await resolveSessionUserId(session.user)
+    if (!userId) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+
     const { setId } = await params
 
     // Check if already starred
     const existing = await prisma.starredSet.findUnique({
       where: {
         userId_setId: {
-          userId: session.user.id,
+          userId,
           setId,
         },
       },
@@ -31,7 +37,7 @@ export async function POST(
 
     await prisma.starredSet.create({
       data: {
-        userId: session.user.id,
+        userId,
         setId,
       },
     })
@@ -57,11 +63,16 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userId = await resolveSessionUserId(session.user)
+    if (!userId) {
+      return NextResponse.json({ starred: false })
+    }
+
     const { setId } = await params
 
     await prisma.starredSet.deleteMany({
       where: {
-        userId: session.user.id,
+        userId,
         setId,
       },
     })

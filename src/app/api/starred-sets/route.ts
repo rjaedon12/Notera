@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import { resolveSessionUserId } from "@/lib/session-user"
 
 // GET /api/starred-sets - Get all starred study set IDs for the user
 export async function GET() {
@@ -10,8 +11,13 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userId = await resolveSessionUserId(session.user)
+    if (!userId) {
+      return NextResponse.json([], { status: 200 })
+    }
+
     const starredSets = await prisma.starredSet.findMany({
-      where: { userId: session.user.id },
+      where: { userId },
       select: { setId: true },
     })
 

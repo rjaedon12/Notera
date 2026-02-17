@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { questionBankSchema } from "@/lib/validations"
+import { resolveSessionUserId } from "@/lib/session-user"
 
 export const dynamic = "force-dynamic"
 
@@ -14,8 +15,13 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userId = await resolveSessionUserId(session.user)
+    if (!userId) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+
     const banks = await prisma.questionBank.findMany({
-      where: { ownerId: session.user.id },
+      where: { ownerId: userId },
       include: {
         _count: { select: { questions: true, attempts: true } },
       },
@@ -39,6 +45,11 @@ export async function POST(request: NextRequest) {
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const userId = await resolveSessionUserId(session.user)
+    if (!userId) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
     const body = await request.json()
@@ -82,7 +93,7 @@ export async function POST(request: NextRequest) {
         description: description || null,
         imageUrl: imageUrl || null,
         isPublic: isPublic || false,
-        ownerId: session.user.id,
+        ownerId: userId,
         questions: {
           create: validQuestions.map((q, index) => {
             const filteredChoices = q.choices.filter((c) => c.text?.trim())
