@@ -44,6 +44,7 @@ model User {
   folders         Folder[]
   savedSets       SavedSet[]
   starredCards    StarredCard[]
+  starredSets     StarredSet[]
   studySessions   StudySession[]
   progress        Progress[]
   shareLinks      ShareLink[]
@@ -75,6 +76,7 @@ model StudySet {
   cards       Card[]
   folders     FolderSet[]
   savedBy     SavedSet[]
+  starredBy   StarredSet[]
   sessions    StudySession[]
   shareLinks  ShareLink[]
   matchScores MatchScore[]
@@ -132,6 +134,17 @@ model SavedSet {
   studySet  StudySet @relation(fields: [setId], references: [id], onDelete: Cascade)
   setId     String
   savedAt   DateTime @default(now())
+
+  @@unique([userId, setId])
+}
+
+model StarredSet {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  studySet  StudySet @relation(fields: [setId], references: [id], onDelete: Cascade)
+  setId     String
+  starredAt DateTime @default(now())
 
   @@unique([userId, setId])
 }

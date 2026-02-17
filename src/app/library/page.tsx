@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useStudySets, useSavedSets, useFolders, useDeleteStudySet, useCreateFolder } from "@/hooks/useStudy"
+import { useStudySets, useSavedSets, useFolders, useDeleteStudySet, useCreateFolder, useStarredSets, useToggleSetStar } from "@/hooks/useStudy"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -17,7 +17,8 @@ import {
   Bookmark, 
   Trash2, 
   MoreVertical,
-  FolderPlus
+  FolderPlus,
+  Star
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { cn } from "@/lib/utils"
@@ -34,8 +35,44 @@ export default function LibraryPage() {
   const { data: mySets, isLoading: loadingSets } = useStudySets()
   const { data: savedSets, isLoading: loadingSaved } = useSavedSets()
   const { data: folders, isLoading: loadingFolders } = useFolders()
+  const { data: starredSetIds = [] } = useStarredSets()
   const deleteSet = useDeleteStudySet()
   const createFolder = useCreateFolder()
+  const toggleStar = useToggleSetStar()
+
+  // Sort starred sets to the top
+  const sortedMySets = mySets
+    ? [...mySets].sort((a, b) => {
+        const aStarred = starredSetIds.includes(a.id) ? 1 : 0
+        const bStarred = starredSetIds.includes(b.id) ? 1 : 0
+        return bStarred - aStarred
+      })
+    : []
+
+  const sortedSavedSets = savedSets
+    ? [...savedSets].sort((a, b) => {
+        const aStarred = starredSetIds.includes(a.id) ? 1 : 0
+        const bStarred = starredSetIds.includes(b.id) ? 1 : 0
+        return bStarred - aStarred
+      })
+    : []
+
+  const handleToggleStar = (setId: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const isStarred = starredSetIds.includes(setId)
+    toggleStar.mutate(
+      { setId, starred: !isStarred },
+      {
+        onSuccess: () => {
+          toast.success(isStarred ? "Removed from starred" : "Added to starred")
+        },
+        onError: () => {
+          toast.error("Failed to update star")
+        },
+      }
+    )
+  }
 
   if (status === "unauthenticated") {
     router.push("/login")
@@ -121,11 +158,13 @@ export default function LibraryPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => <SetCardSkeleton key={i} />)}
           </div>
-        ) : mySets && mySets.length > 0 ? (
+        ) : sortedMySets && sortedMySets.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mySets.map((set) => (
+            {sortedMySets.map((set) => {
+              const isStarred = starredSetIds.includes(set.id)
+              return (
               <Link key={set.id} href={`/sets/${set.id}`}>
-                <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
+                <Card className={`h-full hover:shadow-lg transition-shadow cursor-pointer group ${isStarred ? "ring-2 ring-yellow-400/50" : ""}`}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -137,13 +176,22 @@ export default function LibraryPage() {
                           <p className="text-sm text-muted-foreground line-clamp-2">{set.description}</p>
                         )}
                       </div>
-                      <button
-                        onClick={(e) => handleDeleteSet(set.id, e)}
-                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-muted rounded transition-opacity"
-                        aria-label="Delete set"
-                      >
-                        <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={(e) => handleToggleStar(set.id, e)}
+                          className="p-1 rounded-full hover:bg-muted transition-colors"
+                          aria-label={isStarred ? "Unstar set" : "Star set"}
+                        >
+                          <Star className={`h-4 w-4 ${isStarred ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`} />
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteSet(set.id, e)}
+                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-muted rounded transition-opacity"
+                          aria-label="Delete set"
+                        >
+                          <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
+                        </button>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 mt-3">
                       <span className={cn(
@@ -156,7 +204,8 @@ export default function LibraryPage() {
                   </CardContent>
                 </Card>
               </Link>
-            ))}
+              )
+            })}
           </div>
         ) : (
           <Card className="p-8 text-center">
@@ -175,13 +224,24 @@ export default function LibraryPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => <SetCardSkeleton key={i} />)}
           </div>
-        ) : savedSets && savedSets.length > 0 ? (
+        ) : sortedSavedSets && sortedSavedSets.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {savedSets.map((set) => (
+            {sortedSavedSets.map((set) => {
+              const isStarred = starredSetIds.includes(set.id)
+              return (
               <Link key={set.id} href={`/sets/${set.id}`}>
-                <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
+                <Card className={`h-full hover:shadow-lg transition-shadow cursor-pointer ${isStarred ? "ring-2 ring-yellow-400/50" : ""}`}>
                   <CardContent className="p-4">
-                    <h3 className="font-semibold text-lg mb-1 line-clamp-1">{set.title}</h3>
+                    <div className="flex items-start justify-between">
+                      <h3 className="font-semibold text-lg mb-1 line-clamp-1 flex-1">{set.title}</h3>
+                      <button
+                        onClick={(e) => handleToggleStar(set.id, e)}
+                        className="ml-2 p-1 rounded-full hover:bg-muted transition-colors flex-shrink-0"
+                        aria-label={isStarred ? "Unstar set" : "Star set"}
+                      >
+                        <Star className={`h-4 w-4 ${isStarred ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`} />
+                      </button>
+                    </div>
                     <p className="text-sm text-muted-foreground mb-3">
                       {set._count?.cards || 0} cards
                     </p>
@@ -192,11 +252,15 @@ export default function LibraryPage() {
                         </span>
                       </div>
                       <span>by {set.owner?.name || "Anonymous"}</span>
+                      {isStarred && (
+                        <span className="ml-auto text-yellow-500 text-xs font-medium">★ Starred</span>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
               </Link>
-            ))}
+              )
+            })}
           </div>
         ) : (
           <Card className="p-8 text-center">

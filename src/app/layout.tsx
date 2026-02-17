@@ -10,8 +10,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "StudyApp - Learn Smarter",
+  title: "Koda - Learn Smarter",
   description: "Create flashcards, study with multiple modes, and track your progress",
+  icons: {
+    icon: "/koda-logo.svg",
+    shortcut: "/koda-logo.svg",
+    apple: "/koda-logo.svg",
+  },
 };
 
 export default function RootLayout({

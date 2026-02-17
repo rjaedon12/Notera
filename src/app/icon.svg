@@ -1,0 +1,30 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="kGrad" x1="42" y1="76" x2="223" y2="209" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2F7EF7"/>
+      <stop offset="1" stop-color="#B18BF4"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="256" height="256" fill="#F3F4F6"/>
+
+  <ellipse cx="128" cy="72" rx="38" ry="34" fill="#111217"/>
+  <ellipse cx="128" cy="78" rx="28" ry="25" fill="white"/>
+  <circle cx="115" cy="71" r="4.5" fill="#2A2A2A"/>
+  <circle cx="141" cy="71" r="4.5" fill="#2A2A2A"/>
+  <path d="M126 80C130 79 133 78 136 77.5C132 82 128 84 120 81.5C122 80.5 124 80.2 126 80Z" fill="#F39C31"/>
+
+  <rect x="53" y="60" width="20" height="170" fill="#0B0B0F"/>
+  <path d="M74 126C94 108 113 89 132 70C142 60 152 55 166 52C155 72 142 87 127 103C112 119 95 133 77 144L74 126Z" fill="#0B0B0F"/>
+
+  <path d="M72 133C103 106 122 88 141 74C160 61 179 55 214 58C209 85 198 102 176 118C153 134 127 140 95 142L72 133Z" fill="url(#kGrad)"/>
+  <path d="M53 137C42 141 32 150 26 165C43 166 56 160 66 145L53 137Z" fill="url(#kGrad)"/>
+  <path d="M79 146C108 160 128 179 147 204C167 230 192 239 221 233C216 213 209 196 196 180C182 163 165 148 144 136C122 123 99 120 78 127L79 146Z" fill="url(#kGrad)"/>
+  <path d="M166 147C176 154 188 163 201 178C212 191 221 200 228 204C229 188 223 172 212 159C200 147 185 141 166 147Z" fill="url(#kGrad)"/>
+
+  <path d="M103 132C123 120 136 108 148 91C145 120 131 138 106 150C98 154 89 157 79 158C86 147 93 139 103 132Z" fill="white"/>
+  <path d="M121 160C134 168 146 179 157 194C147 194 137 190 128 183C120 177 115 170 121 160Z" fill="white" opacity="0.95"/>
+
+  <path d="M67 236C67 229 73 224 83 224C91 224 98 227 100 233C97 238 91 241 83 241C76 241 70 239 67 236Z" fill="#F39C31"/>
+  <path d="M132 236C132 229 138 224 149 224C157 224 164 227 166 233C163 238 157 241 149 241C141 241 135 239 132 236Z" fill="#F39C31"/>
+</svg>

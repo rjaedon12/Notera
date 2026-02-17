@@ -225,6 +225,35 @@ export function useStarredCards() {
   })
 }
 
+// Starred Sets (star study sets so they appear at top)
+export function useStarredSets() {
+  return useQuery<string[]>({
+    queryKey: ["starredSets"],
+    queryFn: async () => {
+      const res = await fetch("/api/starred-sets")
+      if (!res.ok) throw new Error("Failed to fetch starred sets")
+      return res.json()
+    },
+  })
+}
+
+export function useToggleSetStar() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ setId, starred }: { setId: string; starred: boolean }) => {
+      const res = await fetch(`/api/sets/${setId}/star`, {
+        method: starred ? "POST" : "DELETE",
+      })
+      if (!res.ok) throw new Error("Failed to toggle set star")
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["starredSets"] })
+      queryClient.invalidateQueries({ queryKey: ["publicSets"] })
+      queryClient.invalidateQueries({ queryKey: ["studySets"] })
+    },
+  })
+}
+
 // Folders
 export function useFolders() {
   return useQuery<Folder[]>({

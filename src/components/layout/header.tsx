@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,7 +14,6 @@ import {
   Settings, 
   LogOut, 
   User,
-  BookOpen,
   Menu,
   X
 } from "lucide-react"
@@ -38,10 +38,14 @@ export function Header() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-blue-500 flex items-center justify-center">
-            <BookOpen className="h-5 w-5 text-white" />
-          </div>
-          <span className="font-bold text-xl hidden sm:block">StudyApp</span>
+          <Image
+            src="/koda-logo.svg"
+            alt="Koda logo"
+            width={32}
+            height={32}
+            className="h-8 w-8"
+          />
+          <span className="font-bold text-xl hidden sm:block">Koda</span>
         </Link>
 
         {/* Search Bar - Desktop */}

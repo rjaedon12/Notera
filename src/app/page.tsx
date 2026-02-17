@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
-import { usePublicSets } from "@/hooks/useStudy"
+import { usePublicSets, useStarredSets, useToggleSetStar } from "@/hooks/useStudy"
 import { useQuery } from "@tanstack/react-query"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,7 @@ import { SetCardSkeleton } from "@/components/ui/skeleton"
 import { BookOpen, Users, Layers, ArrowRight, Clock, Star, TrendingUp } from "lucide-react"
 import { Suspense } from "react"
 import { StreakHero } from "@/components/streak/streak-hero"
+import toast from "react-hot-toast"
 
 interface RecentStudy {
   id: string
@@ -76,6 +77,38 @@ function HomeContent() {
   const searchParams = useSearchParams()
   const search = searchParams.get("search") || ""
   const { data: publicSets, isLoading } = usePublicSets(search)
+  const { data: starredSetIds = [] } = useStarredSets()
+  const toggleStar = useToggleSetStar()
+
+  const handleToggleStar = (setId: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!session?.user) {
+      toast.error("Sign in to star sets")
+      return
+    }
+    const isStarred = starredSetIds.includes(setId)
+    toggleStar.mutate(
+      { setId, starred: !isStarred },
+      {
+        onSuccess: () => {
+          toast.success(isStarred ? "Removed from starred" : "Added to starred")
+        },
+        onError: () => {
+          toast.error("Failed to update star")
+        },
+      }
+    )
+  }
+
+  // Sort starred sets to the top
+  const sortedSets = publicSets
+    ? [...publicSets].sort((a, b) => {
+        const aStarred = starredSetIds.includes(a.id) ? 1 : 0
+        const bStarred = starredSetIds.includes(b.id) ? 1 : 0
+        return bStarred - aStarred
+      })
+    : []
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -89,7 +122,7 @@ function HomeContent() {
       {!session?.user && (
         <section className="text-center py-12 md:py-20">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            Learn Smarter with <span className="text-primary">StudyApp</span>
+            Learn Smarter with <span className="text-primary">Koda</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
             Create flashcards, study with multiple modes, and track your progress.
@@ -159,33 +192,50 @@ function HomeContent() {
               <SetCardSkeleton key={i} />
             ))}
           </div>
-        ) : publicSets && publicSets.length > 0 ? (
+        ) : sortedSets && sortedSets.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {publicSets.map((set) => (
-              <Link key={set.id} href={`/sets/${set.id}`}>
-                <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-lg mb-1 line-clamp-1 text-card-foreground">{set.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      {set._count?.cards || 0} cards
-                    </p>
-                    {set.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                        {set.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                        <span className="text-blue-600 font-medium">
-                          {set.owner?.name?.[0]?.toUpperCase() || "U"}
-                        </span>
+            {sortedSets.map((set) => {
+              const isStarred = starredSetIds.includes(set.id)
+              return (
+                <Link key={set.id} href={`/sets/${set.id}`}>
+                  <Card className={`h-full hover:shadow-lg transition-shadow cursor-pointer ${isStarred ? "ring-2 ring-yellow-400/50" : ""}`}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <h3 className="font-semibold text-lg mb-1 line-clamp-1 text-card-foreground flex-1">{set.title}</h3>
+                        {session?.user && (
+                          <button
+                            onClick={(e) => handleToggleStar(set.id, e)}
+                            className="ml-2 p-1 rounded-full hover:bg-muted transition-colors flex-shrink-0"
+                            aria-label={isStarred ? "Unstar set" : "Star set"}
+                          >
+                            <Star className={`h-5 w-5 ${isStarred ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`} />
+                          </button>
+                        )}
                       </div>
-                      <span>{set.owner?.name || "Anonymous"}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {set._count?.cards || 0} cards
+                      </p>
+                      {set.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                          {set.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                          <span className="text-blue-600 font-medium">
+                            {set.owner?.name?.[0]?.toUpperCase() || "U"}
+                          </span>
+                        </div>
+                        <span>{set.owner?.name || "Anonymous"}</span>
+                        {isStarred && (
+                          <span className="ml-auto text-yellow-500 text-xs font-medium">★ Starred</span>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              )
+            })}
           </div>
         ) : (
           <Card className="p-8 text-center">

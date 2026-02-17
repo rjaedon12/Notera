@@ -47,7 +47,7 @@ export default function SignupPage() {
         toast.error("Account created but failed to sign in. Please try logging in.")
         router.push("/login")
       } else {
-        toast.success("Welcome to StudyApp!")
+        toast.success("Welcome to Koda!")
         router.push("/library")
         router.refresh()
       }
