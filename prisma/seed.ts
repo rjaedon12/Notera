@@ -4,10 +4,14 @@ import bcrypt from "bcryptjs"
 import fs from "node:fs/promises"
 import path from "node:path"
 
-// Resolve database path to prisma/dev.db in the project root
+// Use DATABASE_URL when provided (e.g. Turso/libSQL in production tooling),
+// otherwise fall back to local prisma/dev.db
 const dbPath = path.resolve(__dirname, "dev.db")
+const databaseUrl = process.env.DATABASE_URL || `file:${dbPath}`
+const databaseAuthToken = process.env.DATABASE_AUTH_TOKEN
 const adapter = new PrismaLibSql({
-  url: `file:${dbPath}`,
+  url: databaseUrl,
+  authToken: databaseAuthToken,
 })
 const prisma = new PrismaClient({ adapter })
 
