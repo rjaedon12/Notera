@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
+import { logUserEventToGoogleSheets } from "@/lib/google-sheets"
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -32,6 +33,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         const passwordMatch = await bcrypt.compare(password, user.passwordHash)
         if (!passwordMatch) return null
+
+        logUserEventToGoogleSheets({
+          email: user.email,
+          name: user.name,
+          source: "web",
+          event: "login",
+        }).catch(() => undefined)
 
         return {
           id: user.id,

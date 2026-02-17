@@ -11,6 +11,7 @@
  *   var data = JSON.parse(e.postData.contents);
  *   sheet.appendRow([
  *     new Date(),
+ *     data.event || 'signup',
  *     data.email,
  *     data.name || '',
  *     data.source || 'direct'
@@ -29,7 +30,23 @@ interface SignupData {
   source?: string
 }
 
+interface UserEventData {
+  email: string
+  name?: string | null
+  source?: string
+  event: "signup" | "profile_update" | "login"
+}
+
 export async function logSignupToGoogleSheets(data: SignupData): Promise<boolean> {
+  return logUserEventToGoogleSheets({
+    email: data.email,
+    name: data.name,
+    source: data.source,
+    event: "signup",
+  })
+}
+
+export async function logUserEventToGoogleSheets(data: UserEventData): Promise<boolean> {
   const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL
 
   if (!webhookUrl) {
@@ -38,7 +55,7 @@ export async function logSignupToGoogleSheets(data: SignupData): Promise<boolean
   }
 
   try {
-    // IMPORTANT: We only log email, name, and source - NEVER passwords
+    // IMPORTANT: We only log non-sensitive profile metadata - NEVER passwords
     const response = await fetch(webhookUrl, {
       method: "POST",
       headers: {
@@ -48,6 +65,7 @@ export async function logSignupToGoogleSheets(data: SignupData): Promise<boolean
         email: data.email,
         name: data.name || "",
         source: data.source || "direct",
+        event: data.event,
         // timestamp is added by the Google Apps Script
       }),
     })
@@ -57,7 +75,7 @@ export async function logSignupToGoogleSheets(data: SignupData): Promise<boolean
       return false
     }
 
-    console.log("Signup logged to Google Sheets:", data.email)
+    console.log("User event logged to Google Sheets:", data.event, data.email)
     return true
   } catch (error) {
     // Don't throw - logging failure shouldn't break signup flow

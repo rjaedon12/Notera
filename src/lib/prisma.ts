@@ -9,6 +9,7 @@ const globalForPrisma = globalThis as unknown as {
 
 function createPrismaClient() {
   let databaseUrl = process.env.DATABASE_URL || 'file:./prisma/dev.db'
+  const databaseAuthToken = process.env.DATABASE_AUTH_TOKEN
 
   // Vercel serverless functions use a read-only deployment filesystem.
   // For file-based SQLite URLs, bootstrap a writable DB in /tmp.
@@ -25,6 +26,7 @@ function createPrismaClient() {
 
   const adapter = new PrismaLibSql({
     url: databaseUrl,
+    authToken: databaseAuthToken,
   })
   return new PrismaClient({ adapter })
 }

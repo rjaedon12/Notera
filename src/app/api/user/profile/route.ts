@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { resolveSessionUserId } from "@/lib/session-user"
+import { logUserEventToGoogleSheets } from "@/lib/google-sheets"
 
 const profileSchema = z.object({
   name: z.string().min(1).max(100),
@@ -15,6 +17,11 @@ export async function PUT(request: Request) {
     
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const userId = await resolveSessionUserId(session.user)
+    if (!userId) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
     const body = await request.json()
@@ -35,7 +42,7 @@ export async function PUT(request: Request) {
       const existingUser = await prisma.user.findUnique({
         where: { email }
       })
-      if (existingUser) {
+      if (existingUser && existingUser.id !== userId) {
         return NextResponse.json(
           { error: "Email is already in use" },
           { status: 400 }
@@ -45,7 +52,7 @@ export async function PUT(request: Request) {
 
     // Update user profile
     const updatedUser = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: userId },
       data: { name, email },
       select: {
         id: true,
@@ -55,6 +62,13 @@ export async function PUT(request: Request) {
         role: true,
       }
     })
+
+    logUserEventToGoogleSheets({
+      email,
+      name,
+      source: "profile",
+      event: "profile_update",
+    }).catch(() => undefined)
 
     return NextResponse.json(updatedUser)
   } catch (error) {
@@ -75,8 +89,13 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userId = await resolveSessionUserId(session.user)
+    if (!userId) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       select: {
         id: true,
         name: true,
