@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { questionSchema } from "@/lib/validations"
+import { resolveSessionUserId } from "@/lib/session-user"
 
 // PATCH /api/quizzes/banks/[bankId]/questions/[questionId] - Update a question
 export async function PATCH(
@@ -15,14 +16,33 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userId = await resolveSessionUserId(session.user)
+    if (!userId) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+    const sessionEmail = session.user.email?.toLowerCase().trim() ?? null
+
     const { bankId, questionId } = await params
 
     const bank = await prisma.questionBank.findUnique({
       where: { id: bankId },
+      include: { owner: { select: { email: true } } },
     })
 
-    if (!bank || bank.ownerId !== session.user.id) {
+    const isOwner =
+      !!bank &&
+      (bank.ownerId === userId ||
+        (!!sessionEmail && bank.owner?.email?.toLowerCase() === sessionEmail))
+
+    if (!isOwner) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    if (bank.ownerId !== userId) {
+      await prisma.questionBank.update({
+        where: { id: bankId },
+        data: { ownerId: userId },
+      })
     }
 
     const body = await request.json()
@@ -96,14 +116,33 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userId = await resolveSessionUserId(session.user)
+    if (!userId) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+    const sessionEmail = session.user.email?.toLowerCase().trim() ?? null
+
     const { bankId, questionId } = await params
 
     const bank = await prisma.questionBank.findUnique({
       where: { id: bankId },
+      include: { owner: { select: { email: true } } },
     })
 
-    if (!bank || bank.ownerId !== session.user.id) {
+    const isOwner =
+      !!bank &&
+      (bank.ownerId === userId ||
+        (!!sessionEmail && bank.owner?.email?.toLowerCase() === sessionEmail))
+
+    if (!isOwner) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    if (bank.ownerId !== userId) {
+      await prisma.questionBank.update({
+        where: { id: bankId },
+        data: { ownerId: userId },
+      })
     }
 
     await prisma.question.delete({ where: { id: questionId } })

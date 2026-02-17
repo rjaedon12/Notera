@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { questionBankSchema } from "@/lib/validations"
+import { resolveSessionUserId } from "@/lib/session-user"
 
 // GET /api/quizzes/banks/[bankId] - Get a single question bank
 export async function GET(
@@ -15,6 +16,12 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userId = await resolveSessionUserId(session.user)
+    if (!userId) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+    const sessionEmail = session.user.email?.toLowerCase().trim() ?? null
+
     const { bankId } = await params
 
     const bank = await prisma.questionBank.findUnique({
@@ -24,7 +31,7 @@ export async function GET(
           include: { choices: { orderBy: { orderIndex: "asc" } } },
           orderBy: { orderIndex: "asc" },
         },
-        owner: { select: { id: true, name: true } },
+        owner: { select: { id: true, name: true, email: true } },
         _count: { select: { questions: true, attempts: true } },
       },
     })
@@ -34,12 +41,21 @@ export async function GET(
     }
 
     // Only owner or public
-    if (bank.ownerId !== session.user.id && !bank.isPublic) {
+    const isOwner =
+      bank.ownerId === userId ||
+      (!!sessionEmail && bank.owner?.email?.toLowerCase() === sessionEmail)
+
+    if (!isOwner && !bank.isPublic) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     // correctChoiceId is now stored in DB, no need to derive
-    return NextResponse.json(bank)
+    return NextResponse.json({
+      ...bank,
+      owner: bank.owner
+        ? { id: bank.owner.id, name: bank.owner.name }
+        : null,
+    })
   } catch (error) {
     console.error("Get question bank error:", error)
     return NextResponse.json(
@@ -61,6 +77,12 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userId = await resolveSessionUserId(session.user)
+    if (!userId) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+    const sessionEmail = session.user.email?.toLowerCase().trim() ?? null
+
     const { bankId } = await params
 
     const existing = await prisma.questionBank.findUnique({
@@ -71,8 +93,23 @@ export async function PATCH(
       return NextResponse.json({ error: "Not found" }, { status: 404 })
     }
 
-    if (existing.ownerId !== session.user.id) {
+    const owner = await prisma.user.findUnique({
+      where: { id: existing.ownerId },
+      select: { email: true },
+    })
+    const isOwner =
+      existing.ownerId === userId ||
+      (!!sessionEmail && owner?.email?.toLowerCase() === sessionEmail)
+
+    if (!isOwner) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    if (existing.ownerId !== userId) {
+      await prisma.questionBank.update({
+        where: { id: bankId },
+        data: { ownerId: userId },
+      })
     }
 
     const body = await request.json()
@@ -122,6 +159,12 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userId = await resolveSessionUserId(session.user)
+    if (!userId) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+    const sessionEmail = session.user.email?.toLowerCase().trim() ?? null
+
     const { bankId } = await params
 
     const existing = await prisma.questionBank.findUnique({
@@ -132,7 +175,15 @@ export async function DELETE(
       return NextResponse.json({ error: "Not found" }, { status: 404 })
     }
 
-    if (existing.ownerId !== session.user.id) {
+    const owner = await prisma.user.findUnique({
+      where: { id: existing.ownerId },
+      select: { email: true },
+    })
+    const isOwner =
+      existing.ownerId === userId ||
+      (!!sessionEmail && owner?.email?.toLowerCase() === sessionEmail)
+
+    if (!isOwner) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import { resolveSessionUserId } from "@/lib/session-user"
 
 export const dynamic = "force-dynamic"
 
@@ -12,6 +13,12 @@ export async function POST(request: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    const userId = await resolveSessionUserId(session.user)
+    if (!userId) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+    const sessionEmail = session.user.email?.toLowerCase().trim() ?? null
 
     const body = await request.json()
     const { bankId } = body
@@ -25,20 +32,27 @@ export async function POST(request: NextRequest) {
 
     const bank = await prisma.questionBank.findUnique({
       where: { id: bankId },
-      include: { _count: { select: { questions: true } } },
+      include: {
+        _count: { select: { questions: true } },
+        owner: { select: { email: true } },
+      },
     })
 
     if (!bank) {
       return NextResponse.json({ error: "Not found" }, { status: 404 })
     }
 
-    if (bank.ownerId !== session.user.id && !bank.isPublic) {
+    const isOwner =
+      bank.ownerId === userId ||
+      (!!sessionEmail && bank.owner?.email?.toLowerCase() === sessionEmail)
+
+    if (!isOwner && !bank.isPublic) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     const attempt = await prisma.quizAttempt.create({
       data: {
-        userId: session.user.id,
+        userId,
         bankId,
         totalQuestions: bank._count.questions,
       },
@@ -63,11 +77,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userId = await resolveSessionUserId(session.user)
+    if (!userId) {
+      return NextResponse.json([], { status: 200 })
+    }
+
     const { searchParams } = new URL(request.url)
     const bankId = searchParams.get("bankId")
 
     const where: { userId: string; bankId?: string } = {
-      userId: session.user.id,
+      userId,
     }
     if (bankId) where.bankId = bankId
 

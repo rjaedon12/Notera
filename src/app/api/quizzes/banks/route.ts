@@ -20,8 +20,17 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
+    const sessionEmail = session.user.email?.toLowerCase().trim()
+
     const banks = await prisma.questionBank.findMany({
-      where: { ownerId: userId },
+      where: sessionEmail
+        ? {
+            OR: [
+              { ownerId: userId },
+              { owner: { email: sessionEmail } },
+            ],
+          }
+        : { ownerId: userId },
       include: {
         _count: { select: { questions: true, attempts: true } },
       },

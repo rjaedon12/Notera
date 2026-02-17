@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { questionSchema } from "@/lib/validations"
+import { resolveSessionUserId } from "@/lib/session-user"
 
 // POST /api/quizzes/banks/[bankId]/questions - Add a question
 export async function POST(
@@ -15,19 +16,39 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userId = await resolveSessionUserId(session.user)
+    if (!userId) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+    const sessionEmail = session.user.email?.toLowerCase().trim() ?? null
+
     const { bankId } = await params
 
     const bank = await prisma.questionBank.findUnique({
       where: { id: bankId },
-      include: { _count: { select: { questions: true } } },
+      include: {
+        _count: { select: { questions: true } },
+        owner: { select: { email: true } },
+      },
     })
 
     if (!bank) {
       return NextResponse.json({ error: "Not found" }, { status: 404 })
     }
 
-    if (bank.ownerId !== session.user.id) {
+    const isOwner =
+      bank.ownerId === userId ||
+      (!!sessionEmail && bank.owner?.email?.toLowerCase() === sessionEmail)
+
+    if (!isOwner) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    if (bank.ownerId !== userId) {
+      await prisma.questionBank.update({
+        where: { id: bankId },
+        data: { ownerId: userId },
+      })
     }
 
     const body = await request.json()
