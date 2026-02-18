@@ -7,7 +7,7 @@ The `createMany` call in `src/app/api/timeline/[resourceId]/route.ts` used `posX
 
 ### Fix
 - **Action**: Ran `npx prisma generate` to rebuild the client types and validation logic.
-- **Action**: Ran `npx prisma db push` to ensure the dev database (`dev.db`) columns match the schema.
+- **Action**: Ran `npx prisma db push` to ensure the PostgreSQL schema matches the Prisma schema.
 - **Verification**: The code no longer throws validation errors.
 
 ## 2. Make Saved Timelines Editable ✅

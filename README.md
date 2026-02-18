@@ -16,7 +16,7 @@ A Next.js flashcard and study application with multiple study modes, progress tr
 
 - **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript
-- **Database**: SQLite with Prisma ORM
+- **Database**: PostgreSQL (Neon) with Prisma ORM
 - **Authentication**: NextAuth.js v5
 - **Styling**: Tailwind CSS v4
 - **State Management**: React Query

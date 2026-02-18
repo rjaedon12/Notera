@@ -1,6 +1,6 @@
 # Deploying StudyApp to Vercel
 
-This guide outlines the steps to deploy the `studyapp` to Vercel. Because the app currently uses SQLite (which is not supported on Vercel's serverless environment), you will need to provision a PostgreSQL database.
+This guide outlines the steps to deploy the `studyapp` to Vercel with a PostgreSQL database.
 
 ## Prerequisites
 
@@ -22,7 +22,7 @@ Since you have the code ready locally, follow these steps to push it to GitHub:
 
 ## Step 1: Database Setup (PostgreSQL)
 
-Since SQLite files are read-only on Vercel, you need a cloud Postgres database.
+Use a cloud Postgres database.
 
 1.  **Create a Database**: Use [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres), [Supabase](https://supabase.com/), or [Neon](https://neon.tech/).
 2.  **Get Connection String**: Copy the `DATABASE_URL` (e.g., `postgres://user:pass@host:5432/db`).
@@ -30,7 +30,7 @@ Since SQLite files are read-only on Vercel, you need a cloud Postgres database.
 ## Step 2: Configure Project for Production
 
 1.  **Update `schema.prisma`**:
-    Change your `datasource` provider from `sqlite` to `postgresql`.
+    Ensure your `datasource` provider is `postgresql`.
 
     ```prisma
     datasource db {
@@ -40,7 +40,7 @@ Since SQLite files are read-only on Vercel, you need a cloud Postgres database.
     ```
 
 2.  **Generate Migration**:
-    Run this locally to create the initial migration for Postgres (this *might* reset your local SQLite data if you switch back and forth, so be careful).
+    Run this locally to create the initial migration for Postgres.
     ```bash
     # IMPORTANT: You need a .env file with DATABASE_URL pointing to your NEW Postgres DB for this to work
     npx prisma migrate dev --name init

@@ -1,16 +1,9 @@
 import { PrismaClient } from "@prisma/client"
-import { PrismaPg } from "@prisma/adapter-pg"
 import bcrypt from "bcryptjs"
 import fs from "node:fs/promises"
 import path from "node:path"
 
-const connectionString = process.env.DATABASE_URL
-if (!connectionString) {
-  throw new Error("DATABASE_URL is required")
-}
-
-const adapter = new PrismaPg({ connectionString })
-const prisma = new PrismaClient({ adapter })
+const prisma = new PrismaClient()
 
 // CSV helper - Each CSV has header "English & Pinyin,Chinese"
 // Some English fields contain commas, so we split on the LAST comma.
