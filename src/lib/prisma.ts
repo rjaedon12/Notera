@@ -10,6 +10,12 @@ const globalForPrisma = globalThis as unknown as {
 function createPrismaClient() {
   let databaseUrl = process.env.DATABASE_URL || 'file:./prisma/dev.db'
 
+  // If a stale Postgres URL is still configured from a prior migration,
+  // force SQLite mode for this project.
+  if (databaseUrl.startsWith('postgres://') || databaseUrl.startsWith('postgresql://')) {
+    databaseUrl = 'file:./prisma/dev.db'
+  }
+
   if (process.env.VERCEL && databaseUrl.startsWith('file:')) {
     const writableDbPath = '/tmp/koda.db'
     const seededSnapshotPath = path.join(process.cwd(), 'prisma', 'seeded.db')
