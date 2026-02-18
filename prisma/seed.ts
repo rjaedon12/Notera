@@ -1,18 +1,15 @@
 import { PrismaClient } from "@prisma/client"
-import { PrismaLibSql } from "@prisma/adapter-libsql"
+import { PrismaPg } from "@prisma/adapter-pg"
 import bcrypt from "bcryptjs"
 import fs from "node:fs/promises"
 import path from "node:path"
 
-// Use DATABASE_URL when provided (e.g. Turso/libSQL in production tooling),
-// otherwise fall back to local prisma/dev.db
-const dbPath = path.resolve(__dirname, "dev.db")
-const databaseUrl = process.env.DATABASE_URL || `file:${dbPath}`
-const databaseAuthToken = process.env.DATABASE_AUTH_TOKEN
-const adapter = new PrismaLibSql({
-  url: databaseUrl,
-  authToken: databaseAuthToken,
-})
+const connectionString = process.env.DATABASE_URL
+if (!connectionString) {
+  throw new Error("DATABASE_URL is required")
+}
+
+const adapter = new PrismaPg({ connectionString })
 const prisma = new PrismaClient({ adapter })
 
 // CSV helper - Each CSV has header "English & Pinyin,Chinese"

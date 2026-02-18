@@ -1,33 +1,17 @@
 import { PrismaClient } from '@prisma/client'
-import { PrismaLibSql } from '@prisma/adapter-libsql'
-import fs from 'node:fs'
-import path from 'node:path'
+import { PrismaPg } from '@prisma/adapter-pg'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
 function createPrismaClient() {
-  let databaseUrl = process.env.DATABASE_URL || 'file:./prisma/dev.db'
-  const databaseAuthToken = process.env.DATABASE_AUTH_TOKEN
-
-  // Vercel serverless functions use a read-only deployment filesystem.
-  // For file-based SQLite URLs, bootstrap a writable DB in /tmp.
-  if (process.env.VERCEL && databaseUrl.startsWith('file:')) {
-    const vercelDbPath = '/tmp/koda.db'
-    const seededSnapshotPath = path.join(process.cwd(), 'prisma', 'seeded.db')
-
-    if (!fs.existsSync(vercelDbPath) && fs.existsSync(seededSnapshotPath)) {
-      fs.copyFileSync(seededSnapshotPath, vercelDbPath)
-    }
-
-    databaseUrl = `file:${vercelDbPath}`
+  const connectionString = process.env.DATABASE_URL
+  if (!connectionString) {
+    throw new Error('DATABASE_URL is required')
   }
 
-  const adapter = new PrismaLibSql({
-    url: databaseUrl,
-    authToken: databaseAuthToken,
-  })
+  const adapter = new PrismaPg({ connectionString })
   return new PrismaClient({ adapter })
 }
 

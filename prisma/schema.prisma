@@ -8,10 +8,10 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
-// Enums represented as strings for SQLite compatibility
+// Enums represented as strings
 // Role: USER | ADMIN
 // ResourceType: GUIDE | TIMELINE | IMAGE | PDF | WHITEBOARD
 // Visibility: PRIVATE | PUBLIC | GROUP

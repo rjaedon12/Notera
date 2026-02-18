@@ -8,8 +8,7 @@ type SessionUserLike = {
   role?: string | null
 }
 
-// Placeholder hash used only when recreating a missing user row from session context
-// in ephemeral environments (e.g., serverless SQLite fallback).
+// Placeholder hash used only when recreating a missing user row from session context.
 const FALLBACK_PASSWORD_HASH = "$2b$10$wM98Q9R2vQd.j4hRrjmM8eLLvF6kq7f3h6YqS9C2n7v5yLqkM8T6a"
 
 export async function resolveSessionUserId(sessionUser: SessionUserLike): Promise<string | null> {
