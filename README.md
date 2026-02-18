@@ -4,13 +4,13 @@ A Next.js flashcard and study application with multiple study modes, progress tr
 
 ## Features
 
-- 📚 Create and manage flashcard sets
-- 🎯 Multiple study modes: Flashcards, Learn, Test, Match, Timed
-- 📊 Progress tracking and streak system
-- 👥 Group collaboration with invite codes
-- 🏷️ Tag-based organization
-- 🌙 Dark/Light theme support
-- 📱 Responsive design
+- Create and manage flashcard sets
+- Multiple study modes: Flashcards, Learn, Test, Match, Timed
+- Progress tracking and streak system
+- Group collaboration with invite codes
+- Tag-based organization
+- Dark/Light theme support
+- Responsive design
 
 ## Tech Stack
 
