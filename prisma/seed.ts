@@ -53,6 +53,12 @@ const basicChineseCsvSets: { file: string; title: string; description: string }[
   { file: "basic_02_body_health.csv", title: "Chinese Basics – Body & Health", description: "Body parts and health vocabulary. Chinese characters on the front; pinyin and English on the back." },
   { file: "basic_03_food_drink.csv", title: "Chinese Basics – Food & Drink", description: "Food, drink, and dining vocabulary. Chinese characters on the front; pinyin and English on the back." },
   { file: "basic_04_travel_transport.csv", title: "Chinese Basics – Travel & Transport", description: "Travel, directions, and transport vocabulary. Chinese characters on the front; pinyin and English on the back." },
+  { file: "basic_05_home_daily_life.csv", title: "Chinese Basics – Home & Daily Life", description: "Home, household, and everyday life vocabulary. Chinese characters on the front; pinyin and English on the back." },
+  { file: "basic_06_nature_animals.csv", title: "Chinese Basics – Nature & Animals", description: "Nature, seasons, animals, and environment vocabulary. Chinese characters on the front; pinyin and English on the back." },
+  { file: "basic_07_people_relationships.csv", title: "Chinese Basics – People & Relationships", description: "Family, social relationships, and people vocabulary. Chinese characters on the front; pinyin and English on the back." },
+  { file: "basic_08_emotions_personality.csv", title: "Chinese Basics – Emotions & Personality", description: "Emotions, feelings, and personality traits vocabulary. Chinese characters on the front; pinyin and English on the back." },
+  { file: "basic_09_work_society_culture.csv", title: "Chinese Basics – Work, Society & Culture", description: "Work, society, news, and culture vocabulary. Chinese characters on the front; pinyin and English on the back." },
+  { file: "basic_10_key_verbs_grammar.csv", title: "Chinese Basics – Key Verbs & Grammar", description: "High-frequency verbs and grammar words. Chinese characters on the front; pinyin and English on the back." },
 ]
 
 const chineseCsvSets: { file: string; title: string; description: string }[] = [
