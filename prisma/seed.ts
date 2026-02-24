@@ -27,6 +27,34 @@ function parseCsvToCards(csv: string) {
     .map((c, i) => ({ ...c, orderIndex: i }))
 }
 
+// New-format CSV helper - Header: "Chinese,Pinyin & English"
+// Chinese character is first column (term/front), pinyin+english is second (definition/back).
+function parseCsvNewFormat(csv: string) {
+  const rows = csv
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(1) // skip header
+
+  return rows
+    .map((line, i) => {
+      const sep = line.indexOf(",")
+      if (sep === -1) return null
+      const chinese = line.slice(0, sep).trim()
+      const pinyinAndEnglish = line.slice(sep + 1).trim()
+      if (!chinese || !pinyinAndEnglish) return null
+      return { term: chinese, definition: pinyinAndEnglish, orderIndex: i }
+    })
+    .filter((c): c is { term: string; definition: string; orderIndex: number } => c !== null)
+}
+
+const basicChineseCsvSets: { file: string; title: string; description: string }[] = [
+  { file: "basic_01_school_education.csv", title: "Chinese Basics – School & Education", description: "Essential school and education vocabulary. Chinese characters on the front; pinyin and English on the back." },
+  { file: "basic_02_body_health.csv", title: "Chinese Basics – Body & Health", description: "Body parts and health vocabulary. Chinese characters on the front; pinyin and English on the back." },
+  { file: "basic_03_food_drink.csv", title: "Chinese Basics – Food & Drink", description: "Food, drink, and dining vocabulary. Chinese characters on the front; pinyin and English on the back." },
+  { file: "basic_04_travel_transport.csv", title: "Chinese Basics – Travel & Transport", description: "Travel, directions, and transport vocabulary. Chinese characters on the front; pinyin and English on the back." },
+]
+
 const chineseCsvSets: { file: string; title: string; description: string }[] = [
   { file: "ap_mandarin_vocabulary_2_columns.csv", title: "AP Mandarin – Full Vocabulary", description: "Complete AP Mandarin vocabulary (~597 words). Chinese characters on the front; English meaning with pinyin on the back." },
   { file: "category_action_verbs_and_descriptions.csv", title: "Chinese Action Verbs & Descriptions", description: "Action verbs and descriptive words commonly tested in AP Chinese." },
@@ -238,6 +266,40 @@ async function main() {
       },
     })
     const tagIds = [chineseTag?.id, mandarinTag?.id, apChineseTag?.id, apCoursesTag?.id, languagesTag?.id, vocabTag?.id].filter((id): id is string => !!id)
+    if (tagIds.length > 0) {
+      await prisma.setTag.createMany({ data: tagIds.map((tagId) => ({ setId: studySet.id, tagId })) })
+    }
+    console.log("✓ Created:", csvDef.title, `(${cards.length} cards)`)
+  }
+
+  // ── Basic Chinese CSV sets (Chinese,Pinyin & English format) ────
+  const beginnerTagForBasic = await prisma.tag.findUnique({ where: { slug: "beginner" } })
+
+  for (const csvDef of basicChineseCsvSets) {
+    const csvPath = path.join(dataDir, csvDef.file)
+    let csvContent: string
+    try {
+      csvContent = await fs.readFile(csvPath, "utf8")
+    } catch {
+      console.warn("⚠ Skipping missing file:", csvDef.file)
+      continue
+    }
+    const cards = parseCsvNewFormat(csvContent)
+    if (cards.length === 0) {
+      console.warn("⚠ No valid cards in:", csvDef.file)
+      continue
+    }
+    const studySet = await prisma.studySet.create({
+      data: {
+        title: csvDef.title,
+        description: csvDef.description,
+        isPublic: true,
+        isPremade: true,
+        ownerId: admin.id,
+        cards: { create: cards },
+      },
+    })
+    const tagIds = [chineseTag?.id, mandarinTag?.id, languagesTag?.id, vocabTag?.id, beginnerTagForBasic?.id].filter((id): id is string => !!id)
     if (tagIds.length > 0) {
       await prisma.setTag.createMany({ data: tagIds.map((tagId) => ({ setId: studySet.id, tagId })) })
     }
