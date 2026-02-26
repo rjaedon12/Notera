@@ -6,12 +6,15 @@ import { QuestionBank, QuizAttempt } from "@/types"
 // ============================================
 
 export function useQuestionBanks() {
-  return useQuery<QuestionBank[]>({
+  return useQuery<{ myBanks: QuestionBank[]; premadeBanks: QuestionBank[] }>({
     queryKey: ["questionBanks"],
     queryFn: async () => {
       const res = await fetch("/api/quizzes/banks")
       if (!res.ok) throw new Error("Failed to fetch question banks")
-      return res.json()
+      const data = await res.json()
+      // Handle legacy array response gracefully
+      if (Array.isArray(data)) return { myBanks: data, premadeBanks: [] }
+      return data
     },
   })
 }

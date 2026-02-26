@@ -6,7 +6,7 @@ import { resolveSessionUserId } from "@/lib/session-user"
 
 export const dynamic = "force-dynamic"
 
-// GET /api/quizzes/banks - Get user's question banks
+// GET /api/quizzes/banks - Get user's question banks + public premade banks
 export async function GET() {
   try {
     const session = await auth()
@@ -22,7 +22,8 @@ export async function GET() {
 
     const sessionEmail = session.user.email?.toLowerCase().trim()
 
-    const banks = await prisma.questionBank.findMany({
+    // User's own banks
+    const myBanks = await prisma.questionBank.findMany({
       where: sessionEmail
         ? {
             OR: [
@@ -37,7 +38,18 @@ export async function GET() {
       orderBy: { updatedAt: "desc" },
     })
 
-    return NextResponse.json(banks)
+    // Public premade banks NOT owned by this user
+    const myBankIds = new Set(myBanks.map((b) => b.id))
+    const publicBanks = await prisma.questionBank.findMany({
+      where: { isPublic: true },
+      include: {
+        _count: { select: { questions: true, attempts: true } },
+      },
+      orderBy: { updatedAt: "desc" },
+    })
+    const premadeBanks = publicBanks.filter((b) => !myBankIds.has(b.id))
+
+    return NextResponse.json({ myBanks, premadeBanks })
   } catch (error) {
     console.error("Get question banks error:", error)
     return NextResponse.json(
