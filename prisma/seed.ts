@@ -403,6 +403,18 @@ async function main() {
 
   // ── Quiz Banks ──────────────────────────────────────────────────
 
+  // Delete any duplicate quiz banks (keep only the most recent one per title)
+  const allBanks = await prisma.questionBank.findMany({ select: { id: true, title: true, createdAt: true }, orderBy: { createdAt: "asc" } })
+  const seen = new Map<string, string>()
+  for (const bank of allBanks) {
+    if (seen.has(bank.title)) {
+      const oldId = seen.get(bank.title)!
+      await prisma.questionBank.delete({ where: { id: oldId } })
+      console.log(`✓ Removed duplicate quiz bank: "${bank.title}"`)
+    }
+    seen.set(bank.title, bank.id)
+  }
+
   // Helper to fix correctChoiceId after nested create
   async function fixCorrectChoices(bank: { questions: Array<{ id: string; choices: Array<{ id: string; isCorrect: boolean }> }> }) {
     for (const question of bank.questions) {
@@ -1987,6 +1999,392 @@ async function main() {
   })
   await fixCorrectChoices(quiz6)
   console.log("✓ Created quiz:", quiz6.title, `(${quiz6.questions.length} questions)`)
+
+  // ── Quiz Bank 7: AP Literature & Composition – Multiple Choice Practice ───
+  const quiz7 = await prisma.questionBank.create({
+    data: {
+      title: "AP Literature & Composition – Multiple Choice Practice",
+      subject: "AP Literature",
+      description: "Stimulus-based multiple choice questions across poetry, prose fiction, and drama. Covers tone, diction, figurative language, theme, structure, characterization, point of view, irony, and symbolism.",
+      isPublic: true, ownerId: admin.id,
+      questions: { create: [
+
+        // ── PASSAGE 1: Emily Dickinson, "Because I could not stop for Death" (Qs 1–6) ──
+        {
+          prompt: "In line 2, the word 'kindly' is best understood as an example of which of the following?",
+          passage: "Because I could not stop for Death –\nHe kindly stopped for me –\nThe Carriage held but just Ourselves –\nAnd Immortality.\n\nWe slowly drove – He knew no haste\nAnd I had put away\nMy labor and my leisure too,\nFor His Civility –\n\nWe passed the School, where Children strove\nAt Recess – in the Ring –\nWe passed the Fields of Gazing Grain –\nWe passed the Setting Sun –\n\nOr rather – He passed Us –\nThe Dews drew quivering and Chill –\nFor only Gossamer, my Gown –\nMy Tippet – only Tulle –\n\nWe paused before a House that seemed\nA Swelling of the Ground –\nThe Roof was scarcely visible –\nThe Cornice – in the Ground –\n\nSince then – 'tis Centuries – and yet\nFeels shorter than the Day\nI first surmised the Horses' Heads\nWere toward Eternity –\n\n— Emily Dickinson (c. 1863)",
+          explanation: "Correct: (C) Irony. Death is not typically associated with kindness or social grace — describing it as 'kindly' subverts the reader's expectations, making Death seem courteous rather than terrifying. This ironic word choice is central to the poem's unusual personification of Death as a gentleman caller. (A) is wrong — simile requires 'like' or 'as.' (B) is wrong — alliteration involves repeated consonant sounds. (D) is wrong — hyperbole involves exaggeration.",
+          correctChoiceId: "", orderIndex: 0,
+          choices: { create: [
+            { text: "Simile", isCorrect: false, orderIndex: 0 },
+            { text: "Alliteration", isCorrect: false, orderIndex: 1 },
+            { text: "Irony", isCorrect: true, orderIndex: 2 },
+            { text: "Hyperbole", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The sequence 'the School… the Fields of Gazing Grain… the Setting Sun' (stanza 3) most likely represents which of the following?",
+          passage: "Because I could not stop for Death –\nHe kindly stopped for me –\nThe Carriage held but just Ourselves –\nAnd Immortality.\n\nWe slowly drove – He knew no haste\nAnd I had put away\nMy labor and my leisure too,\nFor His Civility –\n\nWe passed the School, where Children strove\nAt Recess – in the Ring –\nWe passed the Fields of Gazing Grain –\nWe passed the Setting Sun –\n\nOr rather – He passed Us –\nThe Dews drew quivering and Chill –\nFor only Gossamer, my Gown –\nMy Tippet – only Tulle –\n\nWe paused before a House that seemed\nA Swelling of the Ground –\nThe Roof was scarcely visible –\nThe Cornice – in the Ground –\n\nSince then – 'tis Centuries – and yet\nFeels shorter than the Day\nI first surmised the Horses' Heads\nWere toward Eternity –\n\n— Emily Dickinson (c. 1863)",
+          explanation: "Correct: (B) The sequence moves from childhood (school, play) to productive adulthood (grain fields, harvest) to old age and death (setting sun) — a compressed allegory of the entire human lifespan. The images are symbolic, not literal landmarks. (A) is wrong — these are not literal locations but symbolic stages. (C) is wrong — the seasons interpretation is secondary to the life-stages reading. (D) is wrong — the images represent the speaker's past life, not the afterlife.",
+          correctChoiceId: "", orderIndex: 1,
+          choices: { create: [
+            { text: "Literal landmarks the carriage passes on a country road", isCorrect: false, orderIndex: 0 },
+            { text: "Symbolic stages of human life from childhood through old age", isCorrect: true, orderIndex: 1 },
+            { text: "The four seasons of the natural year", isCorrect: false, orderIndex: 2 },
+            { text: "Stages of the afterlife the speaker is entering", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The 'House that seemed / A Swelling of the Ground' (stanza 5) is most likely a symbol for which of the following?",
+          passage: "Because I could not stop for Death –\nHe kindly stopped for me –\nThe Carriage held but just Ourselves –\nAnd Immortality.\n\nWe slowly drove – He knew no haste\nAnd I had put away\nMy labor and my leisure too,\nFor His Civility –\n\nWe passed the School, where Children strove\nAt Recess – in the Ring –\nWe passed the Fields of Gazing Grain –\nWe passed the Setting Sun –\n\nOr rather – He passed Us –\nThe Dews drew quivering and Chill –\nFor only Gossamer, my Gown –\nMy Tippet – only Tulle –\n\nWe paused before a House that seemed\nA Swelling of the Ground –\nThe Roof was scarcely visible –\nThe Cornice – in the Ground –\n\nSince then – 'tis Centuries – and yet\nFeels shorter than the Day\nI first surmised the Horses' Heads\nWere toward Eternity –\n\n— Emily Dickinson (c. 1863)",
+          explanation: "Correct: (A) A grave. The description of a 'house' whose roof and cornice are barely visible above ground perfectly describes a burial mound or grave. Dickinson characteristically uses domestic imagery to defamiliarize death — a grave becomes a 'house,' and eternity becomes a carriage ride. (B) is wrong — the church would be described differently. (C) is wrong — no mention of a church in this stanza. (D) is wrong — the poem moves past, not toward, a farmhouse.",
+          correctChoiceId: "", orderIndex: 2,
+          choices: { create: [
+            { text: "A grave", isCorrect: true, orderIndex: 0 },
+            { text: "A rural farmhouse the carriage passes", isCorrect: false, orderIndex: 1 },
+            { text: "A chapel or place of worship", isCorrect: false, orderIndex: 2 },
+            { text: "The speaker's own home that she left behind", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The primary literary device used to portray Death throughout the poem is which of the following?",
+          passage: "Because I could not stop for Death –\nHe kindly stopped for me –\nThe Carriage held but just Ourselves –\nAnd Immortality.\n\nWe slowly drove – He knew no haste\nAnd I had put away\nMy labor and my leisure too,\nFor His Civility –\n\nWe passed the School, where Children strove\nAt Recess – in the Ring –\nWe passed the Fields of Gazing Grain –\nWe passed the Setting Sun –\n\nOr rather – He passed Us –\nThe Dews drew quivering and Chill –\nFor only Gossamer, my Gown –\nMy Tippet – only Tulle –\n\nWe paused before a House that seemed\nA Swelling of the Ground –\nThe Roof was scarcely visible –\nThe Cornice – in the Ground –\n\nSince then – 'tis Centuries – and yet\nFeels shorter than the Day\nI first surmised the Horses' Heads\nWere toward Eternity –\n\n— Emily Dickinson (c. 1863)",
+          explanation: "Correct: (D) Personification. Death is given human attributes throughout the poem — it is a 'He' who drives a carriage, shows 'Civility,' and 'kindly' stops for the speaker. This sustained personification transforms Death into a courtly gentleman, fundamentally shaping the poem's tone as calm and even intimate rather than terrifying. (A) is wrong — metaphor is at work, but personification is the more specific and dominant device. (B) is wrong — apostrophe would require the speaker to address Death directly. (C) is wrong — synecdoche uses a part to represent a whole.",
+          correctChoiceId: "", orderIndex: 3,
+          choices: { create: [
+            { text: "Metaphor", isCorrect: false, orderIndex: 0 },
+            { text: "Apostrophe", isCorrect: false, orderIndex: 1 },
+            { text: "Synecdoche", isCorrect: false, orderIndex: 2 },
+            { text: "Personification", isCorrect: true, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The speaker's tone toward Death throughout the poem is best described as which of the following?",
+          passage: "Because I could not stop for Death –\nHe kindly stopped for me –\nThe Carriage held but just Ourselves –\nAnd Immortality.\n\nWe slowly drove – He knew no haste\nAnd I had put away\nMy labor and my leisure too,\nFor His Civility –\n\nWe passed the School, where Children strove\nAt Recess – in the Ring –\nWe passed the Fields of Gazing Grain –\nWe passed the Setting Sun –\n\nOr rather – He passed Us –\nThe Dews drew quivering and Chill –\nFor only Gossamer, my Gown –\nMy Tippet – only Tulle –\n\nWe paused before a House that seemed\nA Swelling of the Ground –\nThe Roof was scarcely visible –\nThe Cornice – in the Ground –\n\nSince then – 'tis Centuries – and yet\nFeels shorter than the Day\nI first surmised the Horses' Heads\nWere toward Eternity –\n\n— Emily Dickinson (c. 1863)",
+          explanation: "Correct: (B) Calm and accepting. The speaker does not resist Death, does not mourn, and describes the journey in measured, almost polite terms. She 'put away' her labor and leisure 'for His Civility' — she accepts the invitation willingly. The tone is remarkably tranquil given the subject matter. (A) is wrong — the speaker shows no fear or dread. (C) is wrong — there is no anger or defiance. (D) is wrong — there is no bitter regret expressed.",
+          correctChoiceId: "", orderIndex: 4,
+          choices: { create: [
+            { text: "Fearful and resistant", isCorrect: false, orderIndex: 0 },
+            { text: "Calm and accepting", isCorrect: true, orderIndex: 1 },
+            { text: "Defiant and angry", isCorrect: false, orderIndex: 2 },
+            { text: "Mournful and regretful", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The final stanza's claim that 'Centuries' feel 'shorter than the Day' of the speaker's death most directly contributes to which of the poem's central themes?",
+          passage: "Because I could not stop for Death –\nHe kindly stopped for me –\nThe Carriage held but just Ourselves –\nAnd Immortality.\n\nWe slowly drove – He knew no haste\nAnd I had put away\nMy labor and my leisure too,\nFor His Civility –\n\nWe passed the School, where Children strove\nAt Recess – in the Ring –\nWe passed the Fields of Gazing Grain –\nWe passed the Setting Sun –\n\nOr rather – He passed Us –\nThe Dews drew quivering and Chill –\nFor only Gossamer, my Gown –\nMy Tippet – only Tulle –\n\nWe paused before a House that seemed\nA Swelling of the Ground –\nThe Roof was scarcely visible –\nThe Cornice – in the Ground –\n\nSince then – 'tis Centuries – and yet\nFeels shorter than the Day\nI first surmised the Horses' Heads\nWere toward Eternity –\n\n— Emily Dickinson (c. 1863)",
+          explanation: "Correct: (C) Eternity transcends human time. The speaker — now dead for centuries — experiences eternity as paradoxically shorter than a single earthly day, suggesting that mortal time and eternal time are fundamentally incomparable. The poem closes on eternity as an unimaginable state beyond ordinary human reckoning. (A) is wrong — the poem does not treat death as a loss. (B) is wrong — regret over life is not the final note. (D) is wrong — the poem's third passenger is 'Immortality,' not a community of the dead.",
+          correctChoiceId: "", orderIndex: 5,
+          choices: { create: [
+            { text: "Death represents an irreversible loss of earthly experience", isCorrect: false, orderIndex: 0 },
+            { text: "The speaker regrets the life she left behind", isCorrect: false, orderIndex: 1 },
+            { text: "Eternity exists in a dimension that transcends and defies human conceptions of time", isCorrect: true, orderIndex: 2 },
+            { text: "The dead share a communal experience of timelessness", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+
+        // ── PASSAGE 2: F. Scott Fitzgerald, The Great Gatsby (Qs 7–12) ──
+        {
+          prompt: "The simile comparing Gatsby to 'one of those intricate machines that register earthquakes ten thousand miles away' (lines 4–5) most directly emphasizes which of Gatsby's qualities?",
+          passage: "If personality is an unbroken series of successful gestures, then there was something gorgeous about him, some heightened sensitivity to the promises of life, as if he were related to one of those intricate machines that register earthquakes ten thousand miles away. This responsiveness had nothing to do with that flabby impressionability which is dignified under the name of the 'creative temperament' — it was an extraordinary gift for hope, a romantic readiness such as I have not found in any other person and which it is not likely I shall ever find again. No — Gatsby turned out all right at the end; it is what preyed on Gatsby, what foul dust floated in the wake of his dreams that temporarily closed out my interest in the abortive sorrows and short-winded elations of men.\n\n— F. Scott Fitzgerald, The Great Gatsby, Chapter 1 (1925)",
+          explanation: "Correct: (A) Extraordinary sensitivity and attunement. The seismograph metaphor suggests Gatsby can detect the faintest tremors of promise and opportunity at extreme distance — he is hypersensitive to possibility in a way ordinary people are not. This is presented as a form of precision, not mere emotionality. (B) is wrong — the narrator explicitly separates this quality from 'flabby impressionability.' (C) is wrong — the machine metaphor emphasizes sensitivity, not calculation or manipulation. (D) is wrong — vulnerability is not the point; the emphasis is on the acuity of his perception.",
+          correctChoiceId: "", orderIndex: 6,
+          choices: { create: [
+            { text: "Extraordinary sensitivity to possibility and the promises of life", isCorrect: true, orderIndex: 0 },
+            { text: "Emotional vulnerability and impressionability", isCorrect: false, orderIndex: 1 },
+            { text: "Cold, mechanical calculation in pursuit of his goals", isCorrect: false, orderIndex: 2 },
+            { text: "Physical and emotional fragility beneath his polished exterior", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The phrase 'foul dust floated in the wake of his dreams' (lines 8–9) is best described as which of the following?",
+          passage: "If personality is an unbroken series of successful gestures, then there was something gorgeous about him, some heightened sensitivity to the promises of life, as if he were related to one of those intricate machines that register earthquakes ten thousand miles away. This responsiveness had nothing to do with that flabby impressionability which is dignified under the name of the 'creative temperament' — it was an extraordinary gift for hope, a romantic readiness such as I have not found in any other person and which it is not likely I shall ever find again. No — Gatsby turned out all right at the end; it is what preyed on Gatsby, what foul dust floated in the wake of his dreams that temporarily closed out my interest in the abortive sorrows and short-winded elations of men.\n\n— F. Scott Fitzgerald, The Great Gatsby, Chapter 1 (1925)",
+          explanation: "Correct: (B) A metaphor for the corrupt people and corruption that surrounded Gatsby's idealistic dreams. The 'foul dust' refers to the morally compromised world Gatsby inhabited — people like Tom and Daisy who exploited his idealism. The image uses maritime ('wake') and elemental ('dust') diction to suggest that corruption trails dreams like wake trails a ship. (A) is wrong — it is metaphorical, not literal dust. (C) is wrong — this refers to what surrounded Gatsby, not his own flaws. (D) is wrong — while alliteration is present ('foul… floated'), the primary device is metaphor.",
+          correctChoiceId: "", orderIndex: 7,
+          choices: { create: [
+            { text: "Literal description of the pollution in the Valley of Ashes", isCorrect: false, orderIndex: 0 },
+            { text: "A metaphor for the corrupt people and moral corruption that surrounded Gatsby's idealism", isCorrect: true, orderIndex: 1 },
+            { text: "A symbol for Gatsby's own moral failings and dishonest means", isCorrect: false, orderIndex: 2 },
+            { text: "An example of alliteration used primarily for musical effect", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The narrator's attitude toward Gatsby in this passage is best characterized as which of the following?",
+          passage: "If personality is an unbroken series of successful gestures, then there was something gorgeous about him, some heightened sensitivity to the promises of life, as if he were related to one of those intricate machines that register earthquakes ten thousand miles away. This responsiveness had nothing to do with that flabby impressionability which is dignified under the name of the 'creative temperament' — it was an extraordinary gift for hope, a romantic readiness such as I have not found in any other person and which it is not likely I shall ever find again. No — Gatsby turned out all right at the end; it is what preyed on Gatsby, what foul dust floated in the wake of his dreams that temporarily closed out my interest in the abortive sorrows and short-winded elations of men.\n\n— F. Scott Fitzgerald, The Great Gatsby, Chapter 1 (1925)",
+          explanation: "Correct: (D) Admiring of Gatsby personally but critical of the corrupt world surrounding him. The narrator praises Gatsby's 'extraordinary gift for hope' and 'romantic readiness,' yet condemns 'what preyed on Gatsby' — separating the man from his environment. The phrase 'Gatsby turned out all right at the end' is a moral vindication of Gatsby himself. (A) is wrong — the narrator never condemns Gatsby. (B) is wrong — the narrator admires Gatsby, not just tolerates him. (C) is wrong — the narrator explicitly vindicates Gatsby.",
+          correctChoiceId: "", orderIndex: 8,
+          choices: { create: [
+            { text: "Deeply critical of Gatsby's moral compromises and dishonest wealth", isCorrect: false, orderIndex: 0 },
+            { text: "Neutral and detached, observing Gatsby without personal judgment", isCorrect: false, orderIndex: 1 },
+            { text: "Contemptuous of Gatsby's naive idealism and romantic delusions", isCorrect: false, orderIndex: 2 },
+            { text: "Admiring of Gatsby personally while condemning the corrupt world that surrounded his dreams", isCorrect: true, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The phrase 'abortive sorrows and short-winded elations of men' (lines 10–11) most directly reveals the narrator's view that human emotional life is generally which of the following?",
+          passage: "If personality is an unbroken series of successful gestures, then there was something gorgeous about him, some heightened sensitivity to the promises of life, as if he were related to one of those intricate machines that register earthquakes ten thousand miles away. This responsiveness had nothing to do with that flabby impressionability which is dignified under the name of the 'creative temperament' — it was an extraordinary gift for hope, a romantic readiness such as I have not found in any other person and which it is not likely I shall ever find again. No — Gatsby turned out all right at the end; it is what preyed on Gatsby, what foul dust floated in the wake of his dreams that temporarily closed out my interest in the abortive sorrows and short-winded elations of men.\n\n— F. Scott Fitzgerald, The Great Gatsby, Chapter 1 (1925)",
+          explanation: "Correct: (A) Shallow and incomplete — both failures and joys cut short before they fully develop. 'Abortive' means cut short or incomplete; 'short-winded' means lacking stamina. Together they suggest that ordinary people's emotional experiences are brief and truncated — making Gatsby's sustained, extraordinary hope even more remarkable by contrast. (B) is wrong — the phrase is dismissive, not sympathetic. (C) is wrong — the phrase criticizes human emotion as incomplete, not excessive. (D) is wrong — the phrase is about brevity and incompleteness, not deceit.",
+          correctChoiceId: "", orderIndex: 9,
+          choices: { create: [
+            { text: "Incomplete and short-lived, lacking the depth and duration of genuine feeling", isCorrect: true, orderIndex: 0 },
+            { text: "Painfully authentic and deserving of greater sympathy than the narrator shows", isCorrect: false, orderIndex: 1 },
+            { text: "Excessive and overwrought compared to Gatsby's restrained emotional intelligence", isCorrect: false, orderIndex: 2 },
+            { text: "Fundamentally dishonest, as people perform emotions they do not actually feel", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The narrative perspective of this passage is best described as which of the following?",
+          passage: "If personality is an unbroken series of successful gestures, then there was something gorgeous about him, some heightened sensitivity to the promises of life, as if he were related to one of those intricate machines that register earthquakes ten thousand miles away. This responsiveness had nothing to do with that flabby impressionability which is dignified under the name of the 'creative temperament' — it was an extraordinary gift for hope, a romantic readiness such as I have not found in any other person and which it is not likely I shall ever find again. No — Gatsby turned out all right at the end; it is what preyed on Gatsby, what foul dust floated in the wake of his dreams that temporarily closed out my interest in the abortive sorrows and short-winded elations of men.\n\n— F. Scott Fitzgerald, The Great Gatsby, Chapter 1 (1925)",
+          explanation: "Correct: (C) First-person retrospective. The narrator uses 'I' and refers to events that have already concluded ('I have not found… and which it is not likely I shall ever find again'), indicating he looks back on Gatsby's story from the future. This retrospective framing gives the narrator omniscience about the outcome while creating dramatic irony. (A) is wrong — third-person omniscient would use 'he' or 'she' as subject. (B) is wrong — first-person present tense would use present-tense verbs throughout. (D) is wrong — second person would address 'you.'",
+          correctChoiceId: "", orderIndex: 10,
+          choices: { create: [
+            { text: "Third-person omniscient, with full access to all characters' thoughts", isCorrect: false, orderIndex: 0 },
+            { text: "First-person present, with the narrator experiencing events as they unfold", isCorrect: false, orderIndex: 1 },
+            { text: "First-person retrospective, with the narrator looking back on completed events", isCorrect: true, orderIndex: 2 },
+            { text: "Second-person, directly addressing the reader as participant", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The diction of the opening sentence — 'If personality is an unbroken series of successful gestures' — most directly serves which purpose?",
+          passage: "If personality is an unbroken series of successful gestures, then there was something gorgeous about him, some heightened sensitivity to the promises of life, as if he were related to one of those intricate machines that register earthquakes ten thousand miles away. This responsiveness had nothing to do with that flabby impressionability which is dignified under the name of the 'creative temperament' — it was an extraordinary gift for hope, a romantic readiness such as I have not found in any other person and which it is not likely I shall ever find again. No — Gatsby turned out all right at the end; it is what preyed on Gatsby, what foul dust floated in the wake of his dreams that temporarily closed out my interest in the abortive sorrows and short-winded elations of men.\n\n— F. Scott Fitzgerald, The Great Gatsby, Chapter 1 (1925)",
+          explanation: "Correct: (B) It frames personality as performance — a series of outward gestures rather than an inner essence — establishing the novel's preoccupation with surfaces, self-invention, and the American performance of identity. The conditional 'If' introduces an ironic doubt about whether personality is authentic or theatrical. (A) is wrong — the sentence is philosophically abstract, not directly characterizing Gatsby. (C) is wrong — the narrator's own personality is not the subject. (D) is wrong — the sentence introduces doubt about identity, not celebrates Gatsby's sincerity.",
+          correctChoiceId: "", orderIndex: 11,
+          choices: { create: [
+            { text: "To establish Gatsby as a man of genuine moral character rather than social performance", isCorrect: false, orderIndex: 0 },
+            { text: "To introduce the novel's preoccupation with the theatrical, performative nature of identity", isCorrect: true, orderIndex: 1 },
+            { text: "To characterize the narrator himself as someone who judges people by social success", isCorrect: false, orderIndex: 2 },
+            { text: "To celebrate the American value of projecting confidence and success to others", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+
+        // ── PASSAGE 3: John Keats, "Ode to a Nightingale" Stanzas 7–8 (Qs 13–18) ──
+        {
+          prompt: "The phrase 'Thou wast not born for death, immortal Bird!' (line 1) addresses the nightingale through which literary device?",
+          passage: "Thou wast not born for death, immortal Bird!\nNo hungry generations tread thee down;\nThe voice I hear this passing night was heard\nIn ancient days by emperor and clown:\nPerhaps the self-same song that found a path\nThrough the sad heart of Ruth, when, sick for home,\nShe stood in tears amid the alien corn;\nThe same that oft-times hath\nCharm'd magic casements, opening on the foam\nOf perilous seas, in faery lands forlorn.\n\nForlorn! the very word is like a bell\nTo toll me back from thee to my sole self!\nAdieu! the fancy cannot cheat so well\nAs she is fam'd to do, deceiving elf.\nAdieu! adieu! thy plaintive anthem fades\nPast the near meadows, over the still stream,\nUp the hill-side; and now 'tis buried deep\nIn the next valley-glades:\nWas it a vision, or a waking dream?\nFled is that music:—Do I wake or sleep?\n\n— John Keats, 'Ode to a Nightingale,' stanzas 7–8 (1819)",
+          explanation: "Correct: (A) Apostrophe — the speaker directly addresses the nightingale ('Thou'), an entity that cannot hear or respond. Apostrophe in poetry involves addressing an absent, dead, or non-human entity as if it were present. (B) is wrong — synecdoche uses a part to represent a whole. (C) is wrong — anaphora is the repetition of a phrase at the beginning of successive lines. (D) is wrong — litotes is understatement through negation.",
+          correctChoiceId: "", orderIndex: 12,
+          choices: { create: [
+            { text: "Apostrophe", isCorrect: true, orderIndex: 0 },
+            { text: "Synecdoche", isCorrect: false, orderIndex: 1 },
+            { text: "Anaphora", isCorrect: false, orderIndex: 2 },
+            { text: "Litotes", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The reference to Ruth 'sick for home… amid the alien corn' (lines 6–7) is primarily an example of which of the following?",
+          passage: "Thou wast not born for death, immortal Bird!\nNo hungry generations tread thee down;\nThe voice I hear this passing night was heard\nIn ancient days by emperor and clown:\nPerhaps the self-same song that found a path\nThrough the sad heart of Ruth, when, sick for home,\nShe stood in tears amid the alien corn;\nThe same that oft-times hath\nCharm'd magic casements, opening on the foam\nOf perilous seas, in faery lands forlorn.\n\nForlorn! the very word is like a bell\nTo toll me back from thee to my sole self!\nAdieu! the fancy cannot cheat so well\nAs she is fam'd to do, deceiving elf.\nAdieu! adieu! thy plaintive anthem fades\nPast the near meadows, over the still stream,\nUp the hill-side; and now 'tis buried deep\nIn the next valley-glades:\nWas it a vision, or a waking dream?\nFled is that music:—Do I wake or sleep?\n\n— John Keats, 'Ode to a Nightingale,' stanzas 7–8 (1819)",
+          explanation: "Correct: (C) Allusion — the reference to Ruth is drawn from the Book of Ruth in the Bible, where Ruth the Moabite follows her mother-in-law Naomi to a foreign land ('alien corn' = foreign grain fields), homesick and lonely. Keats uses this allusion to suggest the nightingale's song has always carried across human suffering — a trans-historical consolation. (A) is wrong — pathetic fallacy attributes human emotions to nature, not to a biblical figure. (B) is wrong — metaphor makes a direct comparison without 'like' or 'as.' (D) is wrong — personification would attribute human qualities to a non-human entity.",
+          correctChoiceId: "", orderIndex: 13,
+          choices: { create: [
+            { text: "Pathetic fallacy", isCorrect: false, orderIndex: 0 },
+            { text: "Metaphor", isCorrect: false, orderIndex: 1 },
+            { text: "Allusion", isCorrect: true, orderIndex: 2 },
+            { text: "Personification", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The repetition of 'Forlorn!' at the opening of stanza 8 most directly serves which structural purpose?",
+          passage: "Thou wast not born for death, immortal Bird!\nNo hungry generations tread thee down;\nThe voice I hear this passing night was heard\nIn ancient days by emperor and clown:\nPerhaps the self-same song that found a path\nThrough the sad heart of Ruth, when, sick for home,\nShe stood in tears amid the alien corn;\nThe same that oft-times hath\nCharm'd magic casements, opening on the foam\nOf perilous seas, in faery lands forlorn.\n\nForlorn! the very word is like a bell\nTo toll me back from thee to my sole self!\nAdieu! the fancy cannot cheat so well\nAs she is fam'd to do, deceiving elf.\nAdieu! adieu! thy plaintive anthem fades\nPast the near meadows, over the still stream,\nUp the hill-side; and now 'tis buried deep\nIn the next valley-glades:\nWas it a vision, or a waking dream?\nFled is that music:—Do I wake or sleep?\n\n— John Keats, 'Ode to a Nightingale,' stanzas 7–8 (1819)",
+          explanation: "Correct: (B) The word 'forlorn' ends stanza 7 as an enchanting descriptor of fairy lands and opens stanza 8 as a brutal return to the speaker's own desolate state — the repetition acts as a hinge, pivoting the poem from imaginative transport back to painful reality. The speaker hears the word itself as 'like a bell / To toll me back… to my sole self.' (A) is wrong — this is not simply sound repetition. (C) is wrong — the word re-grounds the speaker, it does not deepen the escape. (D) is wrong — the repetition signals rupture, not climax.",
+          correctChoiceId: "", orderIndex: 14,
+          choices: { create: [
+            { text: "It creates a musical echo effect, reinforcing the beauty of the nightingale's song", isCorrect: false, orderIndex: 0 },
+            { text: "It pivots the poem from imaginative escape back to the speaker's painful reality", isCorrect: true, orderIndex: 1 },
+            { text: "It deepens the speaker's immersion in the imagined fairy world", isCorrect: false, orderIndex: 2 },
+            { text: "It signals the poem's emotional climax before a peaceful resolution", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The lines 'the fancy cannot cheat so well / As she is fam'd to do' suggest that the speaker has come to which realization?",
+          passage: "Thou wast not born for death, immortal Bird!\nNo hungry generations tread thee down;\nThe voice I hear this passing night was heard\nIn ancient days by emperor and clown:\nPerhaps the self-same song that found a path\nThrough the sad heart of Ruth, when, sick for home,\nShe stood in tears amid the alien corn;\nThe same that oft-times hath\nCharm'd magic casements, opening on the foam\nOf perilous seas, in faery lands forlorn.\n\nForlorn! the very word is like a bell\nTo toll me back from thee to my sole self!\nAdieu! the fancy cannot cheat so well\nAs she is fam'd to do, deceiving elf.\nAdieu! adieu! thy plaintive anthem fades\nPast the near meadows, over the still stream,\nUp the hill-side; and now 'tis buried deep\nIn the next valley-glades:\nWas it a vision, or a waking dream?\nFled is that music:—Do I wake or sleep?\n\n— John Keats, 'Ode to a Nightingale,' stanzas 7–8 (1819)",
+          explanation: "Correct: (D) The imagination cannot provide lasting escape from mortality and suffering. 'Fancy' (imagination/creative fancy) is called a 'deceiving elf' — it promises transport and transcendence but ultimately fails to sustain it. The speaker is returned to his 'sole self' despite imagination's supposed power. (A) is wrong — the speaker laments this failure, not celebrates it. (B) is wrong — imagination is not condemned as morally wrong, only insufficient. (C) is wrong — the speaker tried to use imagination for transport and finds it limited.",
+          correctChoiceId: "", orderIndex: 15,
+          choices: { create: [
+            { text: "The imagination is most powerful when directed toward nature rather than myth", isCorrect: false, orderIndex: 0 },
+            { text: "Poetic imagination is morally suspect because it deceives the mind", isCorrect: false, orderIndex: 1 },
+            { text: "The nightingale's song was never as beautiful as the speaker first believed", isCorrect: false, orderIndex: 2 },
+            { text: "The imagination cannot provide lasting escape from the pain of mortal existence", isCorrect: true, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The contrast between the nightingale described as 'immortal' (stanza 7) and the speaker who experiences 'hungry generations' treading him down most directly creates which central tension?",
+          passage: "Thou wast not born for death, immortal Bird!\nNo hungry generations tread thee down;\nThe voice I hear this passing night was heard\nIn ancient days by emperor and clown:\nPerhaps the self-same song that found a path\nThrough the sad heart of Ruth, when, sick for home,\nShe stood in tears amid the alien corn;\nThe same that oft-times hath\nCharm'd magic casements, opening on the foam\nOf perilous seas, in faery lands forlorn.\n\nForlorn! the very word is like a bell\nTo toll me back from thee to my sole self!\nAdieu! the fancy cannot cheat so well\nAs she is fam'd to do, deceiving elf.\nAdieu! adieu! thy plaintive anthem fades\nPast the near meadows, over the still stream,\nUp the hill-side; and now 'tis buried deep\nIn the next valley-glades:\nWas it a vision, or a waking dream?\nFled is that music:—Do I wake or sleep?\n\n— John Keats, 'Ode to a Nightingale,' stanzas 7–8 (1819)",
+          explanation: "Correct: (A) The immortality of art/nature versus human mortality. The nightingale's song persists across centuries — heard by Ruth, by emperors and clowns — while individual human beings live briefly and suffer. Art (the song) endures; the person listening does not. This is the ode's central Romantic preoccupation. (B) is wrong — the speaker is not physically in nature; the tension is metaphysical. (C) is wrong — the poem does not pit reason against emotion. (D) is wrong — the nightingale's freedom vs. the speaker's confinement is a secondary theme, not the primary structural contrast.",
+          correctChoiceId: "", orderIndex: 16,
+          choices: { create: [
+            { text: "The immortality of art and nature versus the brevity and suffering of mortal human experience", isCorrect: true, orderIndex: 0 },
+            { text: "Rural natural life versus the corrupting influence of urban civilization", isCorrect: false, orderIndex: 1 },
+            { text: "The conflict between rational thought and emotional feeling", isCorrect: false, orderIndex: 2 },
+            { text: "The freedom of the bird versus the social confinement of the human speaker", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The closing question, 'Was it a vision, or a waking dream? / Fled is that music:—Do I wake or sleep?' most directly expresses which of the following themes?",
+          passage: "Thou wast not born for death, immortal Bird!\nNo hungry generations tread thee down;\nThe voice I hear this passing night was heard\nIn ancient days by emperor and clown:\nPerhaps the self-same song that found a path\nThrough the sad heart of Ruth, when, sick for home,\nShe stood in tears amid the alien corn;\nThe same that oft-times hath\nCharm'd magic casements, opening on the foam\nOf perilous seas, in faery lands forlorn.\n\nForlorn! the very word is like a bell\nTo toll me back from thee to my sole self!\nAdieu! the fancy cannot cheat so well\nAs she is fam'd to do, deceiving elf.\nAdieu! adieu! thy plaintive anthem fades\nPast the near meadows, over the still stream,\nUp the hill-side; and now 'tis buried deep\nIn the next valley-glades:\nWas it a vision, or a waking dream?\nFled is that music:—Do I wake or sleep?\n\n— John Keats, 'Ode to a Nightingale,' stanzas 7–8 (1819)",
+          explanation: "Correct: (C) The blurred boundary between imaginative experience and waking reality. The speaker cannot determine whether his transport to the nightingale's world was a real vision, a poetic fantasy, or ordinary waking perception — the experience of beauty has made ordinary consciousness feel uncertain. The questions are left unanswered, enacting the theme rather than resolving it. (A) is wrong — the speaker has returned to his self; the confusion is about the nature of what just happened. (B) is wrong — the poem ends in uncertainty, not despair. (D) is wrong — the bird is gone; the question is about the nature of the preceding experience.",
+          correctChoiceId: "", orderIndex: 17,
+          choices: { create: [
+            { text: "The speaker's inability to distinguish between the nightingale and his own imagination", isCorrect: false, orderIndex: 0 },
+            { text: "The speaker's despair at being permanently separated from beauty and transcendence", isCorrect: false, orderIndex: 1 },
+            { text: "The ambiguous boundary between imaginative transport and waking reality after intense aesthetic experience", isCorrect: true, orderIndex: 2 },
+            { text: "The speaker's uncertainty about whether the nightingale is still present or has departed", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+
+        // ── PASSAGE 4: Kate Chopin, "The Story of an Hour" (Qs 19–24) ──
+        {
+          prompt: "The phrase 'monstrous joy' (line 1) is best understood as an example of which of the following?",
+          passage: "She did not stop to ask if it were or were not a monstrous joy that held her. A clear and exalted perception enabled her to dismiss the suggestion as trivial. She knew that she would weep again when she saw the kind, tender hands folded in death; the face that had never looked save with love upon her, fixed and gray and dead. But she saw beyond that bitter moment a long procession of years to come that would belong to her absolutely. And she opened and spread her arms out to them in welcome.\n\nThere would be no one to live for during those coming years; she would live for herself. There was a wild abandonment in the thought of it. What did it matter! What could love, the unsolved mystery, count for in the face of this possession of self-assertion which she suddenly recognized as the strongest impulse of her being!\n\n— Kate Chopin, 'The Story of an Hour' (1894)",
+          explanation: "Correct: (B) Oxymoron — 'monstrous' (terrible, unnatural) combined with 'joy' (happiness, delight) creates a self-contradictory phrase that captures the protagonist's morally troubling yet genuine emotion. She knows this joy is socially unacceptable (a wife should grieve, not rejoice), yet she cannot deny the feeling's reality. (A) is wrong — euphemism softens or avoids a harsh reality; this phrase makes the feeling harsher, not softer. (C) is wrong — synesthesia blends different senses. (D) is wrong — understatement minimizes; 'monstrous joy' is emphatic.",
+          correctChoiceId: "", orderIndex: 18,
+          choices: { create: [
+            { text: "Euphemism", isCorrect: false, orderIndex: 0 },
+            { text: "Oxymoron", isCorrect: true, orderIndex: 1 },
+            { text: "Synesthesia", isCorrect: false, orderIndex: 2 },
+            { text: "Understatement", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The description of 'a long procession of years to come that would belong to her absolutely' most directly reveals which of the following about the protagonist?",
+          passage: "She did not stop to ask if it were or were not a monstrous joy that held her. A clear and exalted perception enabled her to dismiss the suggestion as trivial. She knew that she would weep again when she saw the kind, tender hands folded in death; the face that had never looked save with love upon her, fixed and gray and dead. But she saw beyond that bitter moment a long procession of years to come that would belong to her absolutely. And she opened and spread her arms out to them in welcome.\n\nThere would be no one to live for during those coming years; she would live for herself. There was a wild abandonment in the thought of it. What did it matter! What could love, the unsolved mystery, count for in the face of this possession of self-assertion which she suddenly recognized as the strongest impulse of her being!\n\n— Kate Chopin, 'The Story of an Hour' (1894)",
+          explanation: "Correct: (A) Her marriage had constrained her autonomy and sense of self, making freedom — not grief — her primary emotional response to news of her husband's death. The years 'belong to her absolutely' implies that previously they did not belong to her — they belonged to the institution of marriage. (B) is wrong — the passage acknowledges her husband was loving ('kind, tender hands… never looked save with love'), so she is not relieved to escape cruelty. (C) is wrong — she has genuine emotion, not calculated indifference. (D) is wrong — she is not confused; she has 'a clear and exalted perception.'",
+          correctChoiceId: "", orderIndex: 19,
+          choices: { create: [
+            { text: "Her marriage had suppressed her autonomy, making freedom more powerful than grief at her husband's death", isCorrect: true, orderIndex: 0 },
+            { text: "She had been secretly miserable in a cruel, loveless marriage", isCorrect: false, orderIndex: 1 },
+            { text: "She had never loved her husband and viewed the marriage as a financial arrangement", isCorrect: false, orderIndex: 2 },
+            { text: "She is too shocked by the news to process her grief and mistakes numbness for liberation", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The narrator's description of the husband as having 'kind, tender hands' and a face 'that had never looked save with love upon her' most directly serves which purpose?",
+          passage: "She did not stop to ask if it were or were not a monstrous joy that held her. A clear and exalted perception enabled her to dismiss the suggestion as trivial. She knew that she would weep again when she saw the kind, tender hands folded in death; the face that had never looked save with love upon her, fixed and gray and dead. But she saw beyond that bitter moment a long procession of years to come that would belong to her absolutely. And she opened and spread her arms out to them in welcome.\n\nThere would be no one to live for during those coming years; she would live for herself. There was a wild abandonment in the thought of it. What did it matter! What could love, the unsolved mystery, count for in the face of this possession of self-assertion which she suddenly recognized as the strongest impulse of her being!\n\n— Kate Chopin, 'The Story of an Hour' (1894)",
+          explanation: "Correct: (C) Intensifying the story's thematic irony — a kind, loving husband is not enough to satisfy a woman's need for self-determination. The protagonist's joy is not relief from cruelty but a deeper claim: that even a good marriage can suppress individual identity. This makes Chopin's feminist critique more radical than a simple condemnation of a bad marriage. (A) is wrong — the description makes her joy more morally complex, not excuses it. (B) is wrong — the contrast makes the joy more ambiguous. (D) is wrong — the description humanizes the husband, not diminishes her liberation.",
+          correctChoiceId: "", orderIndex: 20,
+          choices: { create: [
+            { text: "To justify the protagonist's joy by showing that mourning a cruel husband is unnecessary", isCorrect: false, orderIndex: 0 },
+            { text: "To contrast a good man against the protagonist's selfishness, criticizing her emotional response", isCorrect: false, orderIndex: 1 },
+            { text: "To deepen the story's irony: even a loving marriage can suppress a woman's need for self-determination", isCorrect: true, orderIndex: 2 },
+            { text: "To establish the protagonist as so devoted to her husband that her joy must be delusion rather than genuine feeling", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The phrase 'self-assertion which she suddenly recognized as the strongest impulse of her being' most directly functions as which of the following?",
+          passage: "She did not stop to ask if it were or were not a monstrous joy that held her. A clear and exalted perception enabled her to dismiss the suggestion as trivial. She knew that she would weep again when she saw the kind, tender hands folded in death; the face that had never looked save with love upon her, fixed and gray and dead. But she saw beyond that bitter moment a long procession of years to come that would belong to her absolutely. And she opened and spread her arms out to them in welcome.\n\nThere would be no one to live for during those coming years; she would live for herself. There was a wild abandonment in the thought of it. What did it matter! What could love, the unsolved mystery, count for in the face of this possession of self-assertion which she suddenly recognized as the strongest impulse of her being!\n\n— Kate Chopin, 'The Story of an Hour' (1894)",
+          explanation: "Correct: (D) The thematic climax — the story's central argument made explicit. The protagonist discovers that even love is subordinate to the deeper human need for selfhood and autonomy. Chopin positions this 'sudden recognition' as a moment of genuine psychological truth, not selfishness. The word 'suddenly' emphasizes that this truth had been suppressed within her for years. (A) is wrong — the narrative moves toward resolution, not complication. (B) is wrong — the moment is portrayed as authentic, not self-deception. (C) is wrong — this directly addresses the theme of marriage and freedom.",
+          correctChoiceId: "", orderIndex: 21,
+          choices: { create: [
+            { text: "A narrative complication that raises new questions about the protagonist's reliability", isCorrect: false, orderIndex: 0 },
+            { text: "An ironic moment revealing that the protagonist's 'liberation' is in fact self-deception", isCorrect: false, orderIndex: 1 },
+            { text: "A digression from the story's central concern with marital grief", isCorrect: false, orderIndex: 2 },
+            { text: "The story's thematic climax: the claim that the impulse toward selfhood surpasses even love", isCorrect: true, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The technique of presenting the protagonist's interior thoughts directly, blended with the narrator's voice — as in 'What did it matter!' — is best described as which of the following?",
+          passage: "She did not stop to ask if it were or were not a monstrous joy that held her. A clear and exalted perception enabled her to dismiss the suggestion as trivial. She knew that she would weep again when she saw the kind, tender hands folded in death; the face that had never looked save with love upon her, fixed and gray and dead. But she saw beyond that bitter moment a long procession of years to come that would belong to her absolutely. And she opened and spread her arms out to them in welcome.\n\nThere would be no one to live for during those coming years; she would live for herself. There was a wild abandonment in the thought of it. What did it matter! What could love, the unsolved mystery, count for in the face of this possession of self-assertion which she suddenly recognized as the strongest impulse of her being!\n\n— Kate Chopin, 'The Story of an Hour' (1894)",
+          explanation: "Correct: (B) Free indirect discourse — a technique where the narrator's voice blends with the character's inner voice without quotation marks or 'she thought that.' The exclamation 'What did it matter!' reads as the protagonist's own thought in her own emotional register, not as neutral narration. This creates intimacy with her inner life while maintaining third-person narration. (A) is wrong — stream of consciousness is a more extreme, unfiltered flow of thought. (C) is wrong — dramatic monologue is a poem form. (D) is wrong — omniscient commentary would judge or explain, not inhabit the character's voice.",
+          correctChoiceId: "", orderIndex: 22,
+          choices: { create: [
+            { text: "Stream of consciousness", isCorrect: false, orderIndex: 0 },
+            { text: "Free indirect discourse", isCorrect: true, orderIndex: 1 },
+            { text: "Dramatic monologue", isCorrect: false, orderIndex: 2 },
+            { text: "Omniscient editorial commentary", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The central irony of the story as a whole — only partially glimpsed in this passage — depends most upon which of the following situations?",
+          passage: "She did not stop to ask if it were or were not a monstrous joy that held her. A clear and exalted perception enabled her to dismiss the suggestion as trivial. She knew that she would weep again when she saw the kind, tender hands folded in death; the face that had never looked save with love upon her, fixed and gray and dead. But she saw beyond that bitter moment a long procession of years to come that would belong to her absolutely. And she opened and spread her arms out to them in welcome.\n\nThere would be no one to live for during those coming years; she would live for herself. There was a wild abandonment in the thought of it. What did it matter! What could love, the unsolved mystery, count for in the face of this possession of self-assertion which she suddenly recognized as the strongest impulse of her being!\n\n— Kate Chopin, 'The Story of an Hour' (1894)",
+          explanation: "Correct: (A) The husband is not actually dead — he returns alive, and the protagonist, who has just fully embraced her imagined freedom, dies of the shock. The doctors call it 'joy that kills' — ironically attributing her death to the opposite of its true cause. The protagonist dies not of joy at seeing her husband, but of the annihilation of the freedom she had allowed herself to feel. (B) is wrong — the husband was never actually dead. (C) is wrong — the protagonist does not go mad. (D) is wrong — the irony is situational, not merely verbal.",
+          correctChoiceId: "", orderIndex: 23,
+          choices: { create: [
+            { text: "The husband returns alive, and the protagonist — whose heart had soared with freedom — dies at the sight of him, her liberation instantly revoked", isCorrect: true, orderIndex: 0 },
+            { text: "The husband's death is eventually revealed to have been a deliberate lie told to protect her from more terrible news", isCorrect: false, orderIndex: 1 },
+            { text: "The protagonist gradually goes mad with grief, revealing that her 'joy' was a symptom of breakdown", isCorrect: false, orderIndex: 2 },
+            { text: "The story's irony is entirely verbal, contained within this passage's use of 'monstrous joy'", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+
+        // ── PASSAGE 5: Shakespeare, Hamlet, Act III Scene 1 – "To be, or not to be" (Qs 25–30) ──
+        {
+          prompt: "The phrase 'slings and arrows of outrageous fortune' (line 3) employs which of the following literary devices?",
+          passage: "To be, or not to be, that is the question:\nWhether 'tis nobler in the mind to suffer\nThe slings and arrows of outrageous fortune,\nOr to take arms against a sea of troubles\nAnd by opposing end them. To die—to sleep,\nNo more; and by a sleep to say we end\nThe heartache and the thousand natural shocks\nThat flesh is heir to: 'tis a consummation\nDevoutly to be wish'd. To die, to sleep;\nTo sleep, perchance to dream—ay, there's the rub:\nFor in that sleep of death what dreams may come\nWhen we have shuffled off this mortal coil\nMust give us pause—there's the respect\nThat makes calamity of so long life.\n\n— William Shakespeare, Hamlet, Act III, Scene 1 (c. 1600–1601)",
+          explanation: "Correct: (C) Metaphor — life's troubles ('fortune') are compared to weapons ('slings and arrows') without using 'like' or 'as.' The comparison is direct and implicit. The extension of this military metaphor continues in line 4 ('take arms against a sea of troubles'), creating an extended metaphor of battle throughout the passage. (A) is wrong — simile requires 'like' or 'as.' (B) is wrong — there is no direct address to an absent entity. (D) is wrong — onomatopoeia uses words that sound like their meaning.",
+          correctChoiceId: "", orderIndex: 24,
+          choices: { create: [
+            { text: "Simile", isCorrect: false, orderIndex: 0 },
+            { text: "Apostrophe", isCorrect: false, orderIndex: 1 },
+            { text: "Metaphor", isCorrect: true, orderIndex: 2 },
+            { text: "Onomatopoeia", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The extended comparison of death to sleep ('To die—to sleep… To sleep, perchance to dream') primarily serves which purpose in the soliloquy?",
+          passage: "To be, or not to be, that is the question:\nWhether 'tis nobler in the mind to suffer\nThe slings and arrows of outrageous fortune,\nOr to take arms against a sea of troubles\nAnd by opposing end them. To die—to sleep,\nNo more; and by a sleep to say we end\nThe heartache and the thousand natural shocks\nThat flesh is heir to: 'tis a consummation\nDevoutly to be wish'd. To die, to sleep;\nTo sleep, perchance to dream—ay, there's the rub:\nFor in that sleep of death what dreams may come\nWhen we have shuffled off this mortal coil\nMust give us pause—there's the respect\nThat makes calamity of so long life.\n\n— William Shakespeare, Hamlet, Act III, Scene 1 (c. 1600–1601)",
+          explanation: "Correct: (B) To explore — and ultimately complicate — the appeal of death as an escape from suffering. Death as 'sleep' initially seems desirable (a 'consummation / Devoutly to be wish'd'), but the possibility of dreams in that sleep introduces uncertainty: what if the afterlife continues or worsens suffering? The comparison both tempts and terrifies Hamlet. (A) is wrong — the comparison makes death attractive initially, then problematizes it. (C) is wrong — the religious element (devoutly, mortal coil) is present but secondary. (D) is wrong — Hamlet is not romanticizing sleep; he is reasoning about death.",
+          correctChoiceId: "", orderIndex: 25,
+          choices: { create: [
+            { text: "To make death seem appealing and thereby justify Hamlet's decision to act", isCorrect: false, orderIndex: 0 },
+            { text: "To explore the appeal of death as escape while introducing the uncertainty that prevents Hamlet from choosing it", isCorrect: true, orderIndex: 1 },
+            { text: "To establish the Christian context of the soliloquy, grounding Hamlet's deliberation in theology", isCorrect: false, orderIndex: 2 },
+            { text: "To contrast Hamlet's poetic sensibility with his incapacity for decisive action", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The phrase 'shuffled off this mortal coil' (line 12) is best understood as an example of which of the following?",
+          passage: "To be, or not to be, that is the question:\nWhether 'tis nobler in the mind to suffer\nThe slings and arrows of outrageous fortune,\nOr to take arms against a sea of troubles\nAnd by opposing end them. To die—to sleep,\nNo more; and by a sleep to say we end\nThe heartache and the thousand natural shocks\nThat flesh is heir to: 'tis a consummation\nDevoutly to be wish'd. To die, to sleep;\nTo sleep, perchance to dream—ay, there's the rub:\nFor in that sleep of death what dreams may come\nWhen we have shuffled off this mortal coil\nMust give us pause—there's the respect\nThat makes calamity of so long life.\n\n— William Shakespeare, Hamlet, Act III, Scene 1 (c. 1600–1601)",
+          explanation: "Correct: (A) Euphemism — 'shuffled off this mortal coil' is an indirect, figurative way of saying 'died.' 'Coil' in Elizabethan usage meant turmoil or bustle (life's fuss and activity); 'shuffled off' suggests shedding it like a garment. The phrase avoids direct reference to death, softening it with figurative language. (B) is wrong — chiasmus is a rhetorical figure in which words or structures are reversed. (C) is wrong — zeugma joins multiple elements with a single verb in surprising ways. (D) is wrong — anaphora is the repetition of a word or phrase at the beginning of successive clauses.",
+          correctChoiceId: "", orderIndex: 26,
+          choices: { create: [
+            { text: "Euphemism", isCorrect: true, orderIndex: 0 },
+            { text: "Chiasmus", isCorrect: false, orderIndex: 1 },
+            { text: "Zeugma", isCorrect: false, orderIndex: 2 },
+            { text: "Anaphora", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "When Hamlet says 'ay, there's the rub' (line 10), the word 'rub' most directly indicates which of the following?",
+          passage: "To be, or not to be, that is the question:\nWhether 'tis nobler in the mind to suffer\nThe slings and arrows of outrageous fortune,\nOr to take arms against a sea of troubles\nAnd by opposing end them. To die—to sleep,\nNo more; and by a sleep to say we end\nThe heartache and the thousand natural shocks\nThat flesh is heir to: 'tis a consummation\nDevoutly to be wish'd. To die, to sleep;\nTo sleep, perchance to dream—ay, there's the rub:\nFor in that sleep of death what dreams may come\nWhen we have shuffled off this mortal coil\nMust give us pause—there's the respect\nThat makes calamity of so long life.\n\n— William Shakespeare, Hamlet, Act III, Scene 1 (c. 1600–1601)",
+          explanation: "Correct: (C) The obstacle or difficulty — in Elizabethan bowls ('rub' = an obstacle on the green that deflects the ball), a 'rub' is the impediment to a smooth path. Hamlet uses it to mean the critical complication: death looks appealing as escape, but the unknown 'dreams' of the afterlife are the obstacle that prevents him from choosing it. (A) is wrong — the context shows this introduces the problem, not confirms a plan. (B) is wrong — 'rub' means obstacle, not physical pain. (D) is wrong — the word signals the complication, not resolution of the argument.",
+          correctChoiceId: "", orderIndex: 27,
+          choices: { create: [
+            { text: "The confirmation that Hamlet has decided to take action against his enemies", isCorrect: false, orderIndex: 0 },
+            { text: "The physical pain that makes life difficult to bear", isCorrect: false, orderIndex: 1 },
+            { text: "The critical obstacle or difficulty — the uncertainty about what follows death — that prevents a clear choice", isCorrect: true, orderIndex: 2 },
+            { text: "The resolution of Hamlet's internal conflict through philosophical reasoning", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The structure of the soliloquy's opening — 'To be, or not to be, that is the question: / Whether 'tis nobler…' — establishes the passage primarily as which of the following?",
+          passage: "To be, or not to be, that is the question:\nWhether 'tis nobler in the mind to suffer\nThe slings and arrows of outrageous fortune,\nOr to take arms against a sea of troubles\nAnd by opposing end them. To die—to sleep,\nNo more; and by a sleep to say we end\nThe heartache and the thousand natural shocks\nThat flesh is heir to: 'tis a consummation\nDevoutly to be wish'd. To die, to sleep;\nTo sleep, perchance to dream—ay, there's the rub:\nFor in that sleep of death what dreams may come\nWhen we have shuffled off this mortal coil\nMust give us pause—there's the respect\nThat makes calamity of so long life.\n\n— William Shakespeare, Hamlet, Act III, Scene 1 (c. 1600–1601)",
+          explanation: "Correct: (B) Deliberative rhetoric — the systematic weighing of two courses of action (to live and endure or to die and end suffering) before an argument is made. Hamlet frames this explicitly as a 'question' with two alternatives ('to be, or not to be'; 'Whether 'tis nobler… Or to take arms'). The structure is of classical deliberative oratory applied to an existential choice. (A) is wrong — an elegy mourns a specific person's death. (C) is wrong — a confession implies guilt; Hamlet is philosophizing, not confessing. (D) is wrong — a dramatic aside is a brief remark aside to the audience, not an extended philosophical argument.",
+          correctChoiceId: "", orderIndex: 28,
+          choices: { create: [
+            { text: "An elegy mourning the loss of human innocence", isCorrect: false, orderIndex: 0 },
+            { text: "Deliberative rhetoric systematically weighing two opposing courses of action", isCorrect: true, orderIndex: 1 },
+            { text: "A dramatic confession revealing Hamlet's guilt", isCorrect: false, orderIndex: 2 },
+            { text: "A dramatic aside commenting on action happening elsewhere on stage", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The overall tone of the soliloquy is best described as which of the following?",
+          passage: "To be, or not to be, that is the question:\nWhether 'tis nobler in the mind to suffer\nThe slings and arrows of outrageous fortune,\nOr to take arms against a sea of troubles\nAnd by opposing end them. To die—to sleep,\nNo more; and by a sleep to say we end\nThe heartache and the thousand natural shocks\nThat flesh is heir to: 'tis a consummation\nDevoutly to be wish'd. To die, to sleep;\nTo sleep, perchance to dream—ay, there's the rub:\nFor in that sleep of death what dreams may come\nWhen we have shuffled off this mortal coil\nMust give us pause—there's the respect\nThat makes calamity of so long life.\n\n— William Shakespeare, Hamlet, Act III, Scene 1 (c. 1600–1601)",
+          explanation: "Correct: (D) Contemplative and philosophically uncertain. Hamlet moves methodically through an argument, pauses at each complication ('ay, there's the rub'), and reaches no resolution — ending in irresolution ('makes calamity of so long life'). The tone is not passionate or angry but measured, ruminative, and unresolved. (A) is wrong — the soliloquy is measured and reflective, not furious. (B) is wrong — there is no hope or optimism in the passage. (C) is wrong — Hamlet is deeply troubled, not serene.",
+          correctChoiceId: "", orderIndex: 29,
+          choices: { create: [
+            { text: "Furious and anguished", isCorrect: false, orderIndex: 0 },
+            { text: "Hopeful and resolved", isCorrect: false, orderIndex: 1 },
+            { text: "Serene and accepting", isCorrect: false, orderIndex: 2 },
+            { text: "Contemplative and philosophically uncertain, reaching no resolution", isCorrect: true, orderIndex: 3 },
+          ]},
+        },
+
+      ]},
+    },
+    include: { questions: { include: { choices: true } } },
+  })
+  await fixCorrectChoices(quiz7)
+  console.log("✓ Created quiz:", quiz7.title, `(${quiz7.questions.length} questions)`)
 
   console.log("\n✨ Database seeded successfully!")
   console.log("\nCredentials:")
