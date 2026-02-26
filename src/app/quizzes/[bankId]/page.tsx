@@ -35,6 +35,7 @@ import {
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { cn } from "@/lib/utils"
+import { ImageUploader } from "@/components/image-uploader"
 
 interface ChoiceDraft {
   text: string
@@ -442,12 +443,10 @@ export default function QuestionBankPage({
 
             {newQ.showImage && (
               <div>
-                <Label>Image URL</Label>
-                <Input
-                  placeholder="https://example.com/image.png"
+                <Label>Image</Label>
+                <ImageUploader
                   value={newQ.imageUrl}
-                  onChange={(e) => setNewQ((p) => ({ ...p, imageUrl: e.target.value }))}
-                  className="mt-1"
+                  onChange={(url) => setNewQ((p) => ({ ...p, imageUrl: url }))}
                 />
               </div>
             )}

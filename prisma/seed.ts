@@ -1178,49 +1178,6 @@ async function main() {
   await fixCorrectChoices(quiz3)
   console.log("✓ Created quiz:", quiz3.title, `(${quiz3.questions.length} questions)`)
 
-  // ── Original quiz (kept for existing data compatibility) ────────
-  const historyQuizBank = await prisma.questionBank.create({
-    data: {
-      title: "World History – Empires & Religions",
-      subject: "World History",
-      description: "Test your knowledge of major empires, trade networks, and the spread of world religions.",
-      isPublic: true, ownerId: admin.id,
-      questions: { create: [
-        {
-          prompt: "Which of the following best explains the spread of Hinduism to Southeast Asia during the classical period?",
-          explanation: "Indian merchants and Brahmin priests traveled along maritime trade routes.",
-          correctChoiceId: "", orderIndex: 0,
-          choices: { create: [
-            { text: "Military conquest by the Maurya Empire into modern-day Thailand", isCorrect: false, orderIndex: 0 },
-            { text: "Indian merchants and Brahmin priests traveling along maritime trade routes", isCorrect: true, orderIndex: 1 },
-            { text: "The forced conversion of Southeast Asian peoples by Gupta rulers", isCorrect: false, orderIndex: 2 },
-            { text: "Buddhist missionaries replacing local animist traditions with Hindu practices", isCorrect: false, orderIndex: 3 },
-          ]},
-        },
-        {
-          prompt: "The Inca Empire used which of the following systems to manage its vast territory without a written language?",
-          passage: "The Inca Empire, stretching over 2,500 miles along the western coast of South America, governed approximately 12 million people.",
-          explanation: "The quipu was a recording system using knotted strings.",
-          correctChoiceId: "", orderIndex: 1,
-          choices: { create: [
-            { text: "Cuneiform tablets adapted from Mesopotamian traders", isCorrect: false, orderIndex: 0 },
-            { text: "A hieroglyphic writing system similar to the Maya", isCorrect: false, orderIndex: 1 },
-            { text: "The quipu, a system of knotted strings for record keeping", isCorrect: true, orderIndex: 2 },
-            { text: "Oral tradition exclusively, with no physical record-keeping tools", isCorrect: false, orderIndex: 3 },
-          ]},
-        },
-      ]},
-    },
-    include: { questions: { include: { choices: true } } },
-  })
-  for (const question of historyQuizBank.questions) {
-    const correctChoice = question.choices.find((c) => c.isCorrect)
-    if (correctChoice) {
-      await prisma.question.update({ where: { id: question.id }, data: { correctChoiceId: correctChoice.id } })
-    }
-  }
-  console.log("✓ Created quiz:", historyQuizBank.title)
-
   console.log("\n✨ Database seeded successfully!")
   console.log("\nCredentials:")
   console.log("  Admin: admin@example.com / admin123")

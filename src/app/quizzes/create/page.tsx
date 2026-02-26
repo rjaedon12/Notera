@@ -22,6 +22,7 @@ import {
 import toast from "react-hot-toast"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import { ImageUploader } from "@/components/image-uploader"
 
 interface ChoiceDraft {
   text: string
@@ -348,15 +349,13 @@ export default function CreateQuestionBankPage() {
                 </div>
               )}
 
-              {/* Image URL (optional) */}
+              {/* Image upload (optional) */}
               {q.showImage && (
                 <div>
-                  <Label>Image URL</Label>
-                  <Input
-                    placeholder="https://example.com/image.png"
+                  <Label>Image</Label>
+                  <ImageUploader
                     value={q.imageUrl}
-                    onChange={(e) => updateQuestion(activeQ, { imageUrl: e.target.value })}
-                    className="mt-1"
+                    onChange={(url) => updateQuestion(activeQ, { imageUrl: url })}
                   />
                 </div>
               )}
