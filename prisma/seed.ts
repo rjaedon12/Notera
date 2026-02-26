@@ -1178,6 +1178,816 @@ async function main() {
   await fixCorrectChoices(quiz3)
   console.log("✓ Created quiz:", quiz3.title, `(${quiz3.questions.length} questions)`)
 
+  // ── Quiz Bank 4: AP World History – Ancient Civilizations & Classical Empires ───
+  const quiz4 = await prisma.questionBank.create({
+    data: {
+      title: "AP World History – Ancient Civilizations & Classical Empires",
+      subject: "AP World History",
+      description: "Stimulus-based questions on river valley civilizations, classical empires (Rome, Han, Maurya, Persian), trade networks, and the spread of world religions.",
+      isPublic: true, ownerId: admin.id,
+      questions: { create: [
+
+        // ── STIMULUS A: Map of River Valley Civilizations (Qs 1-3) ──
+        {
+          prompt: "The map above most directly supports which of the following conclusions about early river valley civilizations?",
+          passage: "[MAP DESCRIPTION] A world map circa 3000 BCE marks four river-valley civilizations: Mesopotamia (Tigris-Euphrates, labeled 'Sumer/Babylon'), Egypt (Nile delta), Indus Valley (Harappa/Mohenjo-daro), and Yellow River China (Shang). All four sites are highlighted with fertile floodplain shading. The surrounding areas are shown as desert, steppe, or mountains.",
+          explanation: "Correct: (B) All four early civilizations emerged in river valleys where annual flooding deposited rich silt. The geography — not just culture — made agriculture, surplus food, and complex society possible. (A) is wrong — the civilizations were geographically isolated from one another in this period. (C) is wrong — river flooding was a benefit, not a disaster. (D) is wrong — all four relied on agriculture, not trade as their primary base.",
+          correctChoiceId: "", orderIndex: 0,
+          choices: { create: [
+            { text: "Early civilizations arose in river valleys because rivers enabled military conquest of surrounding peoples", isCorrect: false, orderIndex: 0 },
+            { text: "Fertile river floodplains enabled agricultural surpluses that supported the development of complex urban societies", isCorrect: true, orderIndex: 1 },
+            { text: "River flooding was the primary obstacle that early civilizations had to overcome to survive", isCorrect: false, orderIndex: 2 },
+            { text: "Early civilizations depended on long-distance trade along rivers rather than agriculture", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "Which of the following best explains why the civilizations shown on the map above developed systems of writing independently of one another?",
+          passage: "[MAP DESCRIPTION] A world map circa 3000 BCE marks four river-valley civilizations: Mesopotamia (Tigris-Euphrates, labeled 'Sumer/Babylon'), Egypt (Nile delta), Indus Valley (Harappa/Mohenjo-daro), and Yellow River China (Shang). All four sites are highlighted with fertile floodplain shading. The surrounding areas are shown as desert, steppe, or mountains.",
+          explanation: "Correct: (A) Complex societies require recordkeeping — to track agricultural surpluses, tax collection, trade transactions, and religious obligations. Each civilization independently developed writing to manage these administrative needs. (B) is wrong — there is no evidence the civilizations were in contact with one another at this point. (C) is wrong — writing systems were created by specialists (scribes), not ordinary farmers. (D) is wrong — writing was a product of, not a cause of, social complexity.",
+          correctChoiceId: "", orderIndex: 1,
+          choices: { create: [
+            { text: "The administrative demands of managing agricultural surpluses, taxation, and trade created the need for written recordkeeping", isCorrect: true, orderIndex: 0 },
+            { text: "Writing spread from Mesopotamia to the other civilizations through early long-distance trade networks", isCorrect: false, orderIndex: 1 },
+            { text: "Farmers in river valleys invented writing to record crop-planting schedules and weather patterns", isCorrect: false, orderIndex: 2 },
+            { text: "Writing was developed primarily to create religious texts recording the beliefs of early civilizations", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "A historian studying the map above would most likely argue that the geographic features shown explain which of the following patterns?",
+          passage: "[MAP DESCRIPTION] A world map circa 3000 BCE marks four river-valley civilizations: Mesopotamia (Tigris-Euphrates, labeled 'Sumer/Babylon'), Egypt (Nile delta), Indus Valley (Harappa/Mohenjo-daro), and Yellow River China (Shang). All four sites are highlighted with fertile floodplain shading. The surrounding areas are shown as desert, steppe, or mountains.",
+          explanation: "Correct: (D) The civilizations are surrounded by deserts, mountains, and steppes — natural barriers that limited contact and allowed each to develop independently. This geographic isolation explains their separate development of writing, religion, and political structures. (A) is wrong — isolation limited, not promoted, trade. (B) is wrong — there is no evidence of early warfare between these distant civilizations. (C) is wrong — the map shows fertile river valleys, not resource scarcity.",
+          correctChoiceId: "", orderIndex: 2,
+          choices: { create: [
+            { text: "Why long-distance trade networks connected all four civilizations by 2500 BCE", isCorrect: false, orderIndex: 0 },
+            { text: "Why these civilizations frequently waged war against one another for agricultural land", isCorrect: false, orderIndex: 1 },
+            { text: "Why all four civilizations collapsed simultaneously due to resource depletion", isCorrect: false, orderIndex: 2 },
+            { text: "Why early civilizations developed independently, producing diverse cultures, religions, and writing systems", isCorrect: true, orderIndex: 3 },
+          ]},
+        },
+
+        // ── STIMULUS B: Code of Hammurabi (Qs 4-6) ──
+        {
+          prompt: "The law code excerpted above most directly reflects which of the following features of early Mesopotamian society?",
+          passage: "\"If a man destroys the eye of another man, they shall destroy his eye... If a builder has built a house for a man and his work is not strong, and if the house he has built falls in and kills the householder, that builder shall be slain. If a slave says to his master 'You are not my master,' his master shall cut off his ear. If a man strikes his father, his hands shall be cut off.\"\n— Code of Hammurabi, c. 1754 BCE (selected laws)",
+          explanation: "Correct: (C) The Code of Hammurabi — one of the earliest written legal codes — reflects a hierarchical society with slaves, free commoners, and nobles, in which punishments varied by social class. It established the principle of codified law as a tool of social order. (A) is wrong — the code reinforces hierarchy and class difference. (B) is wrong — the code uses harsh physical punishments. (D) is wrong — the code explicitly upholds slavery.",
+          correctChoiceId: "", orderIndex: 3,
+          choices: { create: [
+            { text: "A society in which all people were treated equally under the law regardless of social rank", isCorrect: false, orderIndex: 0 },
+            { text: "A legal system that avoided physical punishment in favor of fines and restitution", isCorrect: false, orderIndex: 1 },
+            { text: "A hierarchical society in which written law codified social order, including the institution of slavery", isCorrect: true, orderIndex: 2 },
+            { text: "A legal tradition that granted slaves the right to purchase their freedom through labor", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The law code above is historically significant primarily because it illustrates which of the following developments?",
+          passage: "\"If a man destroys the eye of another man, they shall destroy his eye... If a builder has built a house for a man and his work is not strong, and if the house he has built falls in and kills the householder, that builder shall be slain. If a slave says to his master 'You are not my master,' his master shall cut off his ear. If a man strikes his father, his hands shall be cut off.\"\n— Code of Hammurabi, c. 1754 BCE (selected laws)",
+          explanation: "Correct: (A) Written law codes are a marker of state development — they allowed a centralized authority to define, enforce, and publicize standards of behavior across a large territory, replacing clan-based customary law. (B) is wrong — the code is specific to Mesopotamia, not universal. (C) is wrong — the code reinforces existing hierarchy, not democratic rights. (D) is wrong — Hammurabi was a ruler who consolidated power, not a philosopher.",
+          correctChoiceId: "", orderIndex: 4,
+          choices: { create: [
+            { text: "How early states used written legal codes to standardize governance and enforce social hierarchy across large territories", isCorrect: true, orderIndex: 0 },
+            { text: "The universal adoption of written law codes across all early civilizations simultaneously", isCorrect: false, orderIndex: 1 },
+            { text: "How early legal codes protected individual rights against government overreach", isCorrect: false, orderIndex: 2 },
+            { text: "The philosophical tradition of natural law that began with Babylonian civilization", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "A critic of Hammurabi's Code might most logically argue which of the following based on the excerpt above?",
+          passage: "\"If a man destroys the eye of another man, they shall destroy his eye... If a builder has built a house for a man and his work is not strong, and if the house he has built falls in and kills the householder, that builder shall be slain. If a slave says to his master 'You are not my master,' his master shall cut off his ear. If a man strikes his father, his hands shall be cut off.\"\n— Code of Hammurabi, c. 1754 BCE (selected laws)",
+          explanation: "Correct: (B) While the Code establishes retributive (eye-for-an-eye) justice, it also mandates death for a builder whose work causes a client's death — applying professional accountability — and amputates the ear of a slave who claims freedom. A modern critic would note the code enforces brutal punishments while legitimizing slavery. (A) is wrong — the code does apply consistently within class categories. (C) is wrong — the code was public (carved on a stele). (D) is wrong — the code includes property law, family law, and criminal law.",
+          correctChoiceId: "", orderIndex: 5,
+          choices: { create: [
+            { text: "The code was inconsistently applied, making it an ineffective legal system", isCorrect: false, orderIndex: 0 },
+            { text: "While establishing consistent rules, the code normalized extreme punishments and the institution of slavery", isCorrect: true, orderIndex: 1 },
+            { text: "The code was kept secret, making it impossible for ordinary people to know the law", isCorrect: false, orderIndex: 2 },
+            { text: "The code only addressed criminal law and ignored civil disputes between citizens", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+
+        // ── STIMULUS C: Silk Road Trade Network (Qs 7-9) ──
+        {
+          prompt: "The map above most directly supports which of the following conclusions about the Silk Road?",
+          passage: "[MAP DESCRIPTION] A map of Eurasia, c. 100 CE, shows the Silk Road as a network of overland and maritime routes. Overland routes run from Chang'an (China) through Central Asia, Persia, and Mesopotamia to the Mediterranean. Maritime routes run from southern China around India to the Persian Gulf and Red Sea. Cities along the routes are labeled: Samarkand, Kashgar, Ctesiphon, Alexandria. Arrows show the direction of silk, spices, glass, and gold.",
+          explanation: "Correct: (C) The Silk Road was not a single road but a network of overland and maritime routes connecting East Asia, South Asia, Central Asia, the Middle East, and the Mediterranean — enabling the exchange of goods, ideas, and diseases across thousands of miles. (A) is wrong — China did not politically control the entire route. (B) is wrong — silk moved East to West; other goods moved the other direction. (D) is wrong — many intermediary merchants (Sogdians, Arabs) profited from the trade.",
+          correctChoiceId: "", orderIndex: 6,
+          choices: { create: [
+            { text: "The Silk Road was controlled entirely by the Han Chinese Empire, which taxed all goods passing through Central Asia", isCorrect: false, orderIndex: 0 },
+            { text: "Goods only flowed from West to East, with Rome exporting manufactured products to China", isCorrect: false, orderIndex: 1 },
+            { text: "The Silk Road was an interconnected network of land and sea routes that facilitated exchange across Eurasia", isCorrect: true, orderIndex: 2 },
+            { text: "The Silk Road was exclusively used by Roman merchants seeking direct access to Chinese silk", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "In addition to luxury goods, which of the following was most significantly transmitted along the routes shown on the map above?",
+          passage: "[MAP DESCRIPTION] A map of Eurasia, c. 100 CE, shows the Silk Road as a network of overland and maritime routes. Overland routes run from Chang'an (China) through Central Asia, Persia, and Mesopotamia to the Mediterranean. Maritime routes run from southern China around India to the Persian Gulf and Red Sea. Cities along the routes are labeled: Samarkand, Kashgar, Ctesiphon, Alexandria. Arrows show the direction of silk, spices, glass, and gold.",
+          explanation: "Correct: (D) The Silk Road transmitted Buddhism, Islam, and Christianity along with goods. Buddhism spread from India to Central Asia and China via the overland routes. Disease (including the Bubonic Plague) also spread along the same corridors. (A) is wrong — democracy was a Greek concept that did not spread widely via the Silk Road. (B) is wrong — printing technology developed in China but spread much later. (C) is wrong — iron smelting developed in multiple regions independently before the Silk Road period.",
+          correctChoiceId: "", orderIndex: 7,
+          choices: { create: [
+            { text: "Democratic political ideas from Athens to the Han Dynasty", isCorrect: false, orderIndex: 0 },
+            { text: "Printing technology from Rome to China that transformed literacy", isCorrect: false, orderIndex: 1 },
+            { text: "Iron-smelting technology from Persia to East Asia", isCorrect: false, orderIndex: 2 },
+            { text: "Religious traditions, artistic styles, and diseases that spread alongside commercial exchange", isCorrect: true, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The trade network shown on the map best illustrates which of the following characteristics of classical-era empires?",
+          passage: "[MAP DESCRIPTION] A map of Eurasia, c. 100 CE, shows the Silk Road as a network of overland and maritime routes. Overland routes run from Chang'an (China) through Central Asia, Persia, and Mesopotamia to the Mediterranean. Maritime routes run from southern China around India to the Persian Gulf and Red Sea. Cities along the routes are labeled: Samarkand, Kashgar, Ctesiphon, Alexandria. Arrows show the direction of silk, spices, glass, and gold.",
+          explanation: "Correct: (A) The Silk Road flourished under the Pax Romana and Han peace because large stable empires provided security for merchants crossing vast territories. When empires fragmented, trade disrupted. (B) is wrong — the map shows complementary, not competitive, trade. (C) is wrong — states profited from taxing trade, but didn't control it all. (D) is wrong — the maritime routes show sea-borne trade was equally important.",
+          correctChoiceId: "", orderIndex: 8,
+          choices: { create: [
+            { text: "How political stability under large empires enabled long-distance commerce across Eurasia", isCorrect: true, orderIndex: 0 },
+            { text: "How imperial powers competed militarily to monopolize Silk Road trade profits", isCorrect: false, orderIndex: 1 },
+            { text: "How states controlled all aspects of long-distance trade through state-owned merchant fleets", isCorrect: false, orderIndex: 2 },
+            { text: "How overland routes were always more important than maritime trade in the classical period", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+
+        // ── STIMULUS D: Roman Colosseum Image (Qs 10-12) ──
+        {
+          prompt: "The structure above most directly reflects which of the following aspects of Roman civilization?",
+          passage: "[IMAGE DESCRIPTION] A photograph of the Roman Colosseum (Flavian Amphitheatre) in Rome, c. 80 CE. The four-story elliptical structure of travertine stone and concrete shows arched galleries on each level. The image shows the interior floor removed, revealing the hypogeum (underground tunnels) below. The structure seated approximately 50,000–80,000 spectators.",
+          explanation: "Correct: (B) The Colosseum demonstrates Roman engineering mastery — concrete (opus caementicium), arched construction, and innovative drainage — as well as Roman political culture, in which emperors used public spectacles to maintain popular support (panem et circenses — 'bread and circuses'). (A) is wrong — gladiatorial combat was entertainment, not religious worship. (C) is wrong — the Colosseum was built, not 'collapsed' from decline. (D) is wrong — the Colosseum reflects urban, not military, infrastructure.",
+          correctChoiceId: "", orderIndex: 9,
+          choices: { create: [
+            { text: "The religious practices of Roman citizens who used the Colosseum for temple worship", isCorrect: false, orderIndex: 0 },
+            { text: "Roman engineering sophistication and the political use of mass entertainment to maintain public loyalty", isCorrect: true, orderIndex: 1 },
+            { text: "Roman military decline that forced emperors to divert resources from defense to entertainment", isCorrect: false, orderIndex: 2 },
+            { text: "Roman military infrastructure used to train legions for imperial expansion", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "A historian would most likely use the structure above as evidence to support which of the following arguments about the Roman Empire?",
+          passage: "[IMAGE DESCRIPTION] A photograph of the Roman Colosseum (Flavian Amphitheatre) in Rome, c. 80 CE. The four-story elliptical structure of travertine stone and concrete shows arched galleries on each level. The image shows the interior floor removed, revealing the hypogeum (underground tunnels) below. The structure seated approximately 50,000–80,000 spectators.",
+          explanation: "Correct: (C) The Colosseum's seating was stratified by social class — senators in the bottom tier, equestrians above, commoners higher, and women and slaves at the top — reflecting and reinforcing Roman social hierarchy even in entertainment. (A) is wrong — the Colosseum was built c. 80 CE, during the Empire's height. (B) is wrong — the Colosseum used slave and paid free labor. (D) is wrong — the Colosseum is in Rome, not on a frontier.",
+          correctChoiceId: "", orderIndex: 10,
+          choices: { create: [
+            { text: "That the Roman Empire was already in economic decline when the Colosseum was built", isCorrect: false, orderIndex: 0 },
+            { text: "That Roman construction relied exclusively on the free labor of Roman citizens", isCorrect: false, orderIndex: 1 },
+            { text: "That Roman social hierarchy was reinforced even in public spaces, with seating reflecting one's class position", isCorrect: true, orderIndex: 2 },
+            { text: "That Roman architecture was primarily designed to serve military rather than civic purposes", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The structure above best illustrates which of the following continuities between the Roman Empire and later Western civilization?",
+          passage: "[IMAGE DESCRIPTION] A photograph of the Roman Colosseum (Flavian Amphitheatre) in Rome, c. 80 CE. The four-story elliptical structure of travertine stone and concrete shows arched galleries on each level. The image shows the interior floor removed, revealing the hypogeum (underground tunnels) below. The structure seated approximately 50,000–80,000 spectators.",
+          explanation: "Correct: (D) Roman architectural innovations — the arch, concrete, the oval stadium form — were rediscovered and adapted during the Renaissance and remain foundational to modern architecture. Modern sports stadiums replicate the Colosseum's basic form. (A) is wrong — gladiatorial combat did not continue. (B) is wrong — Christianity ended, not continued, Roman religious practices. (C) is wrong — the Western Roman Empire collapsed in 476 CE.",
+          correctChoiceId: "", orderIndex: 11,
+          choices: { create: [
+            { text: "Gladiatorial combat as a form of public entertainment that persisted through the medieval period", isCorrect: false, orderIndex: 0 },
+            { text: "Roman polytheism that was adopted and preserved by Christian civilization in Europe", isCorrect: false, orderIndex: 1 },
+            { text: "Roman imperial political structures that continued uninterrupted in Western Europe after 476 CE", isCorrect: false, orderIndex: 2 },
+            { text: "Roman architectural and engineering innovations that were later adapted by Renaissance and modern builders", isCorrect: true, orderIndex: 3 },
+          ]},
+        },
+
+        // ── STIMULUS E: Comparison of Classical Empires (Qs 13-15) ──
+        {
+          prompt: "Which of the following conclusions is best supported by the comparison table above?",
+          passage: "[TABLE: Comparison of Classical Empires, c. 200 BCE–200 CE]\n| Feature             | Han China           | Roman Empire        | Maurya Empire (India) |\n|---------------------|---------------------|---------------------|----------------------|\n| Population (est.)   | 60 million          | 55 million          | 50 million           |\n| Government          | Centralized bureaucracy | Senate/Emperor | Centralized monarchy |\n| Official religion   | Confucianism (state) | Polytheism/later Christianity | Buddhism (state) |\n| Key infrastructure  | Grand Canal, walls  | Roads, aqueducts    | Royal roads, stupas  |\n| Decline factor      | Peasant revolts, nomads | Overextension, migration | Fragmentation after Ashoka |",
+          explanation: "Correct: (A) The table shows that all three classical empires shared comparable populations, centralized governments, state-supported religions, and major infrastructure investment — evidence of parallel state-building processes in widely separated regions. (B) is wrong — all three empires used centralized, not democratic, structures. (C) is wrong — the table shows different religions in each empire. (D) is wrong — the decline factors are different for each empire.",
+          correctChoiceId: "", orderIndex: 12,
+          choices: { create: [
+            { text: "All three classical empires developed comparable features — large populations, centralized governments, state religions, and infrastructure — despite having no direct contact", isCorrect: true, orderIndex: 0 },
+            { text: "Classical empires uniformly adopted democratic political structures to manage large populations", isCorrect: false, orderIndex: 1 },
+            { text: "All three classical empires shared the same official religion, enabling cultural exchange", isCorrect: false, orderIndex: 2 },
+            { text: "All three classical empires collapsed for identical reasons, suggesting a common pattern of imperial decline", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The table above most directly supports which of the following arguments about the relationship between religion and classical empires?",
+          passage: "[TABLE: Comparison of Classical Empires, c. 200 BCE–200 CE]\n| Feature             | Han China           | Roman Empire        | Maurya Empire (India) |\n|---------------------|---------------------|---------------------|----------------------|\n| Population (est.)   | 60 million          | 55 million          | 50 million           |\n| Government          | Centralized bureaucracy | Senate/Emperor | Centralized monarchy |\n| Official religion   | Confucianism (state) | Polytheism/later Christianity | Buddhism (state) |\n| Key infrastructure  | Grand Canal, walls  | Roads, aqueducts    | Royal roads, stupas  |\n| Decline factor      | Peasant revolts, nomads | Overextension, migration | Fragmentation after Ashoka |",
+          explanation: "Correct: (B) All three empires used officially sponsored religion — Confucianism, Roman polytheism/Christianity, Buddhism — as a tool of political legitimacy and social control. Ashoka's promotion of Buddhism and the Roman emperors' use of religion both illustrate this pattern. (A) is wrong — religion was promoted by governments, not kept separate. (C) is wrong — state-sponsored religions served political purposes but also spread organically. (D) is wrong — Buddhism spread beyond the Maurya Empire through missionary activity.",
+          correctChoiceId: "", orderIndex: 13,
+          choices: { create: [
+            { text: "Classical empires maintained strict separation between religious institutions and state power", isCorrect: false, orderIndex: 0 },
+            { text: "Classical empires used officially sponsored religious traditions to legitimize rule and promote social cohesion", isCorrect: true, orderIndex: 1 },
+            { text: "Religion in classical empires was entirely a private matter with no political dimensions", isCorrect: false, orderIndex: 2 },
+            { text: "Buddhism spread beyond India because the Maurya Empire forcibly converted neighboring peoples", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "A historian studying the decline factors listed in the table above would most likely argue which of the following?",
+          passage: "[TABLE: Comparison of Classical Empires, c. 200 BCE–200 CE]\n| Feature             | Han China           | Roman Empire        | Maurya Empire (India) |\n|---------------------|---------------------|---------------------|----------------------|\n| Population (est.)   | 60 million          | 55 million          | 50 million           |\n| Government          | Centralized bureaucracy | Senate/Emperor | Centralized monarchy |\n| Official religion   | Confucianism (state) | Polytheism/later Christianity | Buddhism (state) |\n| Key infrastructure  | Grand Canal, walls  | Royal roads, aqueducts    | Royal roads, stupas  |\n| Decline factor      | Peasant revolts, nomads | Overextension, migration | Fragmentation after Ashoka |",
+          explanation: "Correct: (D) While the specific triggers differ (nomads for China, overextension for Rome, fragmentation for Maurya), all three empires declined due to the structural difficulty of maintaining centralized control over vast, diverse populations. This is a common pattern in large pre-modern empires. (A) is wrong — different factors caused each collapse. (B) is wrong — economic collapse was a factor in Rome but not the primary one listed for all three. (C) is wrong — religion is not listed as a primary decline factor.",
+          correctChoiceId: "", orderIndex: 14,
+          choices: { create: [
+            { text: "All three empires collapsed for the same reason: foreign military invasion overwhelmed their defenses", isCorrect: false, orderIndex: 0 },
+            { text: "Economic collapse caused by overtrading was the primary factor in the decline of all three empires", isCorrect: false, orderIndex: 1 },
+            { text: "The adoption of new religions destabilized all three classical empires from within", isCorrect: false, orderIndex: 2 },
+            { text: "Despite different specific triggers, all three empires faced the common challenge of maintaining centralized control over vast diverse territories", isCorrect: true, orderIndex: 3 },
+          ]},
+        },
+
+        // ── STIMULUS F: Spread of World Religions (Qs 16-18) ──
+        {
+          prompt: "The map above best supports which of the following conclusions about the spread of Buddhism?",
+          passage: "[MAP DESCRIPTION] A map of Asia, c. 500 CE, showing the spread of Buddhism from its origin in northern India (marked with a dot at Lumbini/Bodh Gaya). Arrows radiate outward: one arrow runs northwest along the Silk Road through Central Asia to China and Korea; another runs south to Sri Lanka; a third runs east to Southeast Asia by sea. Shaded zones show regions with Buddhist majorities. The map notes that Buddhism largely declined in India itself by 1200 CE.",
+          explanation: "Correct: (C) Buddhism spread along trade routes — the Silk Road carried it to China, while maritime trade spread it to Southeast Asia. Missionaries (monks) traveled with merchants. Meanwhile Buddhism declined in its homeland as Hinduism reasserted itself and Islam arrived. (A) is wrong — Buddhism spread through persuasion and trade, not military conquest. (B) is wrong — Buddhism spread widely but did not become universal. (D) is wrong — Buddhism declined in India by 1200 CE.",
+          correctChoiceId: "", orderIndex: 15,
+          choices: { create: [
+            { text: "Buddhism spread primarily through military conquest by Buddhist empires in Asia", isCorrect: false, orderIndex: 0 },
+            { text: "Buddhism became the universal religion of Asia by 500 CE, replacing all prior traditions", isCorrect: false, orderIndex: 1 },
+            { text: "Buddhism spread along trade routes and through missionary activity while paradoxically declining in its Indian homeland", isCorrect: true, orderIndex: 2 },
+            { text: "Buddhism remained strongest in India and spread only marginally to surrounding regions", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The pattern shown on the map above most directly illustrates which of the following broader historical processes?",
+          passage: "[MAP DESCRIPTION] A map of Asia, c. 500 CE, showing the spread of Buddhism from its origin in northern India (marked with a dot at Lumbini/Bodh Gaya). Arrows radiate outward: one arrow runs northwest along the Silk Road through Central Asia to China and Korea; another runs south to Sri Lanka; a third runs east to Southeast Asia by sea. Shaded zones show regions with Buddhist majorities. The map notes that Buddhism largely declined in India itself by 1200 CE.",
+          explanation: "Correct: (A) The spread of Buddhism mirrors that of Christianity (from Palestine along Roman roads) and later Islam (from Arabia along trade routes) — religions often 'rode' existing trade and communication networks to reach distant populations. (B) is wrong — Buddhist missionaries actively sought converts in new regions. (C) is wrong — the map shows expansion, not suppression. (D) is wrong — Buddhism adapted to local cultures (Zen Buddhism in Japan, Theravada in Southeast Asia) rather than remaining identical.",
+          correctChoiceId: "", orderIndex: 16,
+          choices: { create: [
+            { text: "How trade networks served as vectors for the spread of religious and cultural ideas across large distances", isCorrect: true, orderIndex: 0 },
+            { text: "How Buddhist missionaries refused to travel beyond South Asia to preserve doctrinal purity", isCorrect: false, orderIndex: 1 },
+            { text: "How political authorities in China suppressed Buddhism, preventing its spread to East Asia", isCorrect: false, orderIndex: 2 },
+            { text: "How Buddhism remained doctrinally identical across all regions where it spread", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The decline of Buddhism in India noted on the map above is best explained by which of the following?",
+          passage: "[MAP DESCRIPTION] A map of Asia, c. 500 CE, showing the spread of Buddhism from its origin in northern India (marked with a dot at Lumbini/Bodh Gaya). Arrows radiate outward: one arrow runs northwest along the Silk Road through Central Asia to China and Korea; another runs south to Sri Lanka; a third runs east to Southeast Asia by sea. Shaded zones show regions with Buddhist majorities. The map notes that Buddhism largely declined in India itself by 1200 CE.",
+          explanation: "Correct: (B) Buddhism's decline in India resulted from multiple factors: the revival of Hindu devotional movements (bhakti) that absorbed Buddhist ideas, the destruction of Buddhist monasteries and universities (Nalanda) by Muslim Turkic invaders in the 12th century, and the loss of royal patronage. (A) is wrong — Buddhist ideas were absorbed into Hinduism rather than violently suppressed initially. (C) is wrong — Buddhism continued to grow in East and Southeast Asia while declining in India. (D) is wrong — Buddhist monasteries were economically important, not isolated.",
+          correctChoiceId: "", orderIndex: 17,
+          choices: { create: [
+            { text: "Buddhist leaders chose to relocate to China because of better opportunities for conversion", isCorrect: false, orderIndex: 0 },
+            { text: "The revival of Hindu traditions and the destruction of Buddhist institutions by Muslim invaders contributed to Buddhism's decline in India", isCorrect: true, orderIndex: 1 },
+            { text: "Buddhism's global popularity made Indian practitioners abandon it in favor of more exclusive local traditions", isCorrect: false, orderIndex: 2 },
+            { text: "Buddhist monasteries in India became economically isolated and ceased to attract followers", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+
+        // ── STIMULUS G: Confucius Quotation (Qs 19-20) ──
+        {
+          prompt: "The passage above most directly reflects which of the following aspects of Confucian philosophy?",
+          passage: "\"When you know a thing, hold that you know it; and when you do not know a thing, allow that you do not know it — this is knowledge... The superior man is catholic and no partisan. The mean man is partisan and not catholic... To govern means to correct. If you lead the people with correctness, who will dare not be correct?\"\n— Confucius, Analects (selected passages, c. 500 BCE)",
+          explanation: "Correct: (D) The passages reflect core Confucian ideas: epistemological humility (knowing the limits of one's knowledge), the 'superior man' (junzi) as a moral ideal, and the belief that good governance flows from the ruler's personal virtue rather than law or force. (A) is wrong — Confucius emphasizes moral virtue, not military power. (B) is wrong — Confucius is about correct behavior, not mysticism or nature. (C) is wrong — Confucius emphasizes hierarchy and learning, not equality.",
+          correctChoiceId: "", orderIndex: 18,
+          choices: { create: [
+            { text: "The importance of military discipline and conquest in building a well-ordered state", isCorrect: false, orderIndex: 0 },
+            { text: "The Daoist belief that rulers should align themselves with nature rather than imposing human rules", isCorrect: false, orderIndex: 1 },
+            { text: "The Legalist argument that strict laws and punishments are the only way to maintain social order", isCorrect: false, orderIndex: 2 },
+            { text: "The role of personal virtue, moral self-cultivation, and ethical leadership in creating a well-ordered society", isCorrect: true, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The passage above most directly explains why Confucianism became the official ideology of which of the following?",
+          passage: "\"When you know a thing, hold that you know it; and when you do not know a thing, allow that you do not know it — this is knowledge... The superior man is catholic and no partisan. The mean man is partisan and not catholic... To govern means to correct. If you lead the people with correctness, who will dare not be correct?\"\n— Confucius, Analects (selected passages, c. 500 BCE)",
+          explanation: "Correct: (A) The Han Dynasty adopted Confucianism as its official state ideology because it legitimized a hierarchical bureaucratic state: the emperor ruled by virtue, officials were selected for moral knowledge through examinations, and society was organized around proper relationships (ruler-subject, parent-child). This system persisted through multiple Chinese dynasties until 1905. (B) is wrong — the Qin Dynasty used Legalism. (C) is wrong — Confucianism was Chinese, not Roman. (D) is wrong — Confucianism was not the basis of Mauryan governance.",
+          correctChoiceId: "", orderIndex: 19,
+          choices: { create: [
+            { text: "The Han Dynasty's civil service examination system, which selected officials based on Confucian learning", isCorrect: true, orderIndex: 0 },
+            { text: "The Qin Dynasty's Legalist system of harsh laws and centralized control", isCorrect: false, orderIndex: 1 },
+            { text: "The Roman imperial cult that used philosophical teachings to legitimize emperor worship", isCorrect: false, orderIndex: 2 },
+            { text: "The Maurya Dynasty's Buddhist administration under Emperor Ashoka", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+
+      ]},
+    },
+    include: { questions: { include: { choices: true } } },
+  })
+  await fixCorrectChoices(quiz4)
+  console.log("✓ Created quiz:", quiz4.title, `(${quiz4.questions.length} questions)`)
+
+  // ── Quiz Bank 5: AP US History – Civil War & Reconstruction ───
+  const quiz5 = await prisma.questionBank.create({
+    data: {
+      title: "AP US History – Civil War & Reconstruction",
+      subject: "AP US History",
+      description: "Stimulus-based questions covering the causes of the Civil War, emancipation, military turning points, Reconstruction amendments, and the retreat from Reconstruction.",
+      isPublic: true, ownerId: admin.id,
+      questions: { create: [
+
+        // ── STIMULUS A: Lincoln-Douglas Debate Excerpt (Qs 1-3) ──
+        {
+          prompt: "The excerpt above most directly reflects which of the following political debates of the 1850s?",
+          passage: "\"A house divided against itself cannot stand. I believe this government cannot endure, permanently, half slave and half free. I do not expect the Union to be dissolved — I do not expect the house to fall — but I do expect it will cease to be divided. It will become all one thing, or all the other.\"\n— Abraham Lincoln, Republican nomination acceptance speech, Springfield, Illinois, June 16, 1858",
+          explanation: "Correct: (B) Lincoln's 'House Divided' speech argued that the nation could not permanently survive with slavery in some states and freedom in others — it must eventually resolve the contradiction one way or the other. This was the central tension of the 1850s. (A) is wrong — Lincoln was not calling for immediate abolition at this point. (C) is wrong — Lincoln explicitly said the Union would NOT dissolve. (D) is wrong — this speech was about the slavery debate, not westward expansion per se.",
+          correctChoiceId: "", orderIndex: 0,
+          choices: { create: [
+            { text: "Lincoln's demand for the immediate and complete abolition of slavery in all states", isCorrect: false, orderIndex: 0 },
+            { text: "The unsustainable contradiction between slavery and freedom that was driving the nation toward crisis", isCorrect: true, orderIndex: 1 },
+            { text: "Lincoln's belief that Southern secession was inevitable and should be allowed peacefully", isCorrect: false, orderIndex: 2 },
+            { text: "Debates over whether slavery should be permitted in newly acquired western territories", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "Lincoln's argument in the passage above was most directly a response to which of the following earlier developments?",
+          passage: "\"A house divided against itself cannot stand. I believe this government cannot endure, permanently, half slave and half free. I do not expect the Union to be dissolved — I do not expect the house to fall — but I do expect it will cease to be divided. It will become all one thing, or all the other.\"\n— Abraham Lincoln, Republican nomination acceptance speech, Springfield, Illinois, June 16, 1858",
+          explanation: "Correct: (C) Lincoln's speech directly responded to the Kansas-Nebraska Act (1854) and the principle of 'popular sovereignty' championed by his opponent Stephen Douglas — the idea that each territory could decide slavery for itself. Lincoln argued this 'compromise' could not hold. (A) is wrong — the Missouri Compromise was 1820; Lincoln's speech was in 1858. (B) is wrong — the Dred Scott decision (1857) had just occurred and reinforced Lincoln's concerns, but his speech targets popular sovereignty broadly. (D) is wrong — John Brown's raid (Harpers Ferry) was October 1859, after this speech.",
+          correctChoiceId: "", orderIndex: 1,
+          choices: { create: [
+            { text: "The Missouri Compromise of 1820 that Lincoln believed had permanently settled the slavery question", isCorrect: false, orderIndex: 0 },
+            { text: "The Dred Scott decision which Lincoln supported as constitutional", isCorrect: false, orderIndex: 1 },
+            { text: "The Kansas-Nebraska Act and popular sovereignty doctrine that Lincoln believed would spread slavery nationwide", isCorrect: true, orderIndex: 2 },
+            { text: "John Brown's raid on Harpers Ferry that Lincoln condemned as counterproductive to abolition", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "Which of the following outcomes of the Civil War era most directly fulfilled the prediction Lincoln made in the passage above?",
+          passage: "\"A house divided against itself cannot stand. I believe this government cannot endure, permanently, half slave and half free. I do not expect the Union to be dissolved — I do not expect the house to fall — but I do expect it will cease to be divided. It will become all one thing, or all the other.\"\n— Abraham Lincoln, Republican nomination acceptance speech, Springfield, Illinois, June 16, 1858",
+          explanation: "Correct: (A) Lincoln's prediction that the nation would become 'all one thing' was fulfilled by the 13th Amendment (1865), which abolished slavery in all states, making the country uniformly free. The house became 'all one thing.' (B) is wrong — the secession crisis proved Lincoln wrong in the short term, though the Union was preserved. (C) is wrong — the Emancipation Proclamation (1863) was a war measure, not the permanent resolution Lincoln described. (D) is wrong — Reconstruction extended federal authority over the South, not the other way around.",
+          correctChoiceId: "", orderIndex: 2,
+          choices: { create: [
+            { text: "The 13th Amendment's abolition of slavery throughout the entire United States", isCorrect: true, orderIndex: 0 },
+            { text: "Southern secession, which proved Lincoln correct that the Union could not survive half-slave and half-free", isCorrect: false, orderIndex: 1 },
+            { text: "The Emancipation Proclamation, which permanently resolved the slavery question in all states", isCorrect: false, orderIndex: 2 },
+            { text: "Southern states gaining sovereignty over their own labor laws during Reconstruction", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+
+        // ── STIMULUS B: Casualty Data / Battle of Antietam Chart (Qs 4-6) ──
+        {
+          prompt: "The data above most directly supports which of the following conclusions about the Civil War?",
+          passage: "[TABLE: Selected Civil War Battles — Casualties]\n| Battle             | Date      | Union Casualties | Confederate Casualties | Military Significance          |\n|--------------------|-----------|-----------------|----------------------|--------------------------------|\n| First Bull Run     | July 1861 | 2,896           | 1,982                | Confederate victory; war won't be quick |\n| Antietam           | Sept 1862 | 12,401          | 10,316               | Bloodiest single day; tactical Union draw; Lincoln issues Emancipation Proclamation |\n| Gettysburg         | July 1863 | 23,049          | 28,063               | Union victory; turns tide of the war      |\n| Chancellorsville   | May 1863  | 17,304          | 12,764               | Confederate tactical victory; Lee at peak |\n| Appomattox         | April 1865| 164             | 500                  | Confederate surrender; war ends          |",
+          explanation: "Correct: (B) The table shows catastrophic casualties at major battles — 22,000 in a single day at Antietam, over 50,000 at Gettysburg — demonstrating that the Civil War was far deadlier than either side anticipated after First Bull Run. Industrial weapons (rifled muskets, artillery) combined with Napoleonic tactics produced mass casualties. (A) is wrong — the Union suffered significant casualties throughout. (C) is wrong — Confederate losses exceeded Union at Gettysburg. (D) is wrong — the data shows tactical wins on both sides before the final Union victory.",
+          correctChoiceId: "", orderIndex: 3,
+          choices: { create: [
+            { text: "Union forces consistently suffered fewer casualties than Confederate forces throughout the war", isCorrect: false, orderIndex: 0 },
+            { text: "The Civil War produced catastrophically high casualties, far exceeding early expectations from both sides", isCorrect: true, orderIndex: 1 },
+            { text: "Confederate forces suffered far greater losses than Union forces at every major battle", isCorrect: false, orderIndex: 2 },
+            { text: "The Union won every major engagement of the Civil War through superior numbers and strategy", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The data in the table above most directly explains why Lincoln issued the Emancipation Proclamation following which of the listed battles?",
+          passage: "[TABLE: Selected Civil War Battles — Casualties]\n| Battle             | Date      | Union Casualties | Confederate Casualties | Military Significance          |\n|--------------------|-----------|-----------------|----------------------|--------------------------------|\n| First Bull Run     | July 1861 | 2,896           | 1,982                | Confederate victory; war won't be quick |\n| Antietam           | Sept 1862 | 12,401          | 10,316               | Bloodiest single day; tactical Union draw; Lincoln issues Emancipation Proclamation |\n| Gettysburg         | July 1863 | 23,049          | 28,063               | Union victory; turns tide of the war      |\n| Chancellorsville   | May 1863  | 17,304          | 12,764               | Confederate tactical victory; Lee at peak |\n| Appomattox         | April 1865| 164             | 500                  | Confederate surrender; war ends          |",
+          explanation: "Correct: (C) Lincoln needed to issue the Emancipation Proclamation after a Union 'victory' to avoid appearing desperate. Antietam (Sept 1862) halted Lee's northern invasion — though bloody — and gave Lincoln the military success he needed to announce emancipation from a position of strength rather than weakness. (A) is wrong — First Bull Run was a Union defeat. (B) is wrong — Gettysburg came after the Proclamation (January 1863). (D) is wrong — Chancellorsville was a Confederate victory.",
+          correctChoiceId: "", orderIndex: 4,
+          choices: { create: [
+            { text: "First Bull Run, because the Confederate victory convinced Lincoln that emancipation was militarily necessary", isCorrect: false, orderIndex: 0 },
+            { text: "Gettysburg, because the decisive Union victory gave Lincoln the momentum he needed", isCorrect: false, orderIndex: 1 },
+            { text: "Antietam, because Lincoln needed to announce emancipation from a position of at least partial military success", isCorrect: true, orderIndex: 2 },
+            { text: "Chancellorsville, because Lincoln feared the war was being lost and used emancipation to reverse Union fortunes", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "A historian studying the table above would most likely cite which of the following as a primary cause of the extremely high casualty figures?",
+          passage: "[TABLE: Selected Civil War Battles — Casualties]\n| Battle             | Date      | Union Casualties | Confederate Casualties | Military Significance          |\n|--------------------|-----------|-----------------|----------------------|--------------------------------|\n| First Bull Run     | July 1861 | 2,896           | 1,982                | Confederate victory; war won't be quick |\n| Antietam           | Sept 1862 | 12,401          | 10,316               | Bloodiest single day; tactical Union draw; Lincoln issues Emancipation Proclamation |\n| Gettysburg         | July 1863 | 23,049          | 28,063               | Union victory; turns tide of the war      |\n| Chancellorsville   | May 1863  | 17,304          | 12,764               | Confederate tactical victory; Lee at peak |\n| Appomattox         | April 1865| 164             | 500                  | Confederate surrender; war ends          |",
+          explanation: "Correct: (D) The Civil War's unprecedented casualties resulted from a lethal mismatch: armies still used Napoleonic offensive tactics (massed frontal assaults) against new industrial weapons (rifled muskets with much greater range and accuracy than smoothbores). Defenders behind fortifications could kill attackers long before they reached the line. (A) is wrong — incompetent generals were a factor but not THE explanation for universal high casualties. (B) is wrong — armies had used cavalry for centuries. (C) is wrong — armies were large but the key factor was weapons technology vs. tactics.",
+          correctChoiceId: "", orderIndex: 5,
+          choices: { create: [
+            { text: "The incompetence of Union and Confederate generals who wasted soldiers in unnecessary frontal assaults", isCorrect: false, orderIndex: 0 },
+            { text: "The first use of cavalry charges, which proved catastrophically vulnerable to infantry fire", isCorrect: false, orderIndex: 1 },
+            { text: "The unprecedented size of Civil War armies, which made battles inherently more deadly", isCorrect: false, orderIndex: 2 },
+            { text: "Industrial weapons technology (rifled muskets, artillery) made old Napoleonic offensive tactics catastrophically deadly", isCorrect: true, orderIndex: 3 },
+          ]},
+        },
+
+        // ── STIMULUS C: Emancipation Proclamation / 13th Amendment (Qs 7-9) ──
+        {
+          prompt: "The document above most directly reflects which of the following limitations on executive power during the Civil War?",
+          passage: "\"That on the first day of January, in the year of our Lord one thousand eight hundred and sixty-three, all persons held as slaves within any State or designated part of a State, the people whereof shall then be in rebellion against the United States, shall be then, thenceforward, and forever free...\"\n— Emancipation Proclamation, Abraham Lincoln, January 1, 1863",
+          explanation: "Correct: (A) The Emancipation Proclamation notably did NOT free slaves in the border states (Missouri, Kentucky, Maryland, Delaware) that had not seceded, nor in Confederate territories already under Union control. Lincoln justified it only as a war measure under his commander-in-chief powers — not as a moral abolition of slavery. (B) is wrong — it freed slaves in Confederate states, not all states. (C) is wrong — Lincoln acted unilaterally; Congress wasn't involved. (D) is wrong — the Proclamation did not address citizenship.",
+          correctChoiceId: "", orderIndex: 6,
+          choices: { create: [
+            { text: "Lincoln justified emancipation as a war measure and limited it to Confederate states, leaving slavery intact in the border states", isCorrect: true, orderIndex: 0 },
+            { text: "The Emancipation Proclamation immediately freed all enslaved people in every state of the Union", isCorrect: false, orderIndex: 1 },
+            { text: "Congress passed the Proclamation over Lincoln's veto as a radical Republican measure", isCorrect: false, orderIndex: 2 },
+            { text: "The Proclamation granted citizenship and voting rights to all formerly enslaved people simultaneously", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The passage above most directly changed the nature of the Civil War by accomplishing which of the following?",
+          passage: "\"That on the first day of January, in the year of our Lord one thousand eight hundred and sixty-three, all persons held as slaves within any State or designated part of a State, the people whereof shall then be in rebellion against the United States, shall be then, thenceforward, and forever free...\"\n— Emancipation Proclamation, Abraham Lincoln, January 1, 1863",
+          explanation: "Correct: (C) The Proclamation transformed the war's character by making it explicitly a war against slavery, not merely a war to preserve the Union. This discouraged Britain and France — who had abolished slavery — from recognizing the Confederacy, and it authorized Black men to serve in the Union Army (eventually ~180,000 Black soldiers). (A) is wrong — the Proclamation escalated the war's moral stakes, not ended it. (B) is wrong — it weakened Confederate morale but did not cause immediate Confederate collapse. (D) is wrong — the 13th Amendment (1865) permanently abolished slavery; the Proclamation was a war measure.",
+          correctChoiceId: "", orderIndex: 7,
+          choices: { create: [
+            { text: "It ended the war by convincing Confederate states to surrender rather than face slave rebellions", isCorrect: false, orderIndex: 0 },
+            { text: "It caused the immediate collapse of Confederate military resistance in the Deep South", isCorrect: false, orderIndex: 1 },
+            { text: "It reframed the war as a struggle against slavery, deterring European recognition of the Confederacy and enabling Black military service", isCorrect: true, orderIndex: 2 },
+            { text: "It permanently abolished slavery throughout the United States, making additional amendments unnecessary", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "Which of the following best explains why the 13th Amendment was necessary following the Emancipation Proclamation?",
+          passage: "\"That on the first day of January, in the year of our Lord one thousand eight hundred and sixty-three, all persons held as slaves within any State or designated part of a State, the people whereof shall then be in rebellion against the United States, shall be then, thenceforward, and forever free...\"\n— Emancipation Proclamation, Abraham Lincoln, January 1, 1863",
+          explanation: "Correct: (B) The Emancipation Proclamation was issued under Lincoln's war powers as commander-in-chief and applied only to Confederate states. It could potentially be reversed after the war or challenged legally. The 13th Amendment (1865) permanently abolished slavery everywhere in the United States through a constitutional change that could not be undone by a future president. (A) is wrong — the Proclamation did apply to Confederate states. (C) is wrong — Lincoln supported the 13th Amendment. (D) is wrong — the 13th Amendment was ratified before Reconstruction formally began.",
+          correctChoiceId: "", orderIndex: 8,
+          choices: { create: [
+            { text: "The Emancipation Proclamation had failed to free any enslaved people because Confederate states ignored it", isCorrect: false, orderIndex: 0 },
+            { text: "The Proclamation was a temporary war measure that could be reversed; a constitutional amendment was needed to permanently abolish slavery nationwide", isCorrect: true, orderIndex: 1 },
+            { text: "Lincoln opposed the 13th Amendment and Congress passed it against his wishes", isCorrect: false, orderIndex: 2 },
+            { text: "The 13th Amendment was necessary because the Proclamation had not addressed slavery in Northern states", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+
+        // ── STIMULUS D: Reconstruction Amendments & Black Codes (Qs 10-12) ──
+        {
+          prompt: "The document above most directly reflects which of the following conflicts of the Reconstruction era?",
+          passage: "\"Section 1: All persons born or naturalized in the United States... are citizens of the United States and of the State wherein they reside. No State shall make or enforce any law which shall abridge the privileges or immunities of citizens of the United States; nor shall any State deprive any person of life, liberty, or property, without due process of law; nor deny to any person within its jurisdiction the equal protection of the laws.\"\n— 14th Amendment to the U.S. Constitution, 1868",
+          explanation: "Correct: (A) The 14th Amendment was a direct constitutional response to the Black Codes enacted by Southern states after the war — laws that restricted the rights of freedpeople. The Amendment's equal protection and due process clauses were designed to prevent states from re-enslaving Black Americans through discriminatory law. (B) is wrong — the 14th Amendment addressed state discrimination, not federal law. (C) is wrong — the Amendment was passed by Congress over Andrew Johnson's objections. (D) is wrong — citizenship was already being denied; the Amendment established it.",
+          correctChoiceId: "", orderIndex: 9,
+          choices: { create: [
+            { text: "Congress's response to Southern states' attempts to re-impose racial hierarchy through Black Codes after emancipation", isCorrect: true, orderIndex: 0 },
+            { text: "Federal government discrimination against freedpeople that Radical Republicans sought to correct", isCorrect: false, orderIndex: 1 },
+            { text: "Andrew Johnson's proposal for reconstructing Southern state governments that Congress agreed with", isCorrect: false, orderIndex: 2 },
+            { text: "The question of whether African Americans born into slavery could become citizens after emancipation", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The passage above is most historically significant because it established which of the following principles?",
+          passage: "\"Section 1: All persons born or naturalized in the United States... are citizens of the United States and of the State wherein they reside. No State shall make or enforce any law which shall abridge the privileges or immunities of citizens of the United States; nor shall any State deprive any person of life, liberty, or property, without due process of law; nor deny to any person within its jurisdiction the equal protection of the laws.\"\n— 14th Amendment to the U.S. Constitution, 1868",
+          explanation: "Correct: (C) The 14th Amendment established the constitutional foundation for federal protection of civil rights against state violation — a principle that would be dormant for decades but became the basis for 20th-century civil rights legislation and Supreme Court decisions (Brown v. Board of Education). (A) is wrong — this is about citizenship and equal protection, not voting rights (that was the 15th Amendment). (B) is wrong — federal supremacy was established by the Constitution itself. (D) is wrong — the amendment addresses individual rights, not economic policy.",
+          correctChoiceId: "", orderIndex: 10,
+          choices: { create: [
+            { text: "The right of all male citizens to vote regardless of race, color, or previous servitude", isCorrect: false, orderIndex: 0 },
+            { text: "The supremacy of federal law over state law in all matters including economic policy", isCorrect: false, orderIndex: 1 },
+            { text: "Federal constitutional protection of individual rights against state infringement — the legal foundation for future civil rights laws", isCorrect: true, orderIndex: 2 },
+            { text: "The federal government's right to redistribute confiscated Confederate land to freedpeople", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "A historian studying the period immediately after the 14th Amendment's ratification would most likely note which of the following paradoxes?",
+          passage: "\"Section 1: All persons born or naturalized in the United States... are citizens of the United States and of the State wherein they reside. No State shall make or enforce any law which shall abridge the privileges or immunities of citizens of the United States; nor shall any State deprive any person of life, liberty, or property, without due process of law; nor deny to any person within its jurisdiction the equal protection of the laws.\"\n— 14th Amendment to the U.S. Constitution, 1868",
+          explanation: "Correct: (D) Despite the 14th Amendment's equal protection guarantee, the Supreme Court's narrow rulings (Slaughterhouse Cases, 1873; Civil Rights Cases, 1883; Plessy v. Ferguson, 1896) allowed states to continue racial discrimination. The Amendment's promise was not realized until the 20th century. (A) is wrong — the Klan used violence, not ignored the amendment openly. (B) is wrong — the amendment was successfully ratified. (C) is wrong — freedpeople knew about the amendment and tried to use its protections.",
+          correctChoiceId: "", orderIndex: 11,
+          choices: { create: [
+            { text: "Southern states openly defied the amendment by refusing to follow even its most basic citizenship provisions", isCorrect: false, orderIndex: 0 },
+            { text: "Congress failed to secure enough states to ratify the 14th Amendment until the 20th century", isCorrect: false, orderIndex: 1 },
+            { text: "Freedpeople were unaware of their constitutional rights under the new amendment", isCorrect: false, orderIndex: 2 },
+            { text: "Despite its guarantees, narrow Supreme Court interpretations allowed states to continue racial discrimination for nearly a century", isCorrect: true, orderIndex: 3 },
+          ]},
+        },
+
+        // ── STIMULUS E: Compromise of 1877 / End of Reconstruction (Qs 13-15) ──
+        {
+          prompt: "The graph above most directly supports which of the following conclusions about Reconstruction?",
+          passage: "[GRAPH DESCRIPTION] A bar graph shows 'Black Elected Officials in Former Confederate States, 1868–1900.' In 1868: approximately 320 officials. In 1870: approximately 640 (peak). In 1876: approximately 490. In 1880: approximately 310. In 1890: approximately 90. In 1900: approximately 15. A vertical line marks 1877 labeled 'Federal Troops Withdrawn.'",
+          explanation: "Correct: (B) The data shows Black political representation peaked during Reconstruction and collapsed after federal troops were withdrawn in 1877 following the Compromise of 1877 — evidence that Reconstruction's political gains were directly tied to federal enforcement. (A) is wrong — the data shows a peak followed by dramatic decline. (C) is wrong — the decline was caused by disenfranchisement, not by choice. (D) is wrong — the sharp decline after 1877 shows federal protection was essential.",
+          correctChoiceId: "", orderIndex: 12,
+          choices: { create: [
+            { text: "Black political participation increased consistently throughout the Reconstruction period and beyond", isCorrect: false, orderIndex: 0 },
+            { text: "Black political gains during Reconstruction were directly dependent on federal enforcement and collapsed when federal troops withdrew", isCorrect: true, orderIndex: 1 },
+            { text: "Black voters voluntarily withdrew from politics after 1877 due to disillusionment with the Republican Party", isCorrect: false, orderIndex: 2 },
+            { text: "Black political participation was maintained at consistent levels even after Reconstruction ended", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "Which of the following best explains the trend shown in the graph above after 1877?",
+          passage: "[GRAPH DESCRIPTION] A bar graph shows 'Black Elected Officials in Former Confederate States, 1868–1900.' In 1868: approximately 320 officials. In 1870: approximately 640 (peak). In 1876: approximately 490. In 1880: approximately 310. In 1890: approximately 90. In 1900: approximately 15. A vertical line marks 1877 labeled 'Federal Troops Withdrawn.'",
+          explanation: "Correct: (C) After federal troops withdrew in 1877, Southern Democrats used poll taxes, literacy tests, grandfather clauses, and white primary elections to systematically disenfranchise Black voters — backed by Ku Klux Klan and Red Shirt violence against those who tried to vote. (A) is wrong — economic factors alone don't explain the near-total elimination of Black officeholders. (B) is wrong — the 15th Amendment was not repealed; it was circumvented. (D) is wrong — Black voters were driven out by force and discriminatory laws, not migration.",
+          correctChoiceId: "", orderIndex: 13,
+          choices: { create: [
+            { text: "Economic hardship from the Panic of 1873 discouraged Black voters from participating in elections", isCorrect: false, orderIndex: 0 },
+            { text: "The Supreme Court struck down the 15th Amendment, stripping Black men of their voting rights", isCorrect: false, orderIndex: 1 },
+            { text: "Southern states used voter suppression laws, violence, and intimidation to systematically disenfranchise Black voters", isCorrect: true, orderIndex: 2 },
+            { text: "Black Southerners migrated north in such large numbers that Southern Black voting power collapsed", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The graph above most directly challenges which of the following historical interpretations of Reconstruction?",
+          passage: "[GRAPH DESCRIPTION] A bar graph shows 'Black Elected Officials in Former Confederate States, 1868–1900.' In 1868: approximately 320 officials. In 1870: approximately 640 (peak). In 1876: approximately 490. In 1880: approximately 310. In 1890: approximately 90. In 1900: approximately 15. A vertical line marks 1877 labeled 'Federal Troops Withdrawn.'",
+          explanation: "Correct: (A) The graph directly refutes the Lost Cause / Dunning School argument (popular in early 20th-century textbooks) that Reconstruction was a corrupt failure because Black men were unfit to hold office. The data shows hundreds of capable Black officials holding office — and that their removal was the result of violent disenfranchisement, not incompetence. (B) is wrong — the graph supports, not challenges, the idea that Reconstruction achievements were real. (C) is wrong — the graph doesn't address Northern motives. (D) is wrong — the graph shows collapse of Black representation, not its continuation.",
+          correctChoiceId: "", orderIndex: 14,
+          choices: { create: [
+            { text: "The 'Dunning School' interpretation that Reconstruction was a corrupt failure caused by unqualified Black officeholders", isCorrect: true, orderIndex: 0 },
+            { text: "The revisionist argument that Reconstruction achieved meaningful political gains for Black Americans", isCorrect: false, orderIndex: 1 },
+            { text: "The argument that Northern Republicans supported Reconstruction purely for economic reasons", isCorrect: false, orderIndex: 2 },
+            { text: "The interpretation that Black political representation persisted in the South through the Progressive Era", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+
+        // ── STIMULUS F: Freedmen's Bureau / Education (Qs 16-18) ──
+        {
+          prompt: "The account above most directly reflects which of the following aspects of the Reconstruction period?",
+          passage: "\"We worked from before sunup to after dark on that plantation for nothing but our keep and a little patch for a garden. Then the Freedmen's Bureau man came and said we could now make a contract — wages for our labor, land to rent if we could. My husband signed his name with an X, but we understood: the Bureau was telling us we were free people with rights. Our children would go to the Bureau school. That was more than we had ever dreamed possible.\"\n— Oral account from a formerly enslaved woman, South Carolina, c. 1866",
+          explanation: "Correct: (B) The Freedmen's Bureau (1865–1872) provided legal contracts, education, and basic relief to formerly enslaved people — representing the first major federal social welfare program and a genuine effort to enable freedpeople to exercise their new rights. (A) is wrong — the account describes empowerment and opportunity, not continued oppression. (C) is wrong — the Bureau was a federal agency helping freedpeople, not restricting them. (D) is wrong — the Bureau operated before the Compromise of 1877 ended Reconstruction.",
+          correctChoiceId: "", orderIndex: 15,
+          choices: { create: [
+            { text: "How the plantation system continued unchanged after emancipation, trapping freedpeople in conditions resembling slavery", isCorrect: false, orderIndex: 0 },
+            { text: "How federal Reconstruction institutions like the Freedmen's Bureau created real opportunities for formerly enslaved people to claim their freedom", isCorrect: true, orderIndex: 1 },
+            { text: "How federal agents worked to restrict freedpeople's labor choices by enforcing plantation work contracts", isCorrect: false, orderIndex: 2 },
+            { text: "How the withdrawal of federal troops in 1877 devastated the Freedmen's Bureau programs", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The account above most directly challenges which of the following arguments about freedpeople's priorities during Reconstruction?",
+          passage: "\"We worked from before sunup to after dark on that plantation for nothing but our keep and a little patch for a garden. Then the Freedmen's Bureau man came and said we could now make a contract — wages for our labor, land to rent if we could. My husband signed his name with an X, but we understood: the Bureau was telling us we were free people with rights. Our children would go to the Bureau school. That was more than we had ever dreamed possible.\"\n— Oral account from a formerly enslaved woman, South Carolina, c. 1866",
+          explanation: "Correct: (D) The account shows freedpeople eagerly pursuing education, legal contracts, and land rental — directly contradicting the Lost Cause / Dunning School argument that freedpeople were content with or suited only for agricultural labor under white supervision. (A) is wrong — the account shows freedpeople actively claiming rights. (B) is wrong — there is evidence of strong desire for education. (C) is wrong — the Bureau is helping this family, not failing them.",
+          correctChoiceId: "", orderIndex: 16,
+          choices: { create: [
+            { text: "The argument that freedpeople were passive recipients of Reconstruction policy rather than active agents demanding rights", isCorrect: false, orderIndex: 0 },
+            { text: "The claim that freedpeople were uninterested in formal education because literacy had no practical value", isCorrect: false, orderIndex: 1 },
+            { text: "The argument that the Freedmen's Bureau consistently failed to deliver meaningful assistance", isCorrect: false, orderIndex: 2 },
+            { text: "The Lost Cause argument that freedpeople were better suited for dependent agricultural labor than independent citizenship", isCorrect: true, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The source above best illustrates which of the following continuities between the antebellum and Reconstruction periods?",
+          passage: "\"We worked from before sunup to after dark on that plantation for nothing but our keep and a little patch for a garden. Then the Freedmen's Bureau man came and said we could now make a contract — wages for our labor, land to rent if we could. My husband signed his name with an X, but we understood: the Bureau was telling us we were free people with rights. Our children would go to the Bureau school. That was more than we had ever dreamed possible.\"\n— Oral account from a formerly enslaved woman, South Carolina, c. 1866",
+          explanation: "Correct: (A) The fact that the husband 'signed his name with an X' reflects the antebellum prohibition on slave literacy — reading and writing were illegal for enslaved people in most Southern states. The desire to educate their children reflects freedpeople's awareness of this deprivation and their determination to ensure the next generation was not similarly limited. (B) is wrong — the account shows profound change in legal status. (C) is wrong — the account shows a woman with agency, not a passive victim. (D) is wrong — the family is accessing the plantation's agricultural economy but is NOT trapped in the same conditions.",
+          correctChoiceId: "", orderIndex: 17,
+          choices: { create: [
+            { text: "The antebellum denial of literacy to enslaved people, which Reconstruction-era freedpeople sought to overcome through education", isCorrect: true, orderIndex: 0 },
+            { text: "The continuation of slavery under a different name through the sharecropping and debt peonage systems", isCorrect: false, orderIndex: 1 },
+            { text: "The passive role of enslaved women who deferred entirely to white authority during and after enslavement", isCorrect: false, orderIndex: 2 },
+            { text: "How the plantation economy remained largely unchanged between the antebellum and Reconstruction periods", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+
+        // ── STIMULUS G: Causes of the Civil War — Excerpt from Confederate VP Stephens (Qs 19-20) ──
+        {
+          prompt: "The speech above most directly reflects which of the following historical debates about the Civil War?",
+          passage: "\"Our new government is founded upon exactly the opposite idea [of the Founders' belief that slavery was wrong]; its foundations are laid, its cornerstone rests, upon the great truth that the negro is not equal to the white man; that slavery — subordination to the superior race — is his natural and normal condition. This, our new government, is the first, in the history of the world, based upon this great physical, philosophical, and moral truth.\"\n— Alexander Stephens, Confederate Vice President, 'Cornerstone Speech,' March 21, 1861",
+          explanation: "Correct: (C) Stephens's 'Cornerstone Speech' is the most direct primary source refuting the 'states' rights' interpretation of the Civil War — the Confederate Vice President himself stated that the Confederate government was explicitly founded on white supremacy and slavery. This makes the speech crucial evidence in the historiographical debate about the war's causes. (A) is wrong — Stephens is celebrating white supremacy, not defending general states' rights. (B) is wrong — this is about the foundation of the Confederacy, not Lincoln's policies. (D) is wrong — economic interpretations focus on industrialism vs. agrarianism; Stephens explicitly states the cause is racial slavery.",
+          correctChoiceId: "", orderIndex: 18,
+          choices: { create: [
+            { text: "Whether Northern economic protectionism rather than Southern rights was the primary cause of the war", isCorrect: false, orderIndex: 0 },
+            { text: "Whether Lincoln's election alone caused secession or whether long-term sectional tensions were responsible", isCorrect: false, orderIndex: 1 },
+            { text: "Whether slavery or states' rights was the primary cause of Southern secession — with Stephens explicitly naming slavery and white supremacy", isCorrect: true, orderIndex: 2 },
+            { text: "Whether the economic differences between industrial North and agrarian South were more important than racial ideology", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The speech above most directly refutes which of the following arguments about the Confederacy?",
+          passage: "\"Our new government is founded upon exactly the opposite idea [of the Founders' belief that slavery was wrong]; its foundations are laid, its cornerstone rests, upon the great truth that the negro is not equal to the white man; that slavery — subordination to the superior race — is his natural and normal condition. This, our new government, is the first, in the history of the world, based upon this great physical, philosophical, and moral truth.\"\n— Alexander Stephens, Confederate Vice President, 'Cornerstone Speech,' March 21, 1861",
+          explanation: "Correct: (B) The 'Lost Cause' mythology argues that the Confederacy fought primarily for states' rights and Southern culture, not slavery. Stephens's speech — given by the Confederacy's own vice president weeks before the war began — directly contradicts this by naming slavery and white supremacy as the Confederacy's explicit founding principles. (A) is wrong — Stephens supports, not opposes, slavery. (C) is wrong — Stephens is speaking in favor of secession. (D) is wrong — this speech was given before Lincoln took any action against slavery.",
+          correctChoiceId: "", orderIndex: 19,
+          choices: { create: [
+            { text: "The abolitionist argument that all Confederates were personally committed to the expansion of slavery", isCorrect: false, orderIndex: 0 },
+            { text: "The 'Lost Cause' narrative that the Confederacy fought primarily for states' rights rather than for the preservation of slavery", isCorrect: true, orderIndex: 1 },
+            { text: "The argument that moderate Confederates supported secession only reluctantly, under pressure from slaveholders", isCorrect: false, orderIndex: 2 },
+            { text: "Lincoln's argument that the Emancipation Proclamation changed the South's motivation for fighting the war", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+
+      ]},
+    },
+    include: { questions: { include: { choices: true } } },
+  })
+  await fixCorrectChoices(quiz5)
+  console.log("✓ Created quiz:", quiz5.title, `(${quiz5.questions.length} questions)`)
+
+  // ── Quiz Bank 6: AP European History – Renaissance through French Revolution ───
+  const quiz6 = await prisma.questionBank.create({
+    data: {
+      title: "AP European History – Renaissance to French Revolution",
+      subject: "AP European History",
+      description: "Stimulus-based questions covering the Renaissance, Reformation, Scientific Revolution, Absolutism, Enlightenment, and the French Revolution.",
+      isPublic: true, ownerId: admin.id,
+      questions: { create: [
+
+        // ── STIMULUS A: Raphael's School of Athens / Renaissance Humanism (Qs 1-3) ──
+        {
+          prompt: "The painting above most directly reflects which of the following characteristics of Renaissance humanism?",
+          passage: "[IMAGE DESCRIPTION] Raphael's 'School of Athens' (1509–1511), a large fresco painting in the Vatican. The massive arched hall is filled with ancient Greek philosophers: Plato and Aristotle walk at the center — Plato points upward (toward ideal forms) and Aristotle gestures horizontally (toward earthly reality). Around them, Socrates, Pythagoras, Euclid, Diogenes, and others discuss, calculate, and argue. The architecture shows classical Roman arches and perspective.",
+          explanation: "Correct: (A) Raphael's fresco celebrates ancient Greek and Roman learning — placing pagan philosophers at the center of intellectual life — reflecting the Renaissance humanist recovery and celebration of classical antiquity as the foundation of knowledge. The painting was commissioned by Pope Julius II for the Vatican, symbolizing the fusion of classical learning and Christian culture. (B) is wrong — the painting celebrates reason and philosophy, not faith. (C) is wrong — the fresco features pagan philosophers, not Christian saints. (D) is wrong — this predates the Scientific Revolution.",
+          correctChoiceId: "", orderIndex: 0,
+          choices: { create: [
+            { text: "Renaissance admiration for classical Greek and Roman learning as a model for human intellectual and cultural achievement", isCorrect: true, orderIndex: 0 },
+            { text: "Medieval scholasticism that subordinated ancient philosophy to Christian theological authority", isCorrect: false, orderIndex: 1 },
+            { text: "The Counter-Reformation emphasis on Christian piety and rejection of pagan classical influences", isCorrect: false, orderIndex: 2 },
+            { text: "The Scientific Revolution's use of empirical observation to overthrow ancient Greek natural philosophy", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The commission of the painting above by the Catholic Church most directly illustrates which of the following Renaissance developments?",
+          passage: "[IMAGE DESCRIPTION] Raphael's 'School of Athens' (1509–1511), a large fresco painting in the Vatican. The massive arched hall is filled with ancient Greek philosophers: Plato and Aristotle walk at the center — Plato points upward (toward ideal forms) and Aristotle gestures horizontally (toward earthly reality). Around them, Socrates, Pythagoras, Euclid, Diogenes, and others discuss, calculate, and argue. The architecture shows classical Roman arches and perspective.",
+          explanation: "Correct: (C) The Vatican commissioning a painting celebrating pagan Greek philosophers reflects the Renaissance synthesis — Church leaders, merchants, and rulers competed to patronize artists and scholars, using art to display wealth, power, and cultural prestige. Without Church and Medici patronage, the Renaissance would not have been possible. (A) is wrong — the Church was embracing, not opposing, classical learning at this point. (B) is wrong — this preceded the Reformation. (D) is wrong — patronage was not an economic reform.",
+          correctChoiceId: "", orderIndex: 1,
+          choices: { create: [
+            { text: "The Catholic Church's opposition to humanist scholarship and its efforts to suppress classical learning", isCorrect: false, orderIndex: 0 },
+            { text: "Protestant challenges to papal authority that forced the Church to use art as propaganda", isCorrect: false, orderIndex: 1 },
+            { text: "The role of wealthy patrons — including the Church — in funding art and learning as expressions of power and prestige", isCorrect: true, orderIndex: 2 },
+            { text: "Economic reforms that allowed the Church to invest surplus wealth in cultural projects", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The contrast between Plato pointing upward and Aristotle gesturing outward in the painting above best illustrates which of the following Renaissance intellectual tensions?",
+          passage: "[IMAGE DESCRIPTION] Raphael's 'School of Athens' (1509–1511), a large fresco painting in the Vatican. The massive arched hall is filled with ancient Greek philosophers: Plato and Aristotle walk at the center — Plato points upward (toward ideal forms) and Aristotle gestures horizontally (toward earthly reality). Around them, Socrates, Pythagoras, Euclid, Diogenes, and others discuss, calculate, and argue. The architecture shows classical Roman arches and perspective.",
+          explanation: "Correct: (B) Raphael's visual contrast between Plato (idealism — truth exists in a higher realm beyond the senses) and Aristotle (empiricism — truth is found in the physical world through observation) represents the two major traditions of Western philosophy that Renaissance thinkers sought to reconcile. Aristotle's gesture toward the earth anticipates the Scientific Revolution's empirical method. (A) is wrong — neither philosopher was a Christian. (C) is wrong — this contrast is philosophical, not about the Church. (D) is wrong — this is about philosophical methods, not political theory.",
+          correctChoiceId: "", orderIndex: 2,
+          choices: { create: [
+            { text: "The Christian debate between faith in God's revelation and reason as guides to truth", isCorrect: false, orderIndex: 0 },
+            { text: "The philosophical tension between Platonic idealism (truth exists beyond the senses) and Aristotelian empiricism (truth is found through observation of the physical world)", isCorrect: true, orderIndex: 1 },
+            { text: "The conflict between Church authority and individual conscience that sparked the Protestant Reformation", isCorrect: false, orderIndex: 2 },
+            { text: "The Renaissance debate between monarchy and republicanism as ideal forms of government", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+
+        // ── STIMULUS B: Luther's 95 Theses / Protestant Reformation (Qs 4-6) ──
+        {
+          prompt: "The document above most directly reflects which of the following causes of the Protestant Reformation?",
+          passage: "\"Out of love for the truth and the desire to bring it to light, the following propositions will be discussed at Wittenberg, under the presidency of the Reverend Father Martin Luther... Thesis 27: There is no divine authority for preaching that the soul flies out of the purgatory immediately the money clinks in the collection-box. Thesis 86: Why does the Pope, whose wealth today is greater than the wealth of the richest Crassus, build the basilica of St. Peter with the money of poor believers rather than with his own money?\"\n— Martin Luther, 95 Theses (selected), 1517",
+          explanation: "Correct: (C) Luther's 95 Theses attacked the Catholic practice of selling indulgences (pardons for sin) and questioned papal wealth — specifically criticizing the Church for using indulgence revenue to fund St. Peter's Basilica while the poor were deceived. This challenged both Church doctrine and institutional corruption. (A) is wrong — Luther attacked Church financial corruption, not just doctrinal errors. (B) is wrong — Luther was criticizing Church authority, not defending it. (D) is wrong — Luther published the Theses to challenge the Church, not to support it.",
+          correctChoiceId: "", orderIndex: 3,
+          choices: { create: [
+            { text: "Luther's approval of the Catholic Church's practice of selling indulgences as a legitimate source of revenue", isCorrect: false, orderIndex: 0 },
+            { text: "The Church's defense of indulgences as a purely doctrinal matter unrelated to financial corruption", isCorrect: false, orderIndex: 1 },
+            { text: "Criticism of Church financial corruption, specifically the sale of indulgences to fund papal building projects", isCorrect: true, orderIndex: 2 },
+            { text: "Luther's attempt to reform the Church from within by proposing minor improvements to the indulgence system", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "Which of the following developments most directly enabled Luther's 95 Theses to spark a Reformation across Europe?",
+          passage: "\"Out of love for the truth and the desire to bring it to light, the following propositions will be discussed at Wittenberg, under the presidency of the Reverend Father Martin Luther... Thesis 27: There is no divine authority for preaching that the soul flies out of the purgatory immediately the money clinks in the collection-box. Thesis 86: Why does the Pope, whose wealth today is greater than the wealth of the richest Crassus, build the basilica of St. Peter with the money of poor believers rather than with his own money?\"\n— Martin Luther, 95 Theses (selected), 1517",
+          explanation: "Correct: (A) Gutenberg's printing press (c. 1440) made it possible to distribute Luther's writings rapidly and cheaply across Europe. Within weeks, the 95 Theses had spread across Germany; within months, across Europe. Previous reformers (Jan Hus, John Wycliffe) had been suppressed partly because their ideas spread slowly. (B) is wrong — the Church opposed Luther. (C) is wrong — the Reformation was about religion, though politics played a role. (D) is wrong — Erasmus supported Church reform but did not support Luther's break with Rome.",
+          correctChoiceId: "", orderIndex: 4,
+          choices: { create: [
+            { text: "The printing press allowed Luther's ideas to spread rapidly across Europe, reaching audiences that previous reformers had never been able to reach", isCorrect: true, orderIndex: 0 },
+            { text: "Pope Leo X's decision to publish and discuss Luther's Theses publicly, inadvertently spreading his ideas", isCorrect: false, orderIndex: 1 },
+            { text: "The Holy Roman Emperor's support for religious reform that allowed Luther's movement to grow without opposition", isCorrect: false, orderIndex: 2 },
+            { text: "Erasmus's public endorsement of Luther's theology that gave the Reformation intellectual credibility", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "Luther's challenge in the passage above most directly contributed to which of the following long-term consequences?",
+          passage: "\"Out of love for the truth and the desire to bring it to light, the following propositions will be discussed at Wittenberg, under the presidency of the Reverend Father Martin Luther... Thesis 27: There is no divine authority for preaching that the soul flies out of the purgatory immediately the money clinks in the collection-box. Thesis 86: Why does the Pope, whose wealth today is greater than the wealth of the richest Crassus, build the basilica of St. Peter with the money of poor believers rather than with his own money?\"\n— Martin Luther, 95 Theses (selected), 1517",
+          explanation: "Correct: (D) Luther's challenge to papal authority — by claiming Scripture alone (sola scriptura) as the basis for Christian truth — broke the Catholic Church's monopoly on scriptural interpretation, eventually producing hundreds of Protestant denominations and a century of religious warfare (Thirty Years' War, 1618–1648). (A) is wrong — the Church lost power rather than regained it. (B) is wrong — Luther opposed peasant revolts in 1525. (C) is wrong — secularism grew from the Wars of Religion but was not Luther's intent.",
+          correctChoiceId: "", orderIndex: 5,
+          choices: { create: [
+            { text: "The strengthening of papal authority as the Church successfully suppressed the Reformation through the Inquisition", isCorrect: false, orderIndex: 0 },
+            { text: "The German Peasants' War in which Luther led a social revolution against feudal landlords", isCorrect: false, orderIndex: 1 },
+            { text: "The immediate secularization of European society as religious authority collapsed", isCorrect: false, orderIndex: 2 },
+            { text: "The permanent fragmentation of Western Christianity into competing denominations and a century of religious conflict", isCorrect: true, orderIndex: 3 },
+          ]},
+        },
+
+        // ── STIMULUS C: Galileo / Scientific Revolution (Qs 7-9) ──
+        {
+          prompt: "The account above most directly reflects which of the following conflicts of the Scientific Revolution?",
+          passage: "\"I was in Rome, before the Holy Office, and was made to abjure, curse, and detest the aforesaid errors and heresies... being that I held and believed that the sun is the centre of the world and immovable, and that the earth is not the centre... After the abjuration they released me, but only to the custody of my villa at Arcetri... and here I end, blind, deaf, broken, useless, awaiting the end.\"\n— Galileo Galilei, letter, c. 1638 (adapted)",
+          explanation: "Correct: (B) Galileo's condemnation by the Inquisition for supporting the heliocentric Copernican theory directly illustrates the conflict between the new empirical science (based on observation through the telescope) and Church authority (based on Scripture and Aristotelian cosmology). (A) is wrong — Galileo was using observation, not just mathematics. (C) is wrong — Galileo was condemned for heliocentrism, which challenged both Scripture and Aristotle. (D) is wrong — Galileo was a devout Catholic; the conflict was not between faith and atheism.",
+          correctChoiceId: "", orderIndex: 6,
+          choices: { create: [
+            { text: "The conflict between mathematicians and experimental scientists over the proper method of scientific inquiry", isCorrect: false, orderIndex: 0 },
+            { text: "The conflict between empirical scientific observation and Church authority based on Scripture and Aristotelian cosmology", isCorrect: true, orderIndex: 1 },
+            { text: "Protestant challenges to Catholic teaching that inspired natural philosophers to seek alternative worldviews", isCorrect: false, orderIndex: 2 },
+            { text: "The conflict between religious faith and atheism that the Scientific Revolution allegedly produced", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The passage above most directly illustrates which of the following broader consequences of the Scientific Revolution?",
+          passage: "\"I was in Rome, before the Holy Office, and was made to abjure, curse, and detest the aforesaid errors and heresies... being that I held and believed that the sun is the centre of the world and immovable, and that the earth is not the centre... After the abjuration they released me, but only to the custody of my villa at Arcetri... and here I end, blind, deaf, broken, useless, awaiting the end.\"\n— Galileo Galilei, letter, c. 1638 (adapted)",
+          explanation: "Correct: (C) Galileo's case illustrates the long-term shift in European intellectual authority: as scientific observation produced results that contradicted Church teaching, the Church's ability to suppress new knowledge weakened. Over the following century, natural philosophy became increasingly independent of theological authority — a key cause of the Enlightenment. (A) is wrong — the Church suppressed Galileo; science won in the long run. (B) is wrong — the Reformation was a separate movement. (D) is wrong — Galileo's work was mathematical and observational, not technological.",
+          correctChoiceId: "", orderIndex: 7,
+          choices: { create: [
+            { text: "How the Catholic Church successfully contained scientific inquiry within acceptable theological boundaries", isCorrect: false, orderIndex: 0 },
+            { text: "How the Protestant Reformation directly inspired scientists to challenge Catholic natural philosophy", isCorrect: false, orderIndex: 1 },
+            { text: "How conflicts between scientific observation and Church authority gradually shifted European intellectual life toward secular rationalism", isCorrect: true, orderIndex: 2 },
+            { text: "How the Scientific Revolution was primarily driven by technological improvements in navigation and warfare", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "A historian would most likely use Galileo's case as evidence to support which of the following arguments about the relationship between the Scientific Revolution and the Enlightenment?",
+          passage: "\"I was in Rome, before the Holy Office, and was made to abjure, curse, and detest the aforesaid errors and heresies... being that I held and believed that the sun is the centre of the world and immovable, and that the earth is not the centre... After the abjuration they released me, but only to the custody of my villa at Arcetri... and here I end, blind, deaf, broken, useless, awaiting the end.\"\n— Galileo Galilei, letter, c. 1638 (adapted)",
+          explanation: "Correct: (D) Enlightenment thinkers (Voltaire, Diderot, d'Alembert) frequently cited the Church's persecution of Galileo as a prime example of religious superstition obstructing human progress — the case became a foundational narrative for the Enlightenment critique of institutional religion and the defense of free inquiry. (A) is wrong — Galileo was a scientist, not an Enlightenment philosopher. (B) is wrong — Enlightenment thinkers were MORE critical of the Church because of Galileo. (C) is wrong — Enlightenment thinkers embraced Newtonian science, not Church authority.",
+          correctChoiceId: "", orderIndex: 8,
+          choices: { create: [
+            { text: "Galileo's work established the philosophical foundations of Enlightenment rationalism before Descartes or Locke", isCorrect: false, orderIndex: 0 },
+            { text: "Galileo's trial reconciled the Church with scientific inquiry, enabling the Enlightenment to proceed without religious opposition", isCorrect: false, orderIndex: 1 },
+            { text: "Enlightenment thinkers rejected natural science in favor of social philosophy after Galileo's persecution", isCorrect: false, orderIndex: 2 },
+            { text: "Enlightenment thinkers used Galileo's persecution as a foundational example of religious superstition obstructing free inquiry and human progress", isCorrect: true, orderIndex: 3 },
+          ]},
+        },
+
+        // ── STIMULUS D: Louis XIV / Absolutism (Qs 10-12) ──
+        {
+          prompt: "The excerpt above most directly reflects which of the following features of absolute monarchy?",
+          passage: "\"L'état, c'est moi.\" [The state, it is I.]\n\"It is legal because I wish it.\"\n\"The royal throne is not the throne of a man, but the throne of God himself... Kings are ministers of God and lieutenant-governors of God on earth.\"\n— Statements attributed to Louis XIV of France (1638–1715); last quotation from Bishop Bossuet's Political Treatise, 1709",
+          explanation: "Correct: (A) The passages reflect the core doctrine of divine right absolutism: the monarch is accountable only to God, not to parliament, aristocracy, or law. Louis XIV embodied this through Versailles, control of the nobility, and centralization of French administration. (B) is wrong — Louis XIV claimed authority beyond the law, not within it. (C) is wrong — absolutism concentrated power; it did not share it. (D) is wrong — Louis XIV famously revoked the Edict of Nantes (1685) and suppressed religious minorities.",
+          correctChoiceId: "", orderIndex: 9,
+          choices: { create: [
+            { text: "The divine right of kings doctrine that made the monarch's authority absolute, answerable only to God", isCorrect: true, orderIndex: 0 },
+            { text: "Constitutional monarchy in which the king's authority was limited by law and representative assemblies", isCorrect: false, orderIndex: 1 },
+            { text: "The aristocratic tradition of shared governance between the king and the noble estates", isCorrect: false, orderIndex: 2 },
+            { text: "Religious toleration as a foundation for royal authority in a multiconfessional state", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "Louis XIV's construction of Versailles most directly served which of the following political purposes?",
+          passage: "\"L'état, c'est moi.\" [The state, it is I.]\n\"It is legal because I wish it.\"\n\"The royal throne is not the throne of a man, but the throne of God himself... Kings are ministers of God and lieutenant-governors of God on earth.\"\n— Statements attributed to Louis XIV of France (1638–1715); last quotation from Bishop Bossuet's Political Treatise, 1709",
+          explanation: "Correct: (C) Louis XIV required the great nobles of France to live at Versailles, removing them from their regional power bases, making them dependent on royal favor, and keeping them under his surveillance. This was a key mechanism for breaking the nobility's independence and consolidating absolute power. (A) is wrong — Versailles was designed to display French power, not military might. (B) is wrong — Versailles isolated the nobility from their estates, not the people from their king. (D) is wrong — Versailles glorified the king, not the Church.",
+          correctChoiceId: "", orderIndex: 10,
+          choices: { create: [
+            { text: "To create a military headquarters from which Louis could direct French wars of expansion", isCorrect: false, orderIndex: 0 },
+            { text: "To physically distance the king from the people of Paris, who had threatened the monarchy during the Fronde", isCorrect: false, orderIndex: 1 },
+            { text: "To concentrate the French nobility at court, making them dependent on royal favor and undermining their independent regional power", isCorrect: true, orderIndex: 2 },
+            { text: "To demonstrate the power of the Catholic Church by building the largest religious complex in Europe", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "Louis XIV's absolutism was most directly challenged by which of the following Enlightenment critiques?",
+          passage: "\"L'état, c'est moi.\" [The state, it is I.]\n\"It is legal because I wish it.\"\n\"The royal throne is not the throne of a man, but the throne of God himself... Kings are ministers of God and lieutenant-governors of God on earth.\"\n— Statements attributed to Louis XIV of France (1638–1715); last quotation from Bishop Bossuet's Political Treatise, 1709",
+          explanation: "Correct: (B) John Locke (Two Treatises of Government, 1689) directly contradicted divine right theory by arguing that government authority comes not from God but from the consent of the governed, and that citizens have the right to overthrow a government that violates their natural rights. This argument was used by American and French revolutionaries against absolutism. (A) is wrong — Machiavelli's Prince advised rulers on maintaining power, not on divine right. (C) is wrong — Rousseau's 'general will' was another Enlightenment critique, but Locke's natural rights theory was the most direct challenge to divine right. (D) is wrong — Voltaire criticized religious intolerance, not specifically divine right theory.",
+          correctChoiceId: "", orderIndex: 11,
+          choices: { create: [
+            { text: "Machiavelli's argument that rulers should use any means necessary to maintain state power", isCorrect: false, orderIndex: 0 },
+            { text: "Locke's argument that legitimate government derives from the consent of the governed, not from divine authority", isCorrect: true, orderIndex: 1 },
+            { text: "Rousseau's theory of the 'general will' that required all citizens to submit to collective decisions", isCorrect: false, orderIndex: 2 },
+            { text: "Voltaire's criticism of religious intolerance that undermined the Church's support for monarchy", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+
+        // ── STIMULUS E: Declaration of the Rights of Man (Qs 13-15) ──
+        {
+          prompt: "The document above most directly reflects the influence of which of the following intellectual movements?",
+          passage: "\"Article 1: Men are born and remain free and equal in rights. Social distinctions may be founded only upon the general good.\nArticle 2: The aim of all political association is the preservation of the natural and imprescriptible rights of man. These rights are liberty, property, security, and resistance to oppression.\nArticle 3: The principle of all sovereignty resides essentially in the nation. No body nor individual may exercise any authority which does not proceed directly from the nation.\"\n— Declaration of the Rights of Man and of the Citizen, France, August 26, 1789",
+          explanation: "Correct: (A) The Declaration directly reflects Enlightenment philosophy: Locke's natural rights (liberty, property, security), Rousseau's popular sovereignty ('the nation'), and the American Declaration's influence. The language of 'natural and imprescriptible rights' is specifically Enlightenment terminology. (B) is wrong — mercantilism was an economic theory about state wealth, not rights. (C) is wrong — Counter-Reformation emphasized Church authority, not individual rights. (D) is wrong — the document is about political rights, not scientific method.",
+          correctChoiceId: "", orderIndex: 12,
+          choices: { create: [
+            { text: "Enlightenment philosophy, particularly natural rights theory and popular sovereignty", isCorrect: true, orderIndex: 0 },
+            { text: "Mercantilist economic theory that linked national wealth to political rights", isCorrect: false, orderIndex: 1 },
+            { text: "Counter-Reformation Catholic social teaching about the dignity of the individual", isCorrect: false, orderIndex: 2 },
+            { text: "The Scientific Revolution's empirical method applied to political philosophy", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The document above most directly challenged which of the following features of pre-revolutionary French society?",
+          passage: "\"Article 1: Men are born and remain free and equal in rights. Social distinctions may be founded only upon the general good.\nArticle 2: The aim of all political association is the preservation of the natural and imprescriptible rights of man. These rights are liberty, property, security, and resistance to oppression.\nArticle 3: The principle of all sovereignty resides essentially in the nation. No body nor individual may exercise any authority which does not proceed directly from the nation.\"\n— Declaration of the Rights of Man and of the Citizen, France, August 26, 1789",
+          explanation: "Correct: (C) The Declaration attacked the Ancien Régime's fundamental structures: Article 1 challenged hereditary aristocracy (social distinctions based on birth, not merit); Article 3 challenged royal absolutism (sovereignty belongs to the nation, not the king). (A) is wrong — the document protects property rights. (B) is wrong — the Declaration says social distinctions are only valid if they serve 'the general good' — it challenged hereditary privilege but not all hierarchy. (D) is wrong — the document was issued during the Revolution, not before it.",
+          correctChoiceId: "", orderIndex: 13,
+          choices: { create: [
+            { text: "The property rights of French peasants that the Declaration sought to abolish in favor of collective ownership", isCorrect: false, orderIndex: 0 },
+            { text: "All forms of social distinction and inequality, calling for complete economic equality", isCorrect: false, orderIndex: 1 },
+            { text: "The hereditary aristocracy (noble privilege based on birth) and royal absolutism (sovereignty resting in the king)", isCorrect: true, orderIndex: 2 },
+            { text: "The power of the Catholic Church, whose influence had dominated French politics since Charlemagne", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "A critic writing in 1792 would most likely point out which of the following limitations of the document above?",
+          passage: "\"Article 1: Men are born and remain free and equal in rights. Social distinctions may be founded only upon the general good.\nArticle 2: The aim of all political association is the preservation of the natural and imprescriptible rights of man. These rights are liberty, property, security, and resistance to oppression.\nArticle 3: The principle of all sovereignty resides essentially in the nation. No body nor individual may exercise any authority which does not proceed directly from the nation.\"\n— Declaration of the Rights of Man and of the Citizen, France, August 26, 1789",
+          explanation: "Correct: (B) Olympe de Gouges published her Declaration of the Rights of Woman and of the Female Citizen in 1791, directly challenging the male-only interpretation of 'the Rights of Man' — pointing out that universal language actually excluded women from political rights, property rights, and representation. (A) is wrong — the document explicitly protects property rights. (C) is wrong — slavery in French colonies was a valid critique (Haitian Revolution), but the most direct limitation was the exclusion of women from political rights. (D) is wrong — the document specifically addresses political rights, not economic ones.",
+          correctChoiceId: "", orderIndex: 14,
+          choices: { create: [
+            { text: "The document's protection of property rights that prevented redistribution of noble wealth to the poor", isCorrect: false, orderIndex: 0 },
+            { text: "The document's use of 'men' excluded women from the universal rights it proclaimed, as Olympe de Gouges pointed out in 1791", isCorrect: true, orderIndex: 1 },
+            { text: "The document's silence on slavery in French colonies, which continued despite its universal language", isCorrect: false, orderIndex: 1 },
+            { text: "The document's failure to address economic inequality, limiting rights to those who owned property", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+
+        // ── STIMULUS F: Data on French Estates / Economic Inequality (Qs 16-18) ──
+        {
+          prompt: "The data above most directly supports which of the following conclusions about pre-revolutionary France?",
+          passage: "[TABLE: French Society Under the Ancien Régime, c. 1789]\n| Estate       | % of Population | % of Land Owned | Tax Burden        | Political Rights |\n|--------------|-----------------|-----------------|-------------------|------------------|\n| First Estate (Clergy) | 0.5%  | ~10%            | Exempt (paid 'gift' to king) | Represented in Estates-General |\n| Second Estate (Nobility) | 1.5% | ~25%         | Largely exempt    | Represented in Estates-General |\n| Third Estate (Everyone else) | 98% | ~65%   | Bore full burden of taxation | Underrepresented in Estates-General |",
+          explanation: "Correct: (A) The table shows a society of radical legal inequality: 98% of the population (Third Estate — peasants, bourgeoisie, urban workers) bore the full tax burden while the privileged estates (Clergy and Nobility, 2% of the population) were largely exempt. This fiscal injustice was the immediate cause of the 1789 financial crisis that triggered the Revolution. (B) is wrong — the nobility owned 25%, not a minority, of the land. (C) is wrong — the Third Estate owned 65% of land but bore all taxes. (D) is wrong — the table shows the Third Estate was massively underrepresented.",
+          correctChoiceId: "", orderIndex: 15,
+          choices: { create: [
+            { text: "A deeply unequal tax system in which the 98% who were commoners bore the full fiscal burden while privileged estates were exempt", isCorrect: true, orderIndex: 0 },
+            { text: "A land-ownership pattern in which the nobility owned the vast majority of French agricultural land", isCorrect: false, orderIndex: 1 },
+            { text: "A system in which the Third Estate paid no taxes because they owned most of the productive land", isCorrect: false, orderIndex: 2 },
+            { text: "A politically balanced system in which the Third Estate's numerical majority gave it proportional representation", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The data in the table above most directly explains which of the following causes of the French Revolution?",
+          passage: "[TABLE: French Society Under the Ancien Régime, c. 1789]\n| Estate       | % of Population | % of Land Owned | Tax Burden        | Political Rights |\n|--------------|-----------------|-----------------|-------------------|------------------|\n| First Estate (Clergy) | 0.5%  | ~10%            | Exempt (paid 'gift' to king) | Represented in Estates-General |\n| Second Estate (Nobility) | 1.5% | ~25%         | Largely exempt    | Represented in Estates-General |\n| Third Estate (Everyone else) | 98% | ~65%   | Bore full burden of taxation | Underrepresented in Estates-General |",
+          explanation: "Correct: (C) When Louis XVI convened the Estates-General in 1789 to address France's bankruptcy, the Third Estate demanded proportional voting (since it was 98% of the population). The nobility and clergy refused, insisting on voting by estate (each estate one vote), which guaranteed them a permanent majority. This political deadlock drove the Third Estate to form the National Assembly — the opening act of the Revolution. (A) is wrong — the table shows the bourgeoisie as part of the Third Estate bearing the tax burden; the conflict was primarily about taxation and representation. (B) is wrong — the Church is listed as partially exempt, not as triggering the Revolution through taxation. (D) is wrong — the table shows the THIRD Estate bearing taxes, not being exempt.",
+          correctChoiceId: "", orderIndex: 16,
+          choices: { create: [
+            { text: "The bourgeoisie's desire to protect their economic privileges from noble encroachment", isCorrect: false, orderIndex: 0 },
+            { text: "The Church's decision to begin taxing the peasantry, triggering the peasant uprisings of 1789", isCorrect: false, orderIndex: 1 },
+            { text: "The Third Estate's demand for proportional voting at the Estates-General that the privileged orders refused, driving the constitutional crisis of 1789", isCorrect: true, orderIndex: 2 },
+            { text: "The nobility's refusal to pay any taxes, which bankrupted France and forced Louis XVI to seize noble land", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "Which of the following Enlightenment principles most directly challenged the system shown in the table above?",
+          passage: "[TABLE: French Society Under the Ancien Régime, c. 1789]\n| Estate       | % of Population | % of Land Owned | Tax Burden        | Political Rights |\n|--------------|-----------------|-----------------|-------------------|------------------|\n| First Estate (Clergy) | 0.5%  | ~10%            | Exempt (paid 'gift' to king) | Represented in Estates-General |\n| Second Estate (Nobility) | 1.5% | ~25%         | Largely exempt    | Represented in Estates-General |\n| Third Estate (Everyone else) | 98% | ~65%   | Bore full burden of taxation | Underrepresented in Estates-General |",
+          explanation: "Correct: (A) The Enlightenment principle of natural equality — that all people are born with equal rights (Locke, Rousseau, Jefferson) — directly challenged hereditary privilege. The French Ancien Régime was built on legally inherited inequality; the Enlightenment said this was neither natural nor just. (B) is wrong — religious toleration (Voltaire) was an Enlightenment principle but not the one most directly challenging the Estate system. (C) is wrong — free trade was an economic Enlightenment idea, not directly about political representation. (D) is wrong — separation of powers (Montesquieu) addressed government structure, not social hierarchy.",
+          correctChoiceId: "", orderIndex: 17,
+          choices: { create: [
+            { text: "Natural equality and natural rights — the principle that all people are born with equal rights regardless of birth status", isCorrect: true, orderIndex: 0 },
+            { text: "Religious toleration — the principle that the Church should not participate in political governance", isCorrect: false, orderIndex: 1 },
+            { text: "Free trade — the principle that economic markets should operate without aristocratic monopolies", isCorrect: false, orderIndex: 2 },
+            { text: "Separation of powers — the principle that government authority should be divided between legislative, executive, and judicial branches", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+
+        // ── STIMULUS G: Reign of Terror (Qs 19-20) ──
+        {
+          prompt: "The speech above most directly reflects which of the following aspects of the French Revolution?",
+          passage: "\"If the basis of popular government in time of peace is virtue, the basis of popular government during a revolution is both virtue and terror: virtue, without which terror is murderous; terror, without which virtue is powerless. The terror is nothing but justice, prompt, severe, inflexible; it is therefore an emanation of virtue.\"\n— Maximilien Robespierre, February 5, 1794",
+          explanation: "Correct: (B) Robespierre's speech is the intellectual justification for the Reign of Terror (1793–1794), in which the Committee of Public Safety executed approximately 17,000 people in the name of protecting the Revolution from enemies. Robespierre argued that terror was a form of revolutionary virtue — a logic that led to his own execution in Thermidor (July 1794). (A) is wrong — Robespierre defended the Terror, not criticized it. (C) is wrong — the Terror occurred during the radical phase, not the moderate Constitutional Monarchy phase. (D) is wrong — the Terror was a domestic policy of mass political execution, not a foreign policy.",
+          correctChoiceId: "", orderIndex: 18,
+          choices: { create: [
+            { text: "Moderate republican criticism of the Jacobin radicals who were executing innocent citizens", isCorrect: false, orderIndex: 0 },
+            { text: "The radical Jacobin justification for the Reign of Terror as a necessary instrument of revolutionary virtue", isCorrect: true, orderIndex: 1 },
+            { text: "The Constitutional Monarchy phase of the Revolution, when the king's powers were being limited peacefully", isCorrect: false, orderIndex: 2 },
+            { text: "French foreign policy justifying military campaigns against neighboring monarchies", isCorrect: false, orderIndex: 3 },
+          ]},
+        },
+        {
+          prompt: "The French Revolution's progression from the ideals in the Declaration of the Rights of Man to the terror described by Robespierre above most directly supports which of the following historical arguments?",
+          passage: "\"If the basis of popular government in time of peace is virtue, the basis of popular government during a revolution is both virtue and terror: virtue, without which terror is murderous; terror, without which virtue is powerless. The terror is nothing but justice, prompt, severe, inflexible; it is therefore an emanation of virtue.\"\n— Maximilien Robespierre, February 5, 1794",
+          explanation: "Correct: (D) The trajectory from the Declaration of the Rights of Man (1789) to the Terror (1793–94) to Napoleon's dictatorship (1799) illustrates a recurring pattern in revolutionary history: that revolutions which begin with Enlightenment ideals often produce authoritarian regimes as instability escalates. Edmund Burke predicted this in 1790; later historians connected it to the Russian and Chinese revolutions. (A) is wrong — the French Revolution did produce major social changes, so it was not purely cyclical in that sense. (B) is wrong — Robespierre was not a forerunner of Napoleon; he was executed before Napoleon's coup. (C) is wrong — the Terror showed the dangers of unchecked popular sovereignty, not its virtue.",
+          correctChoiceId: "", orderIndex: 19,
+          choices: { create: [
+            { text: "That the French Revolution was purely cyclical, returning France to the same conditions that existed before 1789", isCorrect: false, orderIndex: 0 },
+            { text: "That Robespierre's Terror was a deliberate strategy to prepare France for Napoleon's eventual takeover", isCorrect: false, orderIndex: 1 },
+            { text: "That popular sovereignty, once unleashed, naturally produces virtuous and stable governments", isCorrect: false, orderIndex: 2 },
+            { text: "That revolutions inspired by Enlightenment ideals often produce authoritarian outcomes when revolutionary governments face internal and external threats", isCorrect: true, orderIndex: 3 },
+          ]},
+        },
+
+      ]},
+    },
+    include: { questions: { include: { choices: true } } },
+  })
+  await fixCorrectChoices(quiz6)
+  console.log("✓ Created quiz:", quiz6.title, `(${quiz6.questions.length} questions)`)
+
   console.log("\n✨ Database seeded successfully!")
   console.log("\nCredentials:")
   console.log("  Admin: admin@example.com / admin123")
