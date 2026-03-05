@@ -1,44 +1,29 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-// GET /api/sets/public - Get public study sets
+// GET /api/sets/public - Get public flashcard sets
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const search = searchParams.get("search")
-    const tagSlug = searchParams.get("tag")
 
     const where: Record<string, unknown> = { isPublic: true }
 
     if (search) {
       where.OR = [
         { title: { contains: search } },
-        { description: { contains: search } }
+        { description: { contains: search } },
       ]
     }
 
-    if (tagSlug) {
-      where.tags = { some: { tag: { slug: tagSlug } } }
-    }
-
-    const sets = await prisma.studySet.findMany({
+    const sets = await prisma.flashcardSet.findMany({
       where,
       include: {
-        owner: {
-          select: { id: true, name: true, email: true }
-        },
+        user: { select: { id: true, name: true, email: true } },
         _count: { select: { cards: true } },
-        tags: {
-          include: {
-            tag: true
-          }
-        }
       },
-      orderBy: [
-        { isPremade: "desc" },
-        { createdAt: "desc" }
-      ],
-      take: 50
+      orderBy: { createdAt: "desc" },
+      take: 50,
     })
 
     return NextResponse.json(sets)
@@ -50,3 +35,4 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+

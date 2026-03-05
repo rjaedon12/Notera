@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 
-// GET /api/sets/[setId]/progress - Get progress for cards in a set
+// GET /api/sets/[setId]/progress - Get card-level progress for a set
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ setId: string }> }
@@ -15,9 +15,9 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const set = await prisma.studySet.findUnique({
+    const set = await prisma.flashcardSet.findUnique({
       where: { id: setId },
-      include: { cards: true }
+      include: { cards: true },
     })
 
     if (!set) {
@@ -26,17 +26,17 @@ export async function GET(
 
     const cardIds = set.cards.map((c: { id: string }) => c.id)
 
-    const progressRecords = await prisma.progress.findMany({
+    const progressRecords = await prisma.cardProgress.findMany({
       where: {
         userId: session.user.id,
-        cardId: { in: cardIds }
-      }
+        flashcardId: { in: cardIds },
+      },
     })
 
-    // Return as a map of cardId -> progress
+    // Return as a map of flashcardId -> progress
     const progressMap: Record<string, typeof progressRecords[0]> = {}
-    progressRecords.forEach((p: typeof progressRecords[0]) => {
-      progressMap[p.cardId] = p
+    progressRecords.forEach((p) => {
+      progressMap[p.flashcardId] = p
     })
 
     return NextResponse.json(progressMap)
@@ -48,3 +48,4 @@ export async function GET(
     )
   }
 }
+

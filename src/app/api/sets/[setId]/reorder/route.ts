@@ -15,15 +15,15 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const set = await prisma.studySet.findUnique({
-      where: { id: setId }
+    const set = await prisma.flashcardSet.findUnique({
+      where: { id: setId },
     })
 
     if (!set) {
       return NextResponse.json({ error: "Set not found" }, { status: 404 })
     }
 
-    if (set.ownerId !== session.user.id) {
+    if (set.userId !== session.user.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
@@ -37,12 +37,12 @@ export async function POST(
       )
     }
 
-    // Update each card's orderIndex
+    // Update each card's order
     await Promise.all(
       cardIds.map((cardId: string, index: number) =>
-        prisma.card.update({
+        prisma.flashcard.update({
           where: { id: cardId },
-          data: { orderIndex: index }
+          data: { order: index },
         })
       )
     )

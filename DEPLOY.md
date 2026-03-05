@@ -1,82 +1,94 @@
-# Deploying StudyApp to Vercel
+# Deploying Koda to Vercel
 
-This guide outlines the steps to deploy the `studyapp` to Vercel with a PostgreSQL database.
+Step-by-step guide for deploying the Koda study app with a Neon PostgreSQL database.
 
-## Prerequisites
+---
 
-1.  **Vercel Account**: [Sign up for Vercel](https://vercel.com/signup).
-2.  **GitHub Repository**: Push your code to a GitHub repository.
+## 1. Create a Neon Database
 
-## Step 0: Push to GitHub
+1. Go to [neon.tech](https://neon.tech) and create a free project.
+2. Copy the **pooled connection string** — it looks like:
+   ```
+   postgresql://user:password@ep-xyz-123.us-east-2.aws.neon.tech/neondb?sslmode=require
+   ```
+   This is your `DATABASE_URL`.
 
-Since you have the code ready locally, follow these steps to push it to GitHub:
+## 2. Apply the Schema
 
-1.  **Create a Repository**: Go to [GitHub - New Repository](https://github.com/new) and name it `studyapp` (or whatever you prefer). Do **NOT** initialize with README, license, or .gitignore.
-2.  **Push Code**: Run the following commands in your terminal:
-    ```bash
-    # Replace <YOUR_USERNAME> with your actual GitHub username
-    git remote add origin https://github.com/<YOUR_USERNAME>/studyapp.git
-    git branch -M main
-    git push -u origin main
-    ```
+Run this locally to push the Prisma schema to your Neon database:
 
-## Step 1: Database Setup (PostgreSQL)
+```bash
+# Set the DATABASE_URL in your terminal (or in .env)
+export DATABASE_URL="postgresql://..."
 
-Use a cloud Postgres database.
+npx prisma db push
+```
 
-1.  **Create a Database**: Use [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres), [Supabase](https://supabase.com/), or [Neon](https://neon.tech/).
-2.  **Get Connection String**: Copy the `DATABASE_URL` (e.g., `postgres://user:pass@host:5432/db`).
+Optionally seed the demo data:
 
-## Step 2: Configure Project for Production
+```bash
+npx prisma db seed
+```
 
-1.  **Update `schema.prisma`**:
-    Ensure your `datasource` provider is `postgresql`.
+## 3. Push Code to GitHub
 
-    ```prisma
-    datasource db {
-      provider = "postgresql"
-      url      = env("DATABASE_URL")
-    }
-    ```
+```bash
+git remote add origin https://github.com/<YOUR_USERNAME>/Koda.git
+git branch -M main
+git push -u origin main
+```
 
-2.  **Generate Migration**:
-    Run this locally to create the initial migration for Postgres.
-    ```bash
-    # IMPORTANT: You need a .env file with DATABASE_URL pointing to your NEW Postgres DB for this to work
-    npx prisma migrate dev --name init
-    ```
+## 4. Import Repo in Vercel
 
-## Step 3: Deploy to Vercel
+1. Go to [vercel.com/new](https://vercel.com/new).
+2. Import your GitHub repository.
+3. Select **Next.js** as the framework (Vercel auto-detects this).
 
-You can deploy using the Vercel CLI or via the Vercel Dashboard (recommended for first time).
+## 5. Add Environment Variables
 
-### Option A: Vercel Dashboard (Recommended)
+In the Vercel project settings → **Environment Variables**, add:
 
-1.  Go to the [Vercel Dashboard](https://vercel.com/dashboard).
-2.  Click **"Add New..."** -> **"Project"**.
-3.  Import your GitHub repository.
-4.  **Environment Variables**:
-    Add the following environment variables in the **"Environment Variables"** section:
+| Variable               | Value                                      |
+| :--------------------- | :----------------------------------------- |
+| `DATABASE_URL`         | Your Neon pooled connection string          |
+| `AUTH_SECRET`          | *(generate below)*                         |
+| `NEXTAUTH_URL`        | `https://your-project.vercel.app`          |
+| `GOOGLE_CLIENT_ID`    | *(optional — Google OAuth client ID)*      |
+| `GOOGLE_CLIENT_SECRET` | *(optional — Google OAuth client secret)*  |
+| `GITHUB_CLIENT_ID`    | *(optional — GitHub OAuth client ID)*      |
+| `GITHUB_CLIENT_SECRET` | *(optional — GitHub OAuth client secret)*  |
 
-    | Name | Value | Description |
-    | :--- | :--- | :--- |
-    | `DATABASE_URL` | `postgres://...` | Your full Postgres connection string |
-    | `AUTH_SECRET` | `...` | Generate with `openssl rand -base64 32` |
-    | `NEXTAUTH_URL`| `https://your-project.vercel.app` | Your production URL (Vercel will provide one, or set this later) |
+## 6. Generate `AUTH_SECRET`
 
-5.  Click **"Deploy"**.
+Run this in your terminal and paste the output into Vercel:
 
-### Option B: Vercel CLI
+```bash
+openssl rand -base64 32
+```
 
-The project now includes a `deploy` script.
+## 7. Set `NEXTAUTH_URL`
 
-1.  Run the deploy command:
-    ```bash
-    npm run deploy
-    ```
-2.  Follow the prompts to link your project and deploy.
+Set this to your Vercel production URL, e.g.:
+
+```
+https://koda-app.vercel.app
+```
+
+## 8. Deploy
+
+Click **Deploy** in Vercel. The build will automatically run:
+
+```
+prisma generate && next build
+```
+
+Vercel also runs `npm install` which triggers the `postinstall` script (`prisma generate`), ensuring the Prisma client is always up to date.
+
+---
 
 ## Troubleshooting
 
--   **Database Errors**: Ensure your `DATABASE_URL` is correct and accessible from Vercel (allow 0.0.0.0/0 IP addresses if using an external provider).
--   **Build Failures**: Check the "Build Logs" in the Vercel dashboard.
+- **Database connection errors**: Ensure `DATABASE_URL` uses the **pooled** connection string from Neon (includes `?sslmode=require`).
+- **Build failures**: Check the Vercel build logs. Most issues come from missing environment variables.
+- **Auth not working**: Make sure `AUTH_SECRET` is set and `NEXTAUTH_URL` matches your production domain.
+- **Schema changes**: After editing `prisma/schema.prisma`, run `npx prisma db push` against your Neon DB, then redeploy.

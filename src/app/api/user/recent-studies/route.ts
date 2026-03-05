@@ -11,39 +11,32 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get recent study sessions grouped by set
-    const recentSessions = await prisma.studySession.findMany({
+    // Get recent study progress grouped by set (using studyProgress model)
+    const recentProgress = await prisma.studyProgress.findMany({
       where: { userId: session.user.id },
-      orderBy: { startedAt: "desc" },
-      take: 20,
+      orderBy: { lastStudied: "desc" },
+      take: 8,
       include: {
-        studySet: {
-          include: {
+        set: {
+          select: {
+            id: true,
+            title: true,
             _count: { select: { cards: true } }
           }
         }
       }
     })
 
-    // Deduplicate by set and keep most recent
-    const seenSets = new Set<string>()
-    type SessionEntry = typeof recentSessions[number]
-    const uniqueRecent = recentSessions.filter((s: SessionEntry) => {
-      if (seenSets.has(s.setId)) return false
-      seenSets.add(s.setId)
-      return true
-    }).slice(0, 8)
-
-    const result = uniqueRecent.map((s: SessionEntry) => ({
-      id: s.id,
-      setId: s.setId,
+    const result = recentProgress.map((p) => ({
+      id: p.id,
+      setId: p.setId,
       set: {
-        id: s.studySet.id,
-        title: s.studySet.title,
-        _count: s.studySet._count
+        id: p.set.id,
+        title: p.set.title,
+        _count: { cards: p.set._count.cards }
       },
-      studiedAt: s.startedAt.toISOString(),
-      mode: s.mode
+      studiedAt: p.lastStudied.toISOString(),
+      mode: "FLASHCARD"
     }))
 
     return NextResponse.json(result)

@@ -2,139 +2,77 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { prisma } from '../lib/prisma'
 
-describe('Timeline DB Persistence (Integration)', () => {
-    
+describe('DB Persistence (Integration)', () => {
+
   const testEmail = `persistence-test-${Date.now()}@example.com`
   let userId: string
-  let resourceId: string
+  let setId: string
 
   beforeAll(async () => {
-    // Create User
     const user = await prisma.user.create({
       data: {
         email: testEmail,
-        passwordHash: 'test',
-        name: 'Persistence User'
-      }
+        password: 'test-hashed-password',
+        name: 'Persistence User',
+      },
     })
     userId = user.id
   })
 
   afterAll(async () => {
-    // Cleanup
     if (userId) {
-       await prisma.user.delete({ where: { id: userId } }).catch(() => {})
+      await prisma.user.delete({ where: { id: userId } }).catch(() => {})
     }
   })
 
-  it('should successfully save and retrieve timeline events with positions', async () => {
-    // 1. Create Resource
-    const resource = await prisma.resource.create({
+  it('should create and retrieve a flashcard set with cards', async () => {
+    // 1. Create a FlashcardSet with cards
+    const set = await prisma.flashcardSet.create({
       data: {
-        title: 'Integration Test Timeline',
-        type: 'TIMELINE',
-        ownerId: userId,
-        visibility: 'PRIVATE'
-      }
-    })
-    resourceId = resource.id
-
-    // 2. Simulate Save Data (Payload)
-    // This matches what the frontend sends after my fix
-    const eventsPayload = [
-      {
-        id: `evt-${Date.now()}-1`,
-        title: 'Event A',
-        dateLabel: '2020',
-        body: 'Desc A',
-        sortOrder: 0,
-        posX: 50.5,
-        posY: 100.2
+        title: 'Integration Test Set',
+        userId,
+        cards: {
+          create: [
+            { term: 'Term A', definition: 'Definition A', order: 0 },
+            { term: 'Term B', definition: 'Definition B', order: 1 },
+          ],
+        },
       },
-      {
-        id: `evt-${Date.now()}-2`,
-        title: 'Event B',
-        dateLabel: '2021',
-        body: 'Desc B',
-        sortOrder: 1,
-        posX: 200,
-        posY: 300
-      }
-    ]
+      include: { cards: { orderBy: { order: 'asc' } } },
+    })
+    setId = set.id
 
-    const arrowsPayload = [
-        {
-            fromEventId: eventsPayload[0].id,
-            toEventId: eventsPayload[1].id,
-            label: 'Connector'
-        }
-    ]
+    expect(set).toBeDefined()
+    expect(set.title).toBe('Integration Test Set')
+    expect(set.cards).toHaveLength(2)
+    expect(set.cards[0].term).toBe('Term A')
+    expect(set.cards[1].term).toBe('Term B')
+  })
 
-    // 3. Perform Write (replicating API Route transaction)
-    await prisma.$transaction(async (tx) => {
-        // Create/Update Events
-        // Since these are new, we create them
-        await tx.timelineEvent.createMany({
-            data: eventsPayload.map(e => ({
-                id: e.id,
-                resourceId: resource.id,
-                title: e.title,
-                dateLabel: e.dateLabel,
-                body: e.body,
-                sortOrder: e.sortOrder,
-                posX: e.posX,
-                posY: e.posY
-            }))
-        })
-
-        // Create Arrows
-        await tx.timelineArrow.createMany({
-            data: arrowsPayload.map(a => ({
-                fromEventId: a.fromEventId,
-                toEventId: a.toEventId,
-                label: a.label
-            }))
-        })
-        
-        // Touch Resource
-        await tx.resource.update({
-            where: { id: resource.id },
-            data: { updatedAt: new Date() }
-        })
+  it('should record and retrieve study progress', async () => {
+    const progress = await prisma.studyProgress.create({
+      data: {
+        userId,
+        setId,
+        mode: 'FLASHCARD',
+        masteredCount: 1,
+        totalCards: 2,
+        score: 50,
+      },
     })
 
-    // 4. Verify Read
-    const savedResource = await prisma.resource.findUnique({
-        where: { id: resource.id },
-        include: {
-            timelineEvents: {
-                include: { arrowsFrom: true },
-                orderBy: { sortOrder: 'asc' }
-            }
-        }
+    expect(progress).toBeDefined()
+    expect(progress.masteredCount).toBe(1)
+    expect(progress.totalCards).toBe(2)
+    expect(progress.score).toBe(50)
+
+    // Verify it can be retrieved with composite unique key
+    const found = await prisma.studyProgress.findUnique({
+      where: {
+        userId_setId_mode: { userId, setId, mode: 'FLASHCARD' },
+      },
     })
-
-    expect(savedResource).toBeDefined()
-    expect(savedResource?.timelineEvents).toHaveLength(2)
-    
-    const evt1 = savedResource?.timelineEvents[0]
-    const evt2 = savedResource?.timelineEvents[1]
-
-    expect(evt1?.posX).toBe(50.5)
-    expect(evt1?.posY).toBe(100.2)
-    expect(evt1?.title).toBe('Event A')
-
-    expect(evt2?.posX).toBe(200)
-    expect(evt2?.posY).toBe(300)
-
-    // Check Arrow
-    expect(evt1?.arrowsFrom).toHaveLength(1)
-    expect(evt1?.arrowsFrom[0].toEventId).toBe(evt2?.id)
-    expect(evt1?.arrowsFrom[0].label).toBe('Connector')
-    
-    // Check UpdatedAt is recent
-    const now = new Date()
-    const diff = now.getTime() - savedResource!.updatedAt.getTime()
-    expect(diff).toBeLessThan(5000) // Changed within last 5 seconds
+    expect(found).toBeDefined()
+    expect(found?.masteredCount).toBe(1)
   })
 })

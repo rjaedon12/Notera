@@ -15,9 +15,9 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const originalSet = await prisma.studySet.findUnique({
+    const originalSet = await prisma.flashcardSet.findUnique({
       where: { id: setId },
-      include: { cards: true }
+      include: { cards: true },
     })
 
     if (!originalSet) {
@@ -25,28 +25,28 @@ export async function POST(
     }
 
     // Check access - can duplicate if owner or if public
-    if (!originalSet.isPublic && originalSet.ownerId !== session.user.id) {
+    if (!originalSet.isPublic && originalSet.userId !== session.user.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
-    const newSet = await prisma.studySet.create({
+    const newSet = await prisma.flashcardSet.create({
       data: {
         title: `${originalSet.title} (Copy)`,
         description: originalSet.description,
         isPublic: false,
-        ownerId: session.user.id,
+        userId: session.user.id,
         cards: {
-          create: originalSet.cards.map((card: { term: string; definition: string; orderIndex: number }) => ({
+          create: originalSet.cards.map((card: { term: string; definition: string; order: number }) => ({
             term: card.term,
             definition: card.definition,
-            orderIndex: card.orderIndex
-          }))
-        }
+            order: card.order,
+          })),
+        },
       },
       include: {
         cards: true,
-        _count: { select: { cards: true } }
-      }
+        _count: { select: { cards: true } },
+      },
     })
 
     return NextResponse.json(newSet, { status: 201 })

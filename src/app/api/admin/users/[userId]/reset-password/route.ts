@@ -61,20 +61,6 @@ export async function POST(
       }
     })
 
-    // Create audit log
-    await prisma.auditLog.create({
-      data: {
-        action: "GENERATE_RESET_TOKEN",
-        targetType: "User",
-        targetId: userId,
-        adminId: session.user.id,
-        details: JSON.stringify({
-          userEmail: user.email,
-          expiresAt: resetTokenExpiry.toISOString()
-        })
-      }
-    })
-
     // Return the reset link (token is shown only once)
     // In production, this URL should use the actual domain
     const resetLink = `/reset-password?token=${resetToken}`

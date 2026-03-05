@@ -19,7 +19,7 @@ export async function GET() {
         role: true,
         createdAt: true,
         _count: {
-          select: { studySets: true }
+          select: { sets: true }
         }
       },
       orderBy: { createdAt: "desc" }

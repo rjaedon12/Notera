@@ -21,20 +21,20 @@ export async function GET(
       include: {
         members: {
           include: {
-            user: { select: { id: true, name: true, email: true } }
-          }
+            user: { select: { id: true, name: true, email: true } },
+          },
         },
         sets: {
           include: {
-            studySet: {
+            set: {
               include: {
-                owner: { select: { id: true, name: true } },
-                _count: { select: { cards: true } }
-              }
-            }
-          }
-        }
-      }
+                user: { select: { id: true, name: true } },
+                _count: { select: { cards: true } },
+              },
+            },
+          },
+        },
+      },
     })
 
     if (!group) {
@@ -72,12 +72,12 @@ export async function DELETE(
     const { groupId } = await params
 
     // Check if user is owner
-    const membership = await prisma.groupMembership.findFirst({
+    const membership = await prisma.groupMember.findFirst({
       where: {
         groupId,
         userId: session.user.id,
-        role: "OWNER"
-      }
+        role: "OWNER",
+      },
     })
 
     if (!membership) {

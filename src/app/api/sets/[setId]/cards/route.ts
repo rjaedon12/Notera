@@ -1,57 +1,55 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 
-// POST /api/sets/[setId]/cards - Create a new card
+// POST /api/sets/[id]/cards — add card to set
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ setId: string }> }
 ) {
   try {
-    const { setId } = await params
     const session = await auth()
-
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return Response.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const set = await prisma.studySet.findUnique({
-      where: { id: setId }
-    })
+    const { setId } = await params
+    const set = await prisma.flashcardSet.findUnique({ where: { id: setId } })
 
     if (!set) {
-      return NextResponse.json({ error: "Set not found" }, { status: 404 })
+      return Response.json({ error: "Set not found" }, { status: 404 })
+    }
+    if (set.userId !== session.user.id) {
+      return Response.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    if (set.ownerId !== session.user.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
-    }
-
-    const body = await request.json()
-    const { term, definition, orderIndex } = body
+    const { term, definition } = await request.json()
 
     if (!term || !definition) {
-      return NextResponse.json(
+      return Response.json(
         { error: "Term and definition are required" },
         { status: 400 }
       )
     }
 
-    const card = await prisma.card.create({
+    // Determine next order value
+    const maxOrder = await prisma.flashcard.aggregate({
+      where: { setId },
+      _max: { order: true },
+    })
+
+    const card = await prisma.flashcard.create({
       data: {
         term,
         definition,
-        orderIndex: orderIndex ?? 0,
-        setId
-      }
+        order: (maxOrder._max.order ?? -1) + 1,
+        setId,
+      },
     })
 
-    return NextResponse.json(card, { status: 201 })
+    return Response.json(card, { status: 201 })
   } catch (error) {
-    console.error("Create card error:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    console.error("Add card error:", error)
+    return Response.json({ error: "Internal server error" }, { status: 500 })
   }
 }

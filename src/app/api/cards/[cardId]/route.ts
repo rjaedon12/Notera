@@ -15,29 +15,29 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const card = await prisma.card.findUnique({
+    const card = await prisma.flashcard.findUnique({
       where: { id: cardId },
-      include: { studySet: true }
+      include: { set: true },
     })
 
     if (!card) {
       return NextResponse.json({ error: "Card not found" }, { status: 404 })
     }
 
-    if (card.studySet.ownerId !== session.user.id) {
+    if (card.set.userId !== session.user.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
     const body = await request.json()
-    const { term, definition, orderIndex } = body
+    const { term, definition, order } = body
 
-    const updated = await prisma.card.update({
+    const updated = await prisma.flashcard.update({
       where: { id: cardId },
       data: {
         ...(term !== undefined && { term }),
         ...(definition !== undefined && { definition }),
-        ...(orderIndex !== undefined && { orderIndex })
-      }
+        ...(order !== undefined && { order }),
+      },
     })
 
     return NextResponse.json(updated)
@@ -63,21 +63,21 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const card = await prisma.card.findUnique({
+    const card = await prisma.flashcard.findUnique({
       where: { id: cardId },
-      include: { studySet: true }
+      include: { set: true },
     })
 
     if (!card) {
       return NextResponse.json({ error: "Card not found" }, { status: 404 })
     }
 
-    if (card.studySet.ownerId !== session.user.id) {
+    if (card.set.userId !== session.user.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
-    await prisma.card.delete({
-      where: { id: cardId }
+    await prisma.flashcard.delete({
+      where: { id: cardId },
     })
 
     return NextResponse.json({ success: true })

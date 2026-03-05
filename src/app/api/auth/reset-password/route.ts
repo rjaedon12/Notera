@@ -32,10 +32,8 @@ export async function POST(request: NextRequest) {
     const user = await prisma.user.findFirst({
       where: {
         resetToken: token,
-        resetTokenExpiry: {
-          gt: new Date()
-        }
-      }
+        resetTokenExpiry: { gt: new Date() },
+      },
     })
 
     if (!user) {
@@ -52,10 +50,10 @@ export async function POST(request: NextRequest) {
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        passwordHash: hashedPassword,
+        password: hashedPassword,
         resetToken: null,
-        resetTokenExpiry: null
-      }
+        resetTokenExpiry: null,
+      },
     })
 
     return NextResponse.json({

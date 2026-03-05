@@ -60,3 +60,4 @@ coverage/
 
 # Optional: Recovered files (can remove after verification)
 # _recovered/
+.neon

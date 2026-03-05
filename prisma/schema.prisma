@@ -1,512 +1,199 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Koda — Prisma schema for PostgreSQL (Neon serverless)
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./prisma/dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-// Enums represented as strings
-// Role: USER | ADMIN
-// ResourceType: GUIDE | TIMELINE | IMAGE | PDF | WHITEBOARD
-// Visibility: PRIVATE | PUBLIC | GROUP
-// GroupRole: OWNER | MODERATOR | MEMBER
+// ─── Enums ───────────────────────────────────────────────
+
+enum StudyMode {
+  FLASHCARD
+  LEARN
+  TEST
+  MATCH
+  TIMED
+}
+
+enum CardStatus {
+  NEW
+  LEARNING
+  MASTERED
+}
+
+enum GroupRole {
+  OWNER
+  MEMBER
+}
+
+// ─── Auth (NextAuth v5 Prisma Adapter) ───────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── User ────────────────────────────────────────────────
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  passwordHash  String
-  name          String?
-  image         String?
-  role          String    @default("USER") // USER | ADMIN
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Password reset
-  resetToken       String?
-  resetTokenExpiry DateTime?
-  
-  // Recovery codes (stored hashed, comma-separated)
-  recoveryCodes    String?
-  
-  // Streak tracking
-  currentStreak    Int       @default(0)
-  longestStreak    Int       @default(0)
-  lastStudyDate    DateTime?
+  id                String    @id @default(cuid())
+  email             String    @unique
+  name              String?
+  image             String?
+  password          String?   // nullable — OAuth users won't have one
+  emailVerified     DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  streak            Int       @default(0)
+  lastStudied       DateTime?
+  role              String    @default("USER") // USER | ADMIN
+  resetToken        String?
+  resetTokenExpiry  DateTime?
 
   // Relations
-  studySets       StudySet[]
-  folders         Folder[]
-  savedSets       SavedSet[]
-  starredCards    StarredCard[]
-  starredSets     StarredSet[]
-  studySessions   StudySession[]
-  progress        Progress[]
-  shareLinks      ShareLink[]
-  
-  // New relations
-  ownedGroups     Group[]
-  groupMemberships GroupMembership[]
-  resources       Resource[]
-  auditLogs       AuditLog[]
-  studyDays       StudyDay[]
-  
-  // Quiz relations
-  questionBanks   QuestionBank[]
-  quizAttempts    QuizAttempt[]
+  sets             FlashcardSet[]
+  progress         StudyProgress[]
+  cardProgress     CardProgress[]
+  groupMemberships GroupMember[]
+  sessions         Session[]
+  accounts         Account[]
+  ownedGroups      Group[]
 }
 
-model StudySet {
+// ─── Flashcards ──────────────────────────────────────────
+
+model FlashcardSet {
   id          String   @id @default(cuid())
   title       String
   description String?
   isPublic    Boolean  @default(false)
-  isPremade   Boolean  @default(false) // For discover/recommended sets
+  tags        String[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relations
-  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  ownerId     String
-  cards       Card[]
-  folders     FolderSet[]
-  savedBy     SavedSet[]
-  starredBy   StarredSet[]
-  sessions    StudySession[]
-  shareLinks  ShareLink[]
-  matchScores MatchScore[]
-  timedScores TimedScore[]
-  
-  // Tags relation
-  tags        SetTag[]
-  
-  // Groups relation
-  groupSets   GroupSet[]
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  cards     Flashcard[]
+  progress  StudyProgress[]
+  groupSets GroupSet[]
 }
 
-model Card {
-  id          String   @id @default(cuid())
-  term        String
-  definition  String
-  orderIndex  Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Flashcard {
+  id         String @id @default(cuid())
+  term       String
+  definition String
+  order      Int
 
-  // Relations
-  studySet    StudySet @relation(fields: [setId], references: [id], onDelete: Cascade)
-  setId       String
-  starredBy   StarredCard[]
-  progress    Progress[]
+  setId String
+  set   FlashcardSet @relation(fields: [setId], references: [id], onDelete: Cascade)
+
+  cardProgress CardProgress[]
 }
 
-model Folder {
-  id        String   @id @default(cuid())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// ─── Study Progress ──────────────────────────────────────
 
-  // Relations
-  owner     User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  ownerId   String
-  sets      FolderSet[]
+model StudyProgress {
+  id            String    @id @default(cuid())
+  lastStudied   DateTime  @default(now())
+  masteredCount Int       @default(0)
+  totalCards    Int       @default(0)
+  mode          StudyMode
+  score         Float?
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  setId String
+  set   FlashcardSet @relation(fields: [setId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, setId, mode])
 }
 
-model FolderSet {
-  id        String   @id @default(cuid())
-  folder    Folder   @relation(fields: [folderId], references: [id], onDelete: Cascade)
-  folderId  String
-  studySet  StudySet @relation(fields: [setId], references: [id], onDelete: Cascade)
-  setId     String
-  addedAt   DateTime @default(now())
+model CardProgress {
+  id             String     @id @default(cuid())
+  status         CardStatus @default(NEW)
+  correctCount   Int        @default(0)
+  incorrectCount Int        @default(0)
+  lastSeen       DateTime   @default(now())
 
-  @@unique([folderId, setId])
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  flashcardId String
+  flashcard   Flashcard @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, flashcardId])
 }
 
-model SavedSet {
-  id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  studySet  StudySet @relation(fields: [setId], references: [id], onDelete: Cascade)
-  setId     String
-  savedAt   DateTime @default(now())
-
-  @@unique([userId, setId])
-}
-
-model StarredSet {
-  id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  studySet  StudySet @relation(fields: [setId], references: [id], onDelete: Cascade)
-  setId     String
-  starredAt DateTime @default(now())
-
-  @@unique([userId, setId])
-}
-
-model StarredCard {
-  id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  cardId    String
-  starredAt DateTime @default(now())
-
-  @@unique([userId, cardId])
-}
-
-model StudySession {
-  id        String   @id @default(cuid())
-  mode      String   // flashcards, learn, test, match, timed
-  startedAt DateTime @default(now())
-  endedAt   DateTime?
-  stats     String   // JSON string for flexible stats storage
-
-  // Relations
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  studySet  StudySet @relation(fields: [setId], references: [id], onDelete: Cascade)
-  setId     String
-}
-
-model Progress {
-  id             String   @id @default(cuid())
-  masteryLevel   Int      @default(0) // 0-5 (SM-2 quality rating)
-  streak         Int      @default(0)
-  correctCount   Int      @default(0)
-  incorrectCount Int      @default(0)
-  lastReviewedAt DateTime?
-  nextReviewAt   DateTime? // SM-2 scheduled review date
-  easeFactor     Float    @default(2.5) // SM-2 ease factor (EF)
-  interval       Int      @default(0) // Days until next review
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  // Relations
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId         String
-  card           Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  cardId         String
-
-  @@unique([userId, cardId])
-}
-
-model ShareLink {
-  id        String    @id @default(cuid())
-  token     String    @unique @default(cuid())
-  expiresAt DateTime?
-  createdAt DateTime  @default(now())
-
-  // Relations
-  studySet  StudySet  @relation(fields: [setId], references: [id], onDelete: Cascade)
-  setId     String
-  createdBy User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-}
-
-model MatchScore {
-  id        String   @id @default(cuid())
-  time      Int      // Time in milliseconds
-  createdAt DateTime @default(now())
-
-  // Relations
-  studySet  StudySet @relation(fields: [setId], references: [id], onDelete: Cascade)
-  setId     String
-  userId    String   // Store userId directly for leaderboard
-}
-
-model TimedScore {
-  id        String   @id @default(cuid())
-  score     Int
-  mode      String   // blast, timetrial
-  createdAt DateTime @default(now())
-
-  // Relations
-  studySet  StudySet @relation(fields: [setId], references: [id], onDelete: Cascade)
-  setId     String
-  userId    String
-}
-
-// ============================================
-// TAGS
-// ============================================
-
-model Tag {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  slug      String   @unique
-  category  String?  // Optional category like "Subject", "Grade", "Difficulty"
-  createdAt DateTime @default(now())
-
-  // Relations
-  sets      SetTag[]
-  resources ResourceTag[]
-}
-
-model SetTag {
-  id        String   @id @default(cuid())
-  studySet  StudySet @relation(fields: [setId], references: [id], onDelete: Cascade)
-  setId     String
-  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  tagId     String
-  createdAt DateTime @default(now())
-
-  @@unique([setId, tagId])
-}
-
-// ============================================
-// GROUPS
-// ============================================
+// ─── Groups ──────────────────────────────────────────────
 
 model Group {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  inviteToken String   @unique @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  name       String
+  inviteCode String   @unique
+  createdAt  DateTime @default(now())
 
-  // Relations
-  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  ownerId     String
-  members     GroupMembership[]
-  sets        GroupSet[]
-  resources   GroupResource[]
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  members GroupMember[]
+  sets    GroupSet[]
 }
 
-model GroupMembership {
-  id        String   @id @default(cuid())
-  role      String   @default("MEMBER") // OWNER | MODERATOR | MEMBER
-  joinedAt  DateTime @default(now())
+model GroupMember {
+  userId   String
+  groupId  String
+  role     GroupRole @default(MEMBER)
+  joinedAt DateTime  @default(now())
 
-  // Relations
-  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  groupId   String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
-  @@unique([groupId, userId])
+  @@id([userId, groupId])
 }
 
 model GroupSet {
-  id        String   @id @default(cuid())
-  addedAt   DateTime @default(now())
+  groupId String
+  setId   String
 
-  // Relations
-  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  groupId   String
-  studySet  StudySet @relation(fields: [setId], references: [id], onDelete: Cascade)
-  setId     String
+  group Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  set   FlashcardSet @relation(fields: [setId], references: [id], onDelete: Cascade)
 
-  @@unique([groupId, setId])
-}
-
-model GroupResource {
-  id        String   @id @default(cuid())
-  addedAt   DateTime @default(now())
-
-  // Relations
-  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  groupId   String
-  resource  Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-  resourceId String
-
-  @@unique([groupId, resourceId])
-}
-
-// ============================================
-// RESOURCES (Study Guides, Timelines, Images, PDFs, Whiteboards)
-// ============================================
-
-model Resource {
-  id          String   @id @default(cuid())
-  type        String   // GUIDE | TIMELINE | IMAGE | PDF | WHITEBOARD
-  title       String
-  description String?
-  content     String?  // For GUIDE type (markdown/rich text) or WHITEBOARD (JSON canvas data)
-  visibility  String   @default("PRIVATE") // PRIVATE | PUBLIC | GROUP
-  
-  // For file uploads
-  fileName    String?
-  fileSize    Int?
-  mimeType    String?
-  storagePath String?  // Path to file in storage
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  ownerId     String
-  tags        ResourceTag[]
-  groups      GroupResource[]
-  
-  // Timeline events for TIMELINE type
-  timelineEvents TimelineEvent[]
-}
-
-model TimelineEvent {
-  id         String   @id @default(cuid())
-  dateLabel  String   // Flexible date label (e.g., "1914", "March 1917")
-  sortOrder  Int
-  title      String
-  body       String?
-  
-  // Position for timeline builder canvas
-  posX       Float    @default(0)
-  posY       Float    @default(0)
-  
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  // Relations
-  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-  resourceId String
-  
-  // Arrows originating from this event
-  arrowsFrom TimelineArrow[] @relation("FromEvent")
-  arrowsTo   TimelineArrow[] @relation("ToEvent")
-}
-
-model TimelineArrow {
-  id          String   @id @default(cuid())
-  label       String?
-  createdAt   DateTime @default(now())
-
-  // Relations
-  fromEvent   TimelineEvent @relation("FromEvent", fields: [fromEventId], references: [id], onDelete: Cascade)
-  fromEventId String
-  toEvent     TimelineEvent @relation("ToEvent", fields: [toEventId], references: [id], onDelete: Cascade)
-  toEventId   String
-
-  @@unique([fromEventId, toEventId])
-}
-
-model ResourceTag {
-  id         String   @id @default(cuid())
-  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-  resourceId String
-  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  tagId      String
-  createdAt  DateTime @default(now())
-
-  @@unique([resourceId, tagId])
-}
-
-// ============================================
-// QUIZZES (Question Banks & Attempts)
-// ============================================
-
-model QuestionBank {
-  id          String   @id @default(cuid())
-  title       String
-  subject     String   @default("")
-  description String?
-  imageUrl    String?  // Optional cover image
-  isPublic    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  ownerId     String
-  questions   Question[]
-  attempts    QuizAttempt[]
-}
-
-model Question {
-  id              String   @id @default(cuid())
-  prompt          String
-  imageUrl        String?  // Optional image for the question
-  passage         String?  // Optional passage/stimulus text
-  explanation     String   // Explanation shown after answering
-  correctChoiceId String   // ID of the correct choice
-  orderIndex      Int
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relations
-  bank        QuestionBank @relation(fields: [bankId], references: [id], onDelete: Cascade)
-  bankId      String
-  choices     QuestionChoice[]
-  answers     QuizAnswer[]
-}
-
-model QuestionChoice {
-  id          String   @id @default(cuid())
-  text        String
-  isCorrect   Boolean  @default(false)
-  orderIndex  Int
-  createdAt   DateTime @default(now())
-
-  // Relations
-  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  questionId  String
-  answers     QuizAnswer[]
-}
-
-model QuizAttempt {
-  id          String   @id @default(cuid())
-  score       Int?     // Number correct
-  totalQuestions Int
-  completedAt DateTime?
-  createdAt   DateTime @default(now())
-
-  // Relations
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-  bank        QuestionBank @relation(fields: [bankId], references: [id], onDelete: Cascade)
-  bankId      String
-  answers     QuizAnswer[]
-}
-
-model QuizAnswer {
-  id          String   @id @default(cuid())
-  isCorrect   Boolean
-  createdAt   DateTime @default(now())
-
-  // Relations
-  attempt     QuizAttempt    @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  attemptId   String
-  question    Question       @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  questionId  String
-  choice      QuestionChoice @relation(fields: [choiceId], references: [id], onDelete: Cascade)
-  choiceId    String
-}
-
-// ============================================
-// ADMIN & AUDIT
-// ============================================
-
-model AuditLog {
-  id        String   @id @default(cuid())
-  action    String   // e.g., "DELETE_USER", "DELETE_SET", "UNPUBLISH_SET"
-  targetType String  // e.g., "User", "StudySet", "Resource"
-  targetId  String
-  details   String?  // JSON string with additional details
-  createdAt DateTime @default(now())
-
-  // Relations
-  admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  adminId   String
-}
-
-// ============================================
-// STREAK TRACKING
-// ============================================
-
-model StudyDay {
-  id        String   @id @default(cuid())
-  date      String   // YYYY-MM-DD format for easy comparison
-  createdAt DateTime @default(now())
-
-  // Relations
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-
-  @@unique([userId, date])
+  @@id([groupId, setId])
 }

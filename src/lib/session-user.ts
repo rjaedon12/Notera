@@ -8,9 +8,6 @@ type SessionUserLike = {
   role?: string | null
 }
 
-// Placeholder hash used only when recreating a missing user row from session context.
-const FALLBACK_PASSWORD_HASH = "$2b$10$wM98Q9R2vQd.j4hRrjmM8eLLvF6kq7f3h6YqS9C2n7v5yLqkM8T6a"
-
 export async function resolveSessionUserId(sessionUser: SessionUserLike): Promise<string | null> {
   const sessionId = sessionUser.id ?? null
   const email = sessionUser.email?.toLowerCase().trim() ?? null
@@ -40,8 +37,6 @@ export async function resolveSessionUserId(sessionUser: SessionUserLike): Promis
           email,
           name: sessionUser.name ?? email.split("@")[0],
           image: sessionUser.image ?? null,
-          role: sessionUser.role === "ADMIN" ? "ADMIN" : "USER",
-          passwordHash: FALLBACK_PASSWORD_HASH,
         },
         select: { id: true },
       })

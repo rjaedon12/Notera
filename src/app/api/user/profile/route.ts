@@ -59,8 +59,7 @@ export async function PUT(request: Request) {
         name: true,
         email: true,
         image: true,
-        role: true,
-      }
+      },
     })
 
     logUserEventToGoogleSheets({
@@ -101,9 +100,8 @@ export async function GET() {
         name: true,
         email: true,
         image: true,
-        role: true,
         createdAt: true,
-      }
+      },
     })
 
     if (!user) {

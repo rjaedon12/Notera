@@ -11,14 +11,14 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
-    const [users, sets, cards, tags] = await Promise.all([
+    const [users, sets, cards, groups] = await Promise.all([
       prisma.user.count(),
-      prisma.studySet.count(),
-      prisma.card.count(),
-      prisma.tag.count()
+      prisma.flashcardSet.count(),
+      prisma.flashcard.count(),
+      prisma.group.count()
     ])
 
-    return NextResponse.json({ users, sets, cards, tags })
+    return NextResponse.json({ users, sets, cards, groups })
   } catch (error) {
     console.error("Error fetching admin stats:", error)
     return NextResponse.json(

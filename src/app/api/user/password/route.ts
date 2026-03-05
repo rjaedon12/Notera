@@ -34,7 +34,7 @@ export async function PUT(request: Request) {
     // Get user with password hash
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { passwordHash: true }
+      select: { password: true },
     })
 
     if (!user) {
@@ -42,7 +42,7 @@ export async function PUT(request: Request) {
     }
 
     // Verify current password
-    const isValidPassword = await bcrypt.compare(currentPassword, user.passwordHash)
+    const isValidPassword = await bcrypt.compare(currentPassword, user.password ?? "")
     if (!isValidPassword) {
       return NextResponse.json(
         { error: "Current password is incorrect" },
@@ -50,13 +50,12 @@ export async function PUT(request: Request) {
       )
     }
 
-    // Hash new password with bcrypt (cost factor 12)
+    // Hash new password
     const newPasswordHash = await bcrypt.hash(newPassword, 12)
 
-    // Update password
     await prisma.user.update({
       where: { id: session.user.id },
-      data: { passwordHash: newPasswordHash }
+      data: { password: newPasswordHash },
     })
 
     return NextResponse.json({ ok: true, message: "Password updated successfully" })

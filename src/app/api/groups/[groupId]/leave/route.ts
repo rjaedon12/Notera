@@ -17,11 +17,8 @@ export async function POST(
     const { groupId } = await params
 
     // Find membership
-    const membership = await prisma.groupMembership.findFirst({
-      where: {
-        groupId,
-        userId: session.user.id
-      }
+    const membership = await prisma.groupMember.findFirst({
+      where: { groupId, userId: session.user.id },
     })
 
     if (!membership) {
@@ -39,9 +36,14 @@ export async function POST(
       )
     }
 
-    // Remove membership
-    await prisma.groupMembership.delete({
-      where: { id: membership.id }
+    // Remove membership using composite key
+    await prisma.groupMember.delete({
+      where: {
+        userId_groupId: {
+          userId: session.user.id,
+          groupId,
+        },
+      },
     })
 
     return NextResponse.json({ success: true })
