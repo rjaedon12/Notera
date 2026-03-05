@@ -16,22 +16,27 @@ const providers: any[] = [
       password: { label: "Password", type: "password" },
     },
     async authorize(credentials) {
-      const email = credentials?.email as string | undefined
-      const password = credentials?.password as string | undefined
+      try {
+        const email = credentials?.email as string | undefined
+        const password = credentials?.password as string | undefined
 
-      if (!email || !password) return null
+        if (!email || !password) return null
 
-      const user = await prisma.user.findUnique({ where: { email } })
-      if (!user || !user.password) return null
+        const user = await prisma.user.findUnique({ where: { email } })
+        if (!user || !user.password) return null
 
-      const valid = await bcrypt.compare(password, user.password)
-      if (!valid) return null
+        const valid = await bcrypt.compare(password, user.password)
+        if (!valid) return null
 
-      return {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        image: user.image,
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+        }
+      } catch (error) {
+        console.error("Credentials authorize error:", error)
+        return null
       }
     },
   }),
@@ -59,6 +64,8 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers,
+  // Required for Vercel / reverse-proxy deployments
+  trustHost: true,
   // JWT strategy is required when using the Credentials provider.
   // The PrismaAdapter still manages User / Account rows for OAuth sign-ins.
   session: { strategy: "jwt" },
@@ -70,11 +77,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id
         // Fetch role from DB on first sign-in
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id as string },
-          select: { role: true },
-        })
-        token.role = dbUser?.role ?? "USER"
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.id as string },
+            select: { role: true },
+          })
+          token.role = dbUser?.role ?? "USER"
+        } catch (error) {
+          console.error("JWT callback: failed to fetch user role", error)
+          token.role = "USER"
+        }
       }
       return token
     },
@@ -86,7 +98,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session
     },
     async redirect({ baseUrl }) {
-      return `${baseUrl}/dashboard`
+      return `${baseUrl}/library`
     },
   },
 })
