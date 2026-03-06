@@ -1,9 +1,9 @@
 "use client"
 
 import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,9 +32,21 @@ import {
   Edit,
   Brain,
   Layers,
+  LayoutGrid,
+  Megaphone,
+  Globe,
+  GlobeLock,
+  Flag,
+  FlagOff,
+  EyeOff,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
+import type { WBBoard, Announcement } from "@/lib/whiteboard/types"
+import {
+  getAllBoards, getAllUsers as getWBUsers, flagBoard, makeBoardPrivate,
+  deleteBoard as deleteWBBoard, getAnnouncement, setAnnouncement, getStats as getWBStats,
+} from "@/lib/whiteboard/storage"
 
 interface AdminUser {
   id: string
@@ -73,9 +85,21 @@ interface AdminStats {
   quizBanks: number
 }
 
+type AdminTab = "overview" | "users" | "sets" | "tags" | "whiteboards" | "announcements"
+const VALID_TABS: AdminTab[] = ["overview", "users", "sets", "tags", "whiteboards", "announcements"]
+
 export default function AdminPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div></div>}>
+      <AdminPageInner />
+    </Suspense>
+  )
+}
+
+function AdminPageInner() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const queryClient = useQueryClient()
 
   // Protect route - redirect if not admin
@@ -85,7 +109,11 @@ export default function AdminPage() {
     }
   }, [status, session, router])
 
-  const [activeTab, setActiveTab] = useState<"overview" | "users" | "sets" | "tags">("overview")
+  // Read initial tab from URL query param (?tab=whiteboards)
+  const initialTab = VALID_TABS.includes(searchParams.get("tab") as AdminTab)
+    ? (searchParams.get("tab") as AdminTab)
+    : "overview"
+  const [activeTab, setActiveTab] = useState<AdminTab>(initialTab)
   const [newTagName, setNewTagName] = useState("")
   const [newTagCategory, setNewTagCategory] = useState("")
   const [resetPasswordDialog, setResetPasswordDialog] = useState<{ open: boolean; resetLink: string | null; userName: string | null }>({
@@ -98,6 +126,23 @@ export default function AdminPage() {
     open: false, userId: "", currentName: ""
   })
   const [newName, setNewName] = useState("")
+
+  // Whiteboard state
+  const [wbBoards, setWBBoards] = useState<WBBoard[]>([])
+  const [wbStats, setWBStats] = useState({ totalUsers: 0, totalBoards: 0, publicBoards: 0, bannedUsers: 0 })
+  const [wbAnnouncement, setWBAnnouncement] = useState<Announcement>({ text: "", color: "#3b82f6", enabled: false })
+  const [wbRefreshKey, setWBRefreshKey] = useState(0)
+
+  // Load whiteboard data when those tabs are active
+  useEffect(() => {
+    if (activeTab === "whiteboards" || activeTab === "overview") {
+      setWBBoards(getAllBoards())
+      setWBStats(getWBStats())
+    }
+    if (activeTab === "announcements") {
+      setWBAnnouncement(getAnnouncement())
+    }
+  }, [activeTab, wbRefreshKey])
 
   // Fetch admin stats
   const { data: stats } = useQuery<AdminStats>({
@@ -325,13 +370,13 @@ export default function AdminPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 border-b border-border mb-8">
-          {(["overview", "users", "sets", "tags"] as const).map((tab) => (
+        <div className="flex gap-2 border-b border-border mb-8 overflow-x-auto">
+          {(["overview", "users", "sets", "tags", "whiteboards", "announcements"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "px-4 py-2 text-sm font-medium capitalize border-b-2 transition-colors",
+                "px-4 py-2 text-sm font-medium capitalize border-b-2 transition-colors whitespace-nowrap",
                 activeTab === tab
                   ? "border-blue-500 text-blue-600 dark:text-blue-400"
                   : "border-transparent text-muted-foreground hover:text-foreground"
@@ -396,6 +441,20 @@ export default function AdminPage() {
                   <div>
                     <p className="text-sm text-muted-foreground">Quiz Banks</p>
                     <p className="text-2xl font-bold text-card-foreground">{stats?.quizBanks || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
+                    <LayoutGrid className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Whiteboards</p>
+                    <p className="text-2xl font-bold text-card-foreground">{wbStats.totalBoards}</p>
                   </div>
                 </div>
               </CardContent>
@@ -614,6 +673,215 @@ export default function AdminPage() {
                   {tags.length === 0 && (
                     <p className="py-8 text-center text-muted-foreground">No tags yet</p>
                   )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+        {/* Whiteboards Tab */}
+        {activeTab === "whiteboards" && (
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LayoutGrid className="h-5 w-5" />
+                  Whiteboard Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {wbBoards.length === 0 ? (
+                  <p className="py-8 text-center text-muted-foreground">No whiteboards found</p>
+                ) : (
+                  <div className="divide-y dark:divide-gray-700">
+                    {wbBoards.map((board) => (
+                      <div key={board.id} className="py-4 flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-medium text-card-foreground">{board.title}</h3>
+                            {board.isPublic ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                <Globe className="h-3 w-3" /> Public
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground">
+                                <GlobeLock className="h-3 w-3" /> Private
+                              </span>
+                            )}
+                            {board.flagged && (
+                              <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                                Flagged
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <span>Owner: {board.ownerId.slice(0, 8)}...</span>
+                            <span>{board.background} background</span>
+                            <span>{new Date(board.updatedAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              flagBoard(board.id, !board.flagged)
+                              setWBRefreshKey((k) => k + 1)
+                              toast.success(board.flagged ? "Board unflagged" : "Board flagged")
+                            }}
+                          >
+                            {board.flagged ? <FlagOff className="h-3 w-3 mr-1" /> : <Flag className="h-3 w-3 mr-1" />}
+                            {board.flagged ? "Unflag" : "Flag"}
+                          </Button>
+                          {board.isPublic && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                makeBoardPrivate(board.id)
+                                setWBRefreshKey((k) => k + 1)
+                                toast.success("Board set to private")
+                              }}
+                            >
+                              <EyeOff className="h-3 w-3 mr-1" /> Privatize
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => {
+                              if (confirm(`Delete "${board.title}"? This cannot be undone.`)) {
+                                deleteWBBoard(board.id)
+                                setWBRefreshKey((k) => k + 1)
+                                toast.success("Board deleted")
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" /> Delete
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* WB Stats Summary */}
+            <div className="grid gap-4 md:grid-cols-4">
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground">WB Users</p>
+                  <p className="text-xl font-bold text-card-foreground">{wbStats.totalUsers}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground">Total Boards</p>
+                  <p className="text-xl font-bold text-card-foreground">{wbStats.totalBoards}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground">Public Boards</p>
+                  <p className="text-xl font-bold text-card-foreground">{wbStats.publicBoards}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground">Banned WB Users</p>
+                  <p className="text-xl font-bold text-card-foreground">{wbStats.bannedUsers}</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* Announcements Tab */}
+        {activeTab === "announcements" && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Megaphone className="h-5 w-5" />
+                  Whiteboard Announcement Banner
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Preview */}
+                {wbAnnouncement.text && wbAnnouncement.enabled && (
+                  <div className="rounded-lg px-4 py-3 text-center text-sm font-medium text-white" style={{ backgroundColor: wbAnnouncement.color }}>
+                    <Megaphone className="inline h-4 w-4 mr-2" />
+                    {wbAnnouncement.text}
+                  </div>
+                )}
+
+                <div>
+                  <Label htmlFor="announcementText">Message</Label>
+                  <textarea
+                    id="announcementText"
+                    value={wbAnnouncement.text}
+                    onChange={(e) => setWBAnnouncement((a) => ({ ...a, text: e.target.value }))}
+                    placeholder="Type your announcement message..."
+                    className="mt-1 w-full p-3 rounded-lg bg-transparent border border-border text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex items-center gap-6">
+                  <div>
+                    <Label htmlFor="announcementColor">Banner Color</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        id="announcementColor"
+                        type="color"
+                        value={wbAnnouncement.color}
+                        onChange={(e) => setWBAnnouncement((a) => ({ ...a, color: e.target.value }))}
+                        className="w-10 h-10 rounded-lg cursor-pointer border-0"
+                      />
+                      <span className="text-sm text-muted-foreground font-mono">{wbAnnouncement.color}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Enabled</Label>
+                    <div className="mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setWBAnnouncement((a) => ({ ...a, enabled: !a.enabled }))}
+                        className={cn(
+                          "relative w-12 h-6 rounded-full transition-colors",
+                          wbAnnouncement.enabled ? "bg-green-500" : "bg-gray-400 dark:bg-gray-600"
+                        )}
+                      >
+                        <div
+                          className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all"
+                          style={{ left: wbAnnouncement.enabled ? "26px" : "2px" }}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    onClick={() => {
+                      setAnnouncement(wbAnnouncement)
+                      toast.success("Announcement saved")
+                    }}
+                  >
+                    Save Announcement
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const cleared = { text: "", color: "#3b82f6", enabled: false }
+                      setWBAnnouncement(cleared)
+                      setAnnouncement(cleared)
+                      toast.success("Announcement cleared")
+                    }}
+                  >
+                    Clear
+                  </Button>
                 </div>
               </CardContent>
             </Card>

@@ -159,7 +159,7 @@ function BoardDashboard({ boards, user, isAdmin, onCreateBoard, onOpenBoard, onD
           <div className="flex items-center gap-3">
             {isAdmin && (
               <a
-                href="/whiteboard/admin"
+                href="/admin?tab=whiteboards"
                 className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-red-600/10 text-red-500 hover:bg-red-600/20 transition-colors"
               >
                 <Shield className="h-4 w-4" />
