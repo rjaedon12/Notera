@@ -50,7 +50,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
             <Menu className="h-5 w-5" />
           </button>
           
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2 lg:hidden">
             <div
               className="h-8 w-8 rounded-lg flex items-center justify-center font-heading"
               style={{ background: "var(--primary)", color: "#fff", fontWeight: 700, fontSize: "0.9rem" }}

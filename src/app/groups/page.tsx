@@ -25,7 +25,7 @@ interface Group {
   id: string
   name: string
   description: string | null
-  inviteToken: string
+  inviteCode: string
   createdAt: string
   _count: {
     members: number
@@ -264,18 +264,18 @@ export default function GroupsPage() {
                       </div>
                       
                       {/* Invite code for owners */}
-                      {group.inviteToken && group.members.some(
+                      {group.inviteCode && group.members.some(
                         (m) => m.user.id === session.user.id && m.role === "OWNER"
                       ) && (
                         <button
                           onClick={(e) => {
                             e.preventDefault()
-                            copyInviteCode(group.inviteToken)
+                            copyInviteCode(group.inviteCode)
                           }}
                           className="flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-all"
                           style={{ background: "var(--glass-fill)", border: "1px solid var(--glass-border)" }}
                         >
-                          {copiedCode === group.inviteToken ? (
+                          {copiedCode === group.inviteCode ? (
                             <>
                               <Check className="h-3 w-3 text-green-500" />
                               Copied!
@@ -283,7 +283,7 @@ export default function GroupsPage() {
                           ) : (
                             <>
                               <Copy className="h-3 w-3" />
-                              {group.inviteToken}
+                              {group.inviteCode}
                             </>
                           )}
                         </button>

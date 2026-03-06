@@ -17,6 +17,7 @@ export async function GET() {
         name: true,
         email: true,
         role: true,
+        isBanned: true,
         createdAt: true,
         _count: {
           select: { sets: true }

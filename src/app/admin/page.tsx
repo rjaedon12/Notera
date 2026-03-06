@@ -14,6 +14,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import { 
   Users, 
@@ -26,17 +27,23 @@ import {
   User,
   Key,
   Copy,
-  Check
+  Check,
+  Ban,
+  Edit,
+  Brain,
+  Layers,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import toast from "react-hot-toast"
 
-interface User {
+interface AdminUser {
   id: string
   name: string | null
   email: string
   role: string
+  isBanned: boolean
   createdAt: string
-  _count: { studySets: number }
+  _count: { sets: number }
 }
 
 interface Tag {
@@ -47,11 +54,23 @@ interface Tag {
   _count: { sets: number; resources: number }
 }
 
+interface AdminSet {
+  id: string
+  title: string
+  description: string | null
+  isPublic: boolean
+  tags: string[]
+  createdAt: string
+  user: { id: string; name: string | null; email: string }
+  _count: { cards: number }
+}
+
 interface AdminStats {
   users: number
   sets: number
   cards: number
   tags: number
+  quizBanks: number
 }
 
 export default function AdminPage() {
@@ -66,7 +85,7 @@ export default function AdminPage() {
     }
   }, [status, session, router])
 
-  const [activeTab, setActiveTab] = useState<"overview" | "users" | "tags">("overview")
+  const [activeTab, setActiveTab] = useState<"overview" | "users" | "sets" | "tags">("overview")
   const [newTagName, setNewTagName] = useState("")
   const [newTagCategory, setNewTagCategory] = useState("")
   const [resetPasswordDialog, setResetPasswordDialog] = useState<{ open: boolean; resetLink: string | null; userName: string | null }>({
@@ -75,6 +94,10 @@ export default function AdminPage() {
     userName: null
   })
   const [copied, setCopied] = useState(false)
+  const [renameDialog, setRenameDialog] = useState<{ open: boolean; userId: string; currentName: string }>({
+    open: false, userId: "", currentName: ""
+  })
+  const [newName, setNewName] = useState("")
 
   // Fetch admin stats
   const { data: stats } = useQuery<AdminStats>({
@@ -88,7 +111,7 @@ export default function AdminPage() {
   })
 
   // Fetch users
-  const { data: users = [] } = useQuery<User[]>({
+  const { data: users = [] } = useQuery<AdminUser[]>({
     queryKey: ["admin", "users"],
     queryFn: async () => {
       const res = await fetch("/api/admin/users")
@@ -107,6 +130,17 @@ export default function AdminPage() {
       return res.json()
     },
     enabled: activeTab === "tags" && session?.user?.role === "ADMIN"
+  })
+
+  // Fetch sets (admin)
+  const { data: sets = [] } = useQuery<AdminSet[]>({
+    queryKey: ["admin", "sets"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/sets")
+      if (!res.ok) throw new Error("Failed to fetch sets")
+      return res.json()
+    },
+    enabled: activeTab === "sets" && session?.user?.role === "ADMIN"
   })
 
   // Create tag mutation
@@ -143,7 +177,47 @@ export default function AdminPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] })
-    }
+      toast.success("Role updated")
+    },
+    onError: () => toast.error("Failed to update role")
+  })
+
+  // Ban/unban mutation
+  const banMutation = useMutation({
+    mutationFn: async ({ userId, isBanned }: { userId: string; isBanned: boolean }) => {
+      const res = await fetch(`/api/admin/users/${userId}/ban`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isBanned })
+      })
+      if (!res.ok) throw new Error("Failed to update ban status")
+      return res.json()
+    },
+    onSuccess: (_, { isBanned }) => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] })
+      toast.success(isBanned ? "User banned" : "User unbanned")
+    },
+    onError: () => toast.error("Failed to update ban status")
+  })
+
+  // Rename user mutation
+  const renameMutation = useMutation({
+    mutationFn: async ({ userId, name }: { userId: string; name: string }) => {
+      const res = await fetch(`/api/admin/users/${userId}/username`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name })
+      })
+      if (!res.ok) throw new Error("Failed to change username")
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] })
+      setRenameDialog({ open: false, userId: "", currentName: "" })
+      setNewName("")
+      toast.success("Username updated")
+    },
+    onError: () => toast.error("Failed to change username")
   })
 
   // Delete tag mutation
@@ -198,7 +272,28 @@ export default function AdminPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] })
       queryClient.invalidateQueries({ queryKey: ["admin", "stats"] })
-    }
+      toast.success("User deleted")
+    },
+    onError: () => toast.error("Failed to delete user")
+  })
+
+  // Delete set mutation
+  const deleteSetMutation = useMutation({
+    mutationFn: async (setId: string) => {
+      const res = await fetch("/api/admin/sets", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ setId })
+      })
+      if (!res.ok) throw new Error("Failed to delete set")
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "sets"] })
+      queryClient.invalidateQueries({ queryKey: ["admin", "stats"] })
+      toast.success("Set deleted")
+    },
+    onError: () => toast.error("Failed to delete set")
   })
 
   if (status === "loading") {
@@ -231,7 +326,7 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div className="flex gap-2 border-b border-border mb-8">
-          {(["overview", "users", "tags"] as const).map((tab) => (
+          {(["overview", "users", "sets", "tags"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -282,7 +377,7 @@ export default function AdminPage() {
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
                   <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                    <BookOpen className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                    <Layers className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Flashcards</p>
@@ -296,11 +391,11 @@ export default function AdminPage() {
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
                   <div className="h-12 w-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                    <TagIcon className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                    <Brain className="h-6 w-6 text-orange-600 dark:text-orange-400" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Tags</p>
-                    <p className="text-2xl font-bold text-card-foreground">{stats?.tags || 0}</p>
+                    <p className="text-sm text-muted-foreground">Quiz Banks</p>
+                    <p className="text-2xl font-bold text-card-foreground">{stats?.quizBanks || 0}</p>
                   </div>
                 </div>
               </CardContent>
@@ -318,83 +413,124 @@ export default function AdminPage() {
               <CardContent>
                 <div className="divide-y dark:divide-gray-700">
                   {users.map((user) => (
-                    <div key={user.id} className="py-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                          {user.role === "ADMIN" ? (
-                            <Crown className="h-5 w-5 text-yellow-500" />
-                          ) : (
-                            <User className="h-5 w-5 text-muted-foreground" />
-                          )}
+                    <div key={user.id} className="py-4 flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                            {user.role === "ADMIN" ? (
+                              <Crown className="h-5 w-5 text-yellow-500" />
+                            ) : user.isBanned ? (
+                              <Ban className="h-5 w-5 text-red-500" />
+                            ) : (
+                              <User className="h-5 w-5 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium text-card-foreground">{user.name || "No name"}</p>
+                            <p className="text-sm text-muted-foreground">{user.email}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-card-foreground">{user.name || "No name"}</p>
-                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">{user._count.sets} sets</span>
+                          <span className={cn(
+                            "px-2 py-1 text-xs rounded-full",
+                            user.isBanned
+                              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                              : user.role === "ADMIN"
+                              ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                              : "bg-muted text-muted-foreground"
+                          )}>
+                            {user.isBanned ? "BANNED" : user.role}
+                          </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm text-muted-foreground">
-                          {user._count.studySets} sets
-                        </span>
-                        <span className={cn(
-                          "px-2 py-1 text-xs rounded-full",
-                          user.role === "ADMIN"
-                            ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                            : "bg-muted text-muted-foreground"
-                        )}>
-                          {user.role}
-                        </span>
-                        {user.id !== session.user.id && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => toggleRoleMutation.mutate({
-                              userId: user.id,
-                              newRole: user.role === "ADMIN" ? "USER" : "ADMIN"
-                            })}
-                          >
+                      {user.id !== session.user.id && (
+                        <div className="flex items-center gap-2 pl-13 flex-wrap">
+                          <Button size="sm" variant="outline" onClick={() => toggleRoleMutation.mutate({
+                            userId: user.id, newRole: user.role === "ADMIN" ? "USER" : "ADMIN"
+                          })}>
+                            <Crown className="h-3 w-3 mr-1" />
                             {user.role === "ADMIN" ? "Demote" : "Promote"}
                           </Button>
-                        )}
-                        {user.id !== session.user.id && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => resetPasswordMutation.mutate({
-                              userId: user.id,
-                              userName: user.name || user.email
-                            })}
-                            disabled={resetPasswordMutation.isPending}
-                          >
-                            <Key className="h-4 w-4 mr-1" />
+                          <Button size="sm" variant="outline" onClick={() => {
+                            setRenameDialog({ open: true, userId: user.id, currentName: user.name || "" })
+                            setNewName(user.name || "")
+                          }}>
+                            <Edit className="h-3 w-3 mr-1" />
+                            Rename
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => banMutation.mutate({
+                            userId: user.id, isBanned: !user.isBanned
+                          })}>
+                            <Ban className="h-3 w-3 mr-1" />
+                            {user.isBanned ? "Unban" : "Ban"}
+                          </Button>
+                          <Button size="sm" variant="outline"
+                            onClick={() => resetPasswordMutation.mutate({ userId: user.id, userName: user.name || user.email })}
+                            disabled={resetPasswordMutation.isPending}>
+                            <Key className="h-3 w-3 mr-1" />
                             Reset Password
                           </Button>
-                        )}
-                        {user.id !== session.user.id && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => {
-                              const confirmed = window.confirm(
-                                `Delete ${user.name || user.email}? This action cannot be undone.`
-                              )
-                              if (confirmed) {
-                                deleteUserMutation.mutate(user.id)
-                              }
-                            }}
-                            disabled={deleteUserMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
+                          <Button size="sm" variant="destructive" onClick={() => {
+                            if (confirm(`Delete ${user.name || user.email}? This cannot be undone.`)) {
+                              deleteUserMutation.mutate(user.id)
+                            }
+                          }}>
+                            <Trash2 className="h-3 w-3 mr-1" />
                             Delete
                           </Button>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {/* Sets Tab */}
+        {activeTab === "sets" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Study Set Management</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {sets.length === 0 ? (
+                <p className="py-8 text-center text-muted-foreground">No study sets found</p>
+              ) : (
+                <div className="divide-y dark:divide-gray-700">
+                  {sets.map((set) => (
+                    <div key={set.id} className="py-4 flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-medium text-card-foreground">{set.title}</h3>
+                          {set.isPublic && (
+                            <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                              Public
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                          <span>{set._count.cards} cards</span>
+                          <span>by {set.user?.name || set.user?.email || "Unknown"}</span>
+                          <span>{new Date(set.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="destructive" onClick={() => {
+                        if (confirm(`Delete "${set.title}"? This cannot be undone.`)) {
+                          deleteSetMutation.mutate(set.id)
+                        }
+                      }}>
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* Tags Tab */}
@@ -518,6 +654,42 @@ export default function AdminPage() {
             <p className="text-sm text-muted-foreground">
               <strong>Important:</strong> This link is only shown once. Copy it now and share it securely with the user.
             </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename Dialog */}
+      <Dialog open={renameDialog.open} onOpenChange={(open) => {
+        if (!open) setRenameDialog({ open: false, userId: "", currentName: "" })
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Username</DialogTitle>
+            <DialogDescription>
+              Current name: {renameDialog.currentName || "None"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="newName">New Name</Label>
+              <Input
+                id="newName"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Enter new username"
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRenameDialog({ open: false, userId: "", currentName: "" })}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => renameMutation.mutate({ userId: renameDialog.userId, name: newName })}
+                disabled={!newName.trim() || renameMutation.isPending}
+              >
+                Save
+              </Button>
+            </DialogFooter>
           </div>
         </DialogContent>
       </Dialog>
