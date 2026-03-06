@@ -79,12 +79,12 @@ export default function QuizzesPage() {
   // Reusable bank card — no delete button for premade
   const BankCard = ({ bank, owned }: { bank: (typeof myBanks)[0]; owned: boolean }) => (
     <Link href={`/quizzes/${bank.id}`}>
-      <Card className="h-full hover:shadow-md transition-shadow cursor-pointer group">
+      <Card className="h-full cursor-pointer group">
         <CardContent className="p-6">
           <div className="flex items-start justify-between mb-2">
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Brain className="h-5 w-5 text-purple-500 shrink-0" />
-              <h3 className="font-semibold text-base line-clamp-2 leading-snug">
+              <Brain className="h-5 w-5 shrink-0" style={{ color: "var(--primary)" }} />
+              <h3 className="font-semibold text-base line-clamp-2 leading-snug font-heading">
                 {bank.title}
               </h3>
             </div>
@@ -99,7 +99,7 @@ export default function QuizzesPage() {
           </div>
 
           {bank.subject && (
-            <p className="text-xs font-medium text-purple-600 dark:text-purple-400 mb-1">
+            <p className="text-xs font-medium mb-1" style={{ color: "var(--primary)" }}>
               {bank.subject}
             </p>
           )}
@@ -149,7 +149,7 @@ export default function QuizzesPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Quizzes</h1>
+        <h1 className="text-3xl font-bold font-heading tracking-tight">Quizzes</h1>
         <Link href="/quizzes/create">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
@@ -159,7 +159,7 @@ export default function QuizzesPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-border">
+      <div className="flex gap-1 mb-6 border-b" style={{ borderColor: "var(--glass-border)" }}>
         {tabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -167,7 +167,7 @@ export default function QuizzesPage() {
             className={cn(
               "flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px",
               activeTab === id
-                ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                ? "border-[var(--primary)] text-[var(--primary)]"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             )}
           >
@@ -180,12 +180,19 @@ export default function QuizzesPage() {
       {/* Search bar (for banks tabs) */}
       {(activeTab === "premade" || activeTab === "my-banks") && (
         <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
+          <input
             placeholder="Search question banks..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
+            className="w-full h-10 pl-10 pr-4 rounded-full text-sm transition-all
+              backdrop-blur-xl border focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-0
+              placeholder:text-[var(--muted-foreground)]"
+            style={{
+              background: "var(--glass-fill)",
+              borderColor: "var(--glass-border)",
+              color: "var(--foreground)",
+            }}
           />
         </div>
       )}
@@ -196,11 +203,11 @@ export default function QuizzesPage() {
           {loadingBanks ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3].map((i) => (
-                <Card key={i} className="animate-pulse">
+                <Card key={i}>
                   <CardContent className="p-6">
-                    <div className="h-5 bg-muted rounded w-3/4 mb-3" />
-                    <div className="h-4 bg-muted rounded w-1/2 mb-4" />
-                    <div className="h-8 bg-muted rounded w-full" />
+                    <div className="h-5 glass-shimmer rounded-xl w-3/4 mb-3" />
+                    <div className="h-4 glass-shimmer rounded-xl w-1/2 mb-4" />
+                    <div className="h-8 glass-shimmer rounded-xl w-full" />
                   </CardContent>
                 </Card>
               ))}
@@ -213,9 +220,9 @@ export default function QuizzesPage() {
             </div>
           ) : (
             <div className="text-center py-16">
-              <BookOpen className="h-16 w-16 text-muted-foreground/40 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">No practice tests yet</h2>
-              <p className="text-muted-foreground">Check back later for premade tests.</p>
+              <BookOpen className="h-16 w-16 mx-auto mb-4" style={{ color: "var(--muted-foreground)", opacity: 0.4 }} />
+              <h2 className="text-xl font-semibold mb-2 font-heading">No practice tests yet</h2>
+              <p style={{ color: "var(--muted-foreground)" }}>Check back later for premade tests.</p>
             </div>
           )}
         </>
@@ -227,11 +234,11 @@ export default function QuizzesPage() {
           {loadingBanks ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3].map((i) => (
-                <Card key={i} className="animate-pulse">
+                <Card key={i}>
                   <CardContent className="p-6">
-                    <div className="h-5 bg-muted rounded w-3/4 mb-3" />
-                    <div className="h-4 bg-muted rounded w-1/2 mb-4" />
-                    <div className="h-8 bg-muted rounded w-full" />
+                    <div className="h-5 glass-shimmer rounded-xl w-3/4 mb-3" />
+                    <div className="h-4 glass-shimmer rounded-xl w-1/2 mb-4" />
+                    <div className="h-8 glass-shimmer rounded-xl w-full" />
                   </CardContent>
                 </Card>
               ))}
@@ -244,9 +251,9 @@ export default function QuizzesPage() {
             </div>
           ) : (
             <div className="text-center py-16">
-              <Brain className="h-16 w-16 text-muted-foreground/40 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">No question banks yet</h2>
-              <p className="text-muted-foreground mb-6">
+              <Brain className="h-16 w-16 mx-auto mb-4" style={{ color: "var(--muted-foreground)", opacity: 0.4 }} />
+              <h2 className="text-xl font-semibold mb-2 font-heading">No question banks yet</h2>
+              <p className="mb-6" style={{ color: "var(--muted-foreground)" }}>
                 Create your first question bank to start building quizzes
               </p>
               <Link href="/quizzes/create">
@@ -266,10 +273,10 @@ export default function QuizzesPage() {
           {loadingAttempts ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <Card key={i} className="animate-pulse">
+                <Card key={i}>
                   <CardContent className="p-4">
-                    <div className="h-5 bg-muted rounded w-1/3 mb-2" />
-                    <div className="h-4 bg-muted rounded w-1/4" />
+                    <div className="h-5 glass-shimmer rounded-xl w-1/3 mb-2" />
+                    <div className="h-4 glass-shimmer rounded-xl w-1/4" />
                   </CardContent>
                 </Card>
               ))}
@@ -330,9 +337,9 @@ export default function QuizzesPage() {
             </div>
           ) : (
             <div className="text-center py-16">
-              <Clock className="h-16 w-16 text-muted-foreground/40 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">No attempts yet</h2>
-              <p className="text-muted-foreground">
+              <Clock className="h-16 w-16 mx-auto mb-4" style={{ color: "var(--muted-foreground)", opacity: 0.4 }} />
+              <h2 className="text-xl font-semibold mb-2 font-heading">No attempts yet</h2>
+              <p style={{ color: "var(--muted-foreground)" }}>
                 Take a quiz to see your results here
               </p>
             </div>

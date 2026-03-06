@@ -6,17 +6,17 @@ import { Sun, Moon, Monitor } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function ThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme()
+  const { theme, setTheme } = useTheme()
 
   return (
-    <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+    <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: "var(--glass-fill)", border: "1px solid var(--glass-border)" }}>
       <Button
         variant="ghost"
         size="sm"
         onClick={() => setTheme("light")}
         className={cn(
-          "h-8 w-8 p-0",
-          theme === "light" && "bg-card shadow-sm"
+          "h-8 w-8 p-0 rounded-lg",
+          theme === "light" && "bg-[var(--glass-fill-hover)]"
         )}
         aria-label="Light mode"
       >
@@ -27,8 +27,8 @@ export function ThemeToggle() {
         size="sm"
         onClick={() => setTheme("dark")}
         className={cn(
-          "h-8 w-8 p-0",
-          theme === "dark" && "bg-card shadow-sm"
+          "h-8 w-8 p-0 rounded-lg",
+          theme === "dark" && "bg-[var(--glass-fill-hover)]"
         )}
         aria-label="Dark mode"
       >
@@ -39,8 +39,8 @@ export function ThemeToggle() {
         size="sm"
         onClick={() => setTheme("system")}
         className={cn(
-          "h-8 w-8 p-0",
-          theme === "system" && "bg-card shadow-sm"
+          "h-8 w-8 p-0 rounded-lg",
+          theme === "system" && "bg-[var(--glass-fill-hover)]"
         )}
         aria-label="System theme"
       >
@@ -58,18 +58,22 @@ export function ThemeToggleSimple() {
   }
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
+    <button
       onClick={toggleTheme}
-      className="h-9 w-9 p-0"
+      className="h-9 w-9 rounded-full flex items-center justify-center transition-all hover:bg-[var(--glass-fill)]"
+      style={{ border: "1px solid transparent" }}
       aria-label="Toggle theme"
     >
-      {resolvedTheme === "dark" ? (
-        <Sun className="h-5 w-5" />
-      ) : (
-        <Moon className="h-5 w-5" />
-      )}
-    </Button>
+      <span
+        key={resolvedTheme}
+        className="theme-icon-enter"
+      >
+        {resolvedTheme === "dark" ? (
+          <Sun className="h-5 w-5" />
+        ) : (
+          <Moon className="h-5 w-5" />
+        )}
+      </span>
+    </button>
   )
 }

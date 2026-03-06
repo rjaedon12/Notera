@@ -30,16 +30,18 @@ export function StreakIndicator() {
   return (
     <div 
       className={cn(
-        "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-sm font-medium",
-        streakData.studiedToday
-          ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
-          : "bg-muted text-muted-foreground"
+        "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-sm font-medium backdrop-blur-sm transition-all"
       )}
+      style={{
+        background: streakData.studiedToday ? "rgba(79,142,247,0.15)" : "var(--glass-fill)",
+        border: "1px solid " + (streakData.studiedToday ? "rgba(79,142,247,0.2)" : "var(--glass-border)"),
+        color: streakData.studiedToday ? "var(--primary)" : "var(--muted-foreground)",
+      }}
       title={`Current streak: ${streakData.currentStreak} days\nBest streak: ${streakData.longestStreak} days`}
     >
       <Flame 
         className={cn(
-          "h-4 w-4",
+          "h-4 w-4 flame-breathe",
           streakData.studiedToday && "text-orange-500"
         )} 
       />

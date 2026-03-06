@@ -15,12 +15,10 @@ import {
   Shield,
   ChevronLeft,
   ChevronRight,
-  BookOpen,
   Clock,
   PenTool,
   Brain
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 
 interface SidebarProps {
   isCollapsed: boolean
@@ -76,15 +74,18 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       >
         <div
           className={cn(
-            "inline-flex items-center justify-start gap-3 whitespace-nowrap rounded-lg text-sm font-medium transition-all w-full h-11 px-3",
-            "hover:bg-muted hover:text-foreground", // Ghost hover
+            "relative inline-flex items-center gap-3 whitespace-nowrap rounded-[10px] text-sm font-medium transition-all w-full h-10 px-3",
             isCollapsed && "justify-center px-0",
             isActive 
-              ? "bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
-              : "text-foreground"
+              ? "bg-[rgba(79,142,247,0.18)] text-[var(--primary)]"
+              : "text-[var(--text-secondary,var(--muted-foreground))] hover:text-foreground hover:bg-[var(--glass-fill)]"
           )}
         >
-          {item.icon}
+          {/* Active indicator bar */}
+          {isActive && (
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[var(--primary)] transition-all" />
+          )}
+          <span className={cn(isActive && !isCollapsed && "ml-1")}>{item.icon}</span>
           {!isCollapsed && <span>{item.label}</span>}
         </div>
       </Link>
@@ -94,41 +95,59 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-16 h-[calc(100vh-4rem)] bg-background border-r border-border z-30 transition-all duration-300",
+        "fixed left-0 top-16 h-[calc(100vh-4rem)] z-30 transition-all duration-300",
+        "backdrop-blur-[32px] border-r",
         isCollapsed ? "w-16" : "w-56"
       )}
+      style={{
+        background: "var(--sidebar-bg)",
+        borderColor: "var(--sidebar-border)",
+      }}
     >
       <div className="flex flex-col h-full p-3">
-        {/* Logo when collapsed */}
+        {/* Logo monogram when collapsed */}
         {isCollapsed && (
           <div className="flex justify-center mb-4">
-            <div className="h-8 w-8 rounded-lg bg-blue-500 flex items-center justify-center">
-              <BookOpen className="h-5 w-5 text-white" />
+            <div className="h-8 w-8 rounded-lg flex items-center justify-center font-heading"
+              style={{ background: "var(--primary)", color: "#fff", fontWeight: 700, fontSize: "1rem" }}
+            >
+              K
             </div>
           </div>
         )}
 
+        {/* Koda wordmark when expanded */}
+        {!isCollapsed && (
+          <div className="flex items-center gap-2 px-3 mb-5">
+            <div className="h-7 w-7 rounded-lg flex items-center justify-center font-heading"
+              style={{ background: "var(--primary)", color: "#fff", fontWeight: 700, fontSize: "0.85rem" }}
+            >
+              K
+            </div>
+            <span className="font-heading text-lg font-bold tracking-tight text-foreground">Koda</span>
+          </div>
+        )}
+
         {/* Main Navigation */}
-        <nav className="flex-1 space-y-1">
+        <nav className="flex-1 space-y-0.5 nav-stagger">
           {filterItems(navItems).map(renderNavItem)}
         </nav>
 
         {/* Bottom Navigation */}
-        <div className="border-t border-border pt-3 space-y-1">
+        <div className="pt-3 space-y-0.5" style={{ borderTop: "1px solid var(--glass-border)" }}>
           {filterItems(bottomItems).map(renderNavItem)}
         </div>
 
         {/* Collapse Toggle */}
         <button
           onClick={onToggle}
-          className="mt-3 flex items-center justify-center h-10 rounded-lg border border-border hover:bg-muted transition-colors"
+          className="mt-3 flex items-center justify-center h-9 rounded-[10px] transition-all hover:bg-[var(--glass-fill)]"
+          style={{ border: "1px solid var(--glass-border)" }}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {isCollapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <ChevronLeft className="h-4 w-4" />
-          )}
+          <span className={cn("transition-transform duration-300", isCollapsed ? "rotate-0" : "rotate-180")}>
+            <ChevronRight className="h-4 w-4 text-[var(--muted-foreground)]" />
+          </span>
         </button>
       </div>
     </aside>

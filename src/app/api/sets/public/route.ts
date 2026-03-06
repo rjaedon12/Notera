@@ -11,15 +11,15 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       where.OR = [
-        { title: { contains: search } },
-        { description: { contains: search } },
+        { title: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
       ]
     }
 
     const sets = await prisma.flashcardSet.findMany({
       where,
       include: {
-        user: { select: { id: true, name: true, email: true } },
+        user: { select: { id: true, name: true } },
         _count: { select: { cards: true } },
       },
       orderBy: { createdAt: "desc" },

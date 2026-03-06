@@ -13,8 +13,8 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system")
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light")
+  const [theme, setThemeState] = useState<Theme>("dark")
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("dark")
 
   useEffect(() => {
     // Load saved theme from localStorage
@@ -44,7 +44,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // Update meta theme-color
     const metaThemeColor = document.querySelector('meta[name="theme-color"]')
     if (metaThemeColor) {
-      metaThemeColor.setAttribute("content", resolved === "dark" ? "#111827" : "#ffffff")
+      metaThemeColor.setAttribute("content", resolved === "dark" ? "#0a0d14" : "#eef1f8")
     }
   }, [theme])
 

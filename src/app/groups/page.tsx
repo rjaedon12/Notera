@@ -108,9 +108,9 @@ export default function GroupsPage() {
   if (!session?.user) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <Users className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold mb-2 text-foreground">Study Groups</h1>
-        <p className="text-muted-foreground mb-4">
+        <Users className="h-12 w-12 mx-auto mb-4" style={{ color: "var(--muted-foreground)", opacity: 0.4 }} />
+        <h1 className="text-2xl font-bold mb-2 text-foreground font-heading">Study Groups</h1>
+        <p className="mb-4" style={{ color: "var(--muted-foreground)" }}>
           Sign in to create or join study groups
         </p>
         <Link href="/login">
@@ -125,8 +125,8 @@ export default function GroupsPage() {
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Study Groups</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl font-bold text-foreground font-heading tracking-tight">Study Groups</h1>
+            <p style={{ color: "var(--muted-foreground)" }}>
               Collaborate with others on study sets
             </p>
           </div>
@@ -222,14 +222,14 @@ export default function GroupsPage() {
         {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-32 rounded-xl" />
+              <Skeleton key={i} className="h-32 rounded-2xl" />
             ))}
           </div>
         ) : groups.length === 0 ? (
           <Card className="p-8 text-center">
-            <Users className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2 text-foreground">No groups yet</h3>
-            <p className="text-muted-foreground mb-4">
+            <Users className="h-12 w-12 mx-auto mb-4" style={{ color: "var(--muted-foreground)", opacity: 0.4 }} />
+            <h3 className="text-lg font-medium mb-2 text-foreground font-heading">No groups yet</h3>
+            <p className="mb-4" style={{ color: "var(--muted-foreground)" }}>
               Create a group or join one with an invite code
             </p>
           </Card>
@@ -237,12 +237,12 @@ export default function GroupsPage() {
           <div className="space-y-4">
             {groups.map((group) => (
               <Link key={group.id} href={`/groups/${group.id}`}>
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <Card className="cursor-pointer">
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-lg text-card-foreground">
+                          <h3 className="font-semibold text-lg text-card-foreground font-heading">
                             {group.name}
                           </h3>
                         </div>
@@ -272,7 +272,8 @@ export default function GroupsPage() {
                             e.preventDefault()
                             copyInviteCode(group.inviteToken)
                           }}
-                          className="flex items-center gap-1 px-3 py-1 bg-muted rounded text-sm"
+                          className="flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-all"
+                          style={{ background: "var(--glass-fill)", border: "1px solid var(--glass-border)" }}
                         >
                           {copiedCode === group.inviteToken ? (
                             <>

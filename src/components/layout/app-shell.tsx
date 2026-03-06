@@ -10,6 +10,7 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   // Load sidebar state from localStorage
   useEffect(() => {
@@ -17,6 +18,8 @@ export function AppShell({ children }: AppShellProps) {
     if (saved !== null) {
       setSidebarCollapsed(saved === "true")
     }
+    // Trigger mount animation
+    requestAnimationFrame(() => setMounted(true))
   }, [])
 
   const toggleSidebar = () => {
@@ -26,14 +29,25 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-x-hidden">
+      {/* Background gradient orbs */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="bg-orb bg-orb-1" />
+        <div className="bg-orb bg-orb-2" />
+        <div className="bg-orb bg-orb-3" />
+      </div>
+
       <TopBar onMenuClick={toggleSidebar} />
       <Sidebar isCollapsed={sidebarCollapsed} onToggle={toggleSidebar} />
       <main
-        className="pt-16 transition-all duration-300"
+        className="pt-16 transition-all duration-300 relative z-10"
         style={{ paddingLeft: sidebarCollapsed ? "4rem" : "14rem" }}
       >
-        <div className="min-h-[calc(100vh-4rem)]">
+        <div
+          className={`min-h-[calc(100vh-4rem)] transition-all duration-500 ease-out ${
+            mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+          }`}
+        >
           {children}
         </div>
       </main>

@@ -515,9 +515,9 @@ function WhiteboardContent() {
   if (!session?.user) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <PenTool className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold mb-2 text-foreground">Whiteboard</h1>
-        <p className="text-muted-foreground mb-4">
+        <PenTool className="h-12 w-12 mx-auto mb-4" style={{ color: "var(--muted-foreground)", opacity: 0.4 }} />
+        <h1 className="text-2xl font-bold mb-2 text-foreground font-heading">Whiteboard</h1>
+        <p className="mb-4" style={{ color: "var(--muted-foreground)" }}>
           Sign in to create and edit whiteboards
         </p>
         <Link href="/login">
@@ -533,13 +533,13 @@ function WhiteboardContent() {
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* Toolbar */}
-      <div className="border-b border-border bg-background p-4 shrink-0">
+      <div className="border-b p-4 shrink-0 backdrop-blur-xl" style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}>
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
             <Link href="/library" className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-5 w-5" />
             </Link>
-            <h1 className="text-xl font-bold text-foreground">
+            <h1 className="text-xl font-bold text-foreground font-heading">
               {activeBoard?.title || "Whiteboard"}
             </h1>
           </div>
@@ -548,7 +548,8 @@ function WhiteboardContent() {
             {/* Board selector */}
             {store.order.length > 0 && (
               <select
-                className="h-8 rounded-md border border-border bg-background px-2 text-sm text-foreground"
+                className="h-8 rounded-xl border px-2 text-sm text-foreground backdrop-blur-sm"
+                style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}
                 value={store.activeId ?? ""}
                 onChange={(e) => handleSelectBoard(e.target.value)}
               >
@@ -590,8 +591,8 @@ function WhiteboardContent() {
               <button
                 key={c}
                 className={cn(
-                  "w-6 h-6 rounded-full border-2 transition-transform",
-                  color === c ? "border-white ring-2 ring-primary scale-110" : "border-transparent hover:scale-105"
+                  "w-6 h-6 rounded-full border-2 transition-all",
+                  color === c ? "border-white ring-2 ring-[var(--primary)] scale-125" : "border-transparent hover:scale-110"
                 )}
                 style={{ backgroundColor: c }}
                 onClick={() => setColor(c)}
@@ -646,9 +647,9 @@ function WhiteboardContent() {
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - Board List */}
-        <div className="w-56 border-r border-border bg-muted/30 p-4 overflow-y-auto shrink-0">
+        <div className="w-56 border-r p-4 overflow-y-auto shrink-0 backdrop-blur-xl" style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-foreground text-sm">My Whiteboards</h2>
+            <h2 className="font-semibold text-foreground text-sm font-heading">My Whiteboards</h2>
             <Button variant="ghost" size="sm" onClick={() => setNewDialogOpen(true)}>
               <Plus className="h-4 w-4" />
             </Button>
@@ -686,12 +687,12 @@ function WhiteboardContent() {
         </div>
 
         {/* Canvas Area */}
-        <div className="flex-1 bg-muted/10 overflow-hidden relative">
+        <div className="flex-1 overflow-hidden relative" style={{ background: "var(--bg-base)" }}>
           {!store.activeId ? (
             <div className="flex items-center justify-center h-full">
               <Card className="p-8 text-center max-w-md">
-                <PenTool className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
-                <h2 className="text-lg font-semibold mb-2 text-foreground">
+                <PenTool className="h-12 w-12 mx-auto mb-4" style={{ color: "var(--muted-foreground)", opacity: 0.4 }} />
+                <h2 className="text-lg font-semibold mb-2 text-foreground font-heading">
                   Create or Select a Whiteboard
                 </h2>
                 <p className="text-muted-foreground mb-4">

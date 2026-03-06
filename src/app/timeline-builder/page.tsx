@@ -481,9 +481,9 @@ function TimelineBuilderContent() {
   if (!session?.user) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <Clock className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold mb-2 text-foreground">Timeline Builder</h1>
-        <p className="text-muted-foreground mb-4">
+        <Clock className="h-12 w-12 mx-auto mb-4" style={{ color: "var(--muted-foreground)", opacity: 0.4 }} />
+        <h1 className="text-2xl font-bold mb-2 text-foreground font-heading">Timeline Builder</h1>
+        <p className="mb-4" style={{ color: "var(--muted-foreground)" }}>
           Sign in to create and edit timelines
         </p>
         <Link href="/login">
@@ -496,13 +496,13 @@ function TimelineBuilderContent() {
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* Toolbar */}
-      <div className="border-b border-border bg-background p-4">
+      <div className="border-b p-4 backdrop-blur-xl" style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}>
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
             <Link href="/resources" className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-5 w-5" />
             </Link>
-            <h1 className="text-xl font-bold text-foreground">
+            <h1 className="text-xl font-bold text-foreground font-heading">
               {timeline?.title || "Timeline Builder"}
             </h1>
           </div>
@@ -572,9 +572,9 @@ function TimelineBuilderContent() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - Timeline List */}
-        <div className="w-64 border-r border-border bg-muted/30 p-4 overflow-y-auto">
+        <div className="w-64 border-r p-4 overflow-y-auto backdrop-blur-xl" style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-foreground">My Timelines</h2>
+            <h2 className="font-semibold text-foreground font-heading">My Timelines</h2>
             <Button 
               variant="ghost" 
               size="sm"
@@ -612,12 +612,12 @@ function TimelineBuilderContent() {
         </div>
 
         {/* Canvas */}
-        <div className="flex-1 overflow-auto bg-muted/10 p-4">
+        <div className="flex-1 overflow-auto p-4" style={{ background: "var(--bg-base)" }}>
           {!currentResourceId ? (
             <div className="flex items-center justify-center h-full">
               <Card className="p-8 text-center max-w-md">
-                <Clock className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
-                <h2 className="text-lg font-semibold mb-2 text-foreground">
+                <Clock className="h-12 w-12 mx-auto mb-4" style={{ color: "var(--muted-foreground)", opacity: 0.4 }} />
+                <h2 className="text-lg font-semibold mb-2 text-foreground font-heading">
                   Create or Select a Timeline
                 </h2>
                 <p className="text-muted-foreground mb-4">
@@ -636,8 +636,8 @@ function TimelineBuilderContent() {
           ) : (
             <div 
               ref={canvasRef}
-              className="relative w-full min-h-[600px] bg-background rounded-xl border border-border"
-              style={{ minWidth: "800px" }}
+              className="relative w-full min-h-[600px] rounded-2xl border backdrop-blur-sm"
+              style={{ minWidth: "800px", background: "var(--glass-fill)", borderColor: "var(--glass-border)" }}
             >
               {/* Help text */}
               {events.length === 0 && (
@@ -724,7 +724,7 @@ function TimelineBuilderContent() {
                   onDoubleClick={() => handleEditEvent(event)}
                 >
                   <div className="p-3">
-                    <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">
+                    <p className="text-xs font-medium mb-1" style={{ color: "var(--primary)" }}>
                       {event.dateLabel}
                     </p>
                     <h4 className="text-sm font-semibold text-card-foreground line-clamp-2">

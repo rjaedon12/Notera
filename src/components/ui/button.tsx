@@ -13,28 +13,17 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         className={cn(
-          // Base styles - consistent across all variants
-          "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          // Base styles
+          "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium glass-btn",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
           "disabled:pointer-events-none disabled:opacity-50",
-          // Variant styles - all token-driven for theme safety
+          // Variant styles
           {
-            // Primary/Default: Vibrant Quizlet-like blue accent
             "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm": variant === "default",
-            
-            // Outline: Clear border, transparent bg, visible in both themes
-            "border border-border bg-transparent text-foreground hover:bg-muted hover:text-foreground": variant === "outline",
-            
-            // Secondary: Subtle surface, not pure white/black
+            "border border-border bg-transparent text-foreground hover:bg-[var(--glass-fill)]": variant === "outline",
             "bg-secondary text-secondary-foreground hover:bg-secondary/80": variant === "secondary",
-            
-            // Ghost: Minimal, only shows background on hover
-            "text-foreground hover:bg-muted hover:text-foreground": variant === "ghost",
-            
-            // Link: Text-only button
+            "text-foreground hover:bg-[var(--glass-fill)]": variant === "ghost",
             "text-primary underline-offset-4 hover:underline": variant === "link",
-            
-            // Destructive: Red for dangerous actions
             "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm": variant === "destructive",
           },
           // Size variants

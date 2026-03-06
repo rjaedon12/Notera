@@ -29,7 +29,8 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
   return (
     <div className="fixed inset-0 z-50">
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm" 
+        className="fixed inset-0 backdrop-blur-md" 
+        style={{ background: "rgba(0,0,0,0.4)" }}
         onClick={() => onOpenChange(false)}
         aria-hidden="true"
       />
@@ -48,10 +49,15 @@ export function DialogContent({ className, children, ...props }: DialogContentPr
   return (
     <div
       className={cn(
-        "relative bg-card text-card-foreground rounded-xl shadow-xl max-w-lg w-full p-6",
-        "animate-in fade-in-0 zoom-in-95 border border-border",
+        "relative rounded-2xl max-w-lg w-full p-6 backdrop-blur-[40px] animate-slide-up",
         className
       )}
+      style={{
+        background: "var(--popover)",
+        border: "1px solid var(--glass-border)",
+        boxShadow: "var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight)",
+        color: "var(--foreground)",
+      }}
       onClick={(e) => e.stopPropagation()}
       role="dialog"
       aria-modal="true"
@@ -70,7 +76,7 @@ export function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLD
 
 export function DialogTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h2 className={cn("text-lg font-semibold text-foreground", className)} {...props} />
+    <h2 className={cn("text-lg font-semibold text-foreground font-heading", className)} {...props} />
   )
 }
 

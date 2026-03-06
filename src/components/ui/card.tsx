@@ -4,13 +4,20 @@ import { cn } from "@/lib/utils"
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-export function Card({ className, ...props }: CardProps) {
+export function Card({ className, style, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow",
+        "rounded-2xl backdrop-blur-[20px] transition-all duration-200 glass-card-hover",
         className
       )}
+      style={{
+        background: "var(--glass-fill)",
+        border: "1px solid var(--glass-border)",
+        boxShadow: "var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight)",
+        color: "var(--card-foreground)",
+        ...style,
+      }}
       {...props}
     />
   )
@@ -28,7 +35,8 @@ export function CardHeader({ className, ...props }: CardProps) {
 export function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={cn("text-xl font-semibold leading-none tracking-tight text-card-foreground", className)}
+      className={cn("text-xl font-semibold leading-none tracking-tight font-heading", className)}
+      style={{ color: "var(--card-foreground)" }}
       {...props}
     />
   )
@@ -37,7 +45,8 @@ export function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHead
 export function CardDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
     <p
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn("text-sm", className)}
+      style={{ color: "var(--muted-foreground)" }}
       {...props}
     />
   )

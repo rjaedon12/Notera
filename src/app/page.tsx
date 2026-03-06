@@ -41,25 +41,25 @@ function ContinueStudying() {
   if (!session?.user || recentStudies.length === 0) return null
 
   return (
-    <section className="py-8 border-b border-border">
+    <section className="py-8 border-b" style={{ borderColor: "var(--glass-border)" }}>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-          <Clock className="h-5 w-5 text-blue-500" />
+        <h2 className="text-xl font-bold text-foreground flex items-center gap-2 font-heading">
+          <Clock className="h-5 w-5" style={{ color: "var(--primary)" }} />
           Continue Studying
         </h2>
-        <Link href="/library" className="text-sm text-blue-500 hover:underline">
+        <Link href="/library" className="text-sm hover:underline" style={{ color: "var(--primary)" }}>
           View all
         </Link>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {recentStudies.slice(0, 4).map((study) => (
           <Link key={study.id} href={`/sets/${study.setId}`}>
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <Card className="cursor-pointer">
               <CardContent className="p-4">
-                <h3 className="font-semibold line-clamp-1 text-card-foreground">
+                <h3 className="font-semibold line-clamp-1 text-card-foreground font-heading">
                   {study.set.title}
                 </h3>
-                <div className="flex items-center justify-between mt-2 text-sm text-muted-foreground">
+                <div className="flex items-center justify-between mt-2 text-sm" style={{ color: "var(--muted-foreground)" }}>
                   <span>{study.set._count.cards} cards</span>
                   <span className="capitalize">{study.mode}</span>
                 </div>
@@ -121,10 +121,10 @@ function HomeContent() {
       {/* Hero Section - shown for non-logged-in users */}
       {!session?.user && (
         <section className="text-center py-12 md:py-20">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            Learn Smarter with <span className="text-primary">Koda</span>
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 font-heading tracking-tight">
+            Learn Smarter with <span style={{ color: "var(--primary)" }}>Koda</span>
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+          <p className="text-lg max-w-2xl mx-auto mb-8" style={{ color: "var(--muted-foreground)" }}>
             Create flashcards, study with multiple modes, and track your progress.
             Master any subject faster with our adaptive learning system.
           </p>
@@ -148,29 +148,32 @@ function HomeContent() {
       {!session?.user && (
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6 py-12">
           <Card className="p-6">
-            <div className="w-12 h-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4">
-              <Layers className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
+              style={{ background: "rgba(79,142,247,0.15)", border: "1px solid rgba(79,142,247,0.2)" }}>
+              <Layers className="h-6 w-6" style={{ color: "var(--primary)" }} />
             </div>
-            <h3 className="font-semibold text-lg mb-2 text-card-foreground">Multiple Study Modes</h3>
-            <p className="text-muted-foreground">
+            <h3 className="font-semibold text-lg mb-2 font-heading">Multiple Study Modes</h3>
+            <p style={{ color: "var(--muted-foreground)" }}>
               Flashcards, Learn, Test, Match, and Timed modes to suit your learning style.
             </p>
           </Card>
           <Card className="p-6">
-            <div className="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-4">
-              <BookOpen className="h-6 w-6 text-green-600 dark:text-green-400" />
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
+              style={{ background: "rgba(66,217,160,0.12)", border: "1px solid rgba(66,217,160,0.2)" }}>
+              <BookOpen className="h-6 w-6" style={{ color: "#42d9a0" }} />
             </div>
-            <h3 className="font-semibold text-lg mb-2 text-card-foreground">Progress Tracking</h3>
-            <p className="text-muted-foreground">
+            <h3 className="font-semibold text-lg mb-2 font-heading">Progress Tracking</h3>
+            <p style={{ color: "var(--muted-foreground)" }}>
               Track your mastery level and focus on cards you need to practice most.
             </p>
           </Card>
           <Card className="p-6">
-            <div className="w-12 h-12 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4">
-              <Users className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
+              style={{ background: "rgba(160,80,220,0.12)", border: "1px solid rgba(160,80,220,0.2)" }}>
+              <Users className="h-6 w-6" style={{ color: "#a050dc" }} />
             </div>
-            <h3 className="font-semibold text-lg mb-2 text-card-foreground">Share & Collaborate</h3>
-            <p className="text-muted-foreground">
+            <h3 className="font-semibold text-lg mb-2 font-heading">Share & Collaborate</h3>
+            <p style={{ color: "var(--muted-foreground)" }}>
               Share your study sets with friends or discover public sets from others.
             </p>
           </Card>
@@ -180,8 +183,8 @@ function HomeContent() {
       {/* Featured Sets */}
       <section className="py-12">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Star className="h-6 w-6 text-yellow-500" />
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2 font-heading">
+            <Star className="h-6 w-6" style={{ color: "var(--primary)" }} />
             {search ? `Search results for "${search}"` : "Featured Study Sets"}
           </h2>
         </div>
@@ -198,10 +201,10 @@ function HomeContent() {
               const isStarred = starredSetIds.includes(set.id)
               return (
                 <Link key={set.id} href={`/sets/${set.id}`}>
-                  <Card className={`h-full hover:shadow-lg transition-shadow cursor-pointer ${isStarred ? "ring-2 ring-yellow-400/50" : ""}`}>
+                  <Card className={`h-full cursor-pointer ${isStarred ? "ring-2 ring-[var(--primary)]/30" : ""}`}>
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
-                        <h3 className="font-semibold text-lg mb-1 line-clamp-1 text-card-foreground flex-1">{set.title}</h3>
+                        <h3 className="font-semibold text-lg mb-1 line-clamp-1 flex-1 font-heading">{set.title}</h3>
                         {session?.user && (
                           <button
                             onClick={(e) => handleToggleStar(set.id, e)}
@@ -220,15 +223,16 @@ function HomeContent() {
                           {set.description}
                         </p>
                       )}
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-blue-600 font-medium">
+                      <div className="flex items-center gap-2 text-xs" style={{ color: "var(--muted-foreground)" }}>
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center"
+                          style={{ background: "rgba(79,142,247,0.15)", border: "1px solid rgba(79,142,247,0.2)" }}>
+                          <span className="font-medium" style={{ color: "var(--primary)", fontSize: "0.65rem" }}>
                             {set.owner?.name?.[0]?.toUpperCase() || "U"}
                           </span>
                         </div>
                         <span>{set.owner?.name || "Anonymous"}</span>
                         {isStarred && (
-                          <span className="ml-auto text-yellow-500 text-xs font-medium">★ Starred</span>
+                          <span className="ml-auto text-xs font-medium" style={{ color: "var(--primary)" }}>★ Starred</span>
                         )}
                       </div>
                     </CardContent>
@@ -239,9 +243,9 @@ function HomeContent() {
           </div>
         ) : (
           <Card className="p-8 text-center">
-            <BookOpen className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-            <h3 className="font-semibold text-lg mb-2 text-card-foreground">No study sets found</h3>
-            <p className="text-muted-foreground mb-4">
+            <BookOpen className="h-12 w-12 mx-auto mb-4" style={{ color: "var(--muted-foreground)", opacity: 0.5 }} />
+            <h3 className="font-semibold text-lg mb-2 text-card-foreground font-heading">No study sets found</h3>
+            <p className="mb-4" style={{ color: "var(--muted-foreground)" }}>
               {search 
                 ? "Try a different search term or create your own set."
                 : "Be the first to create a public study set!"}
@@ -261,9 +265,9 @@ export default function HomePage() {
     <Suspense fallback={
       <div className="container mx-auto px-4 py-8">
         <div className="text-center py-12">
-          <div className="animate-pulse">
-            <div className="h-12 bg-muted rounded w-96 mx-auto mb-4" />
-            <div className="h-6 bg-muted rounded w-64 mx-auto" />
+          <div>
+            <div className="h-12 glass-shimmer rounded-2xl w-96 mx-auto mb-4" />
+            <div className="h-6 glass-shimmer rounded-2xl w-64 mx-auto" />
           </div>
         </div>
       </div>
