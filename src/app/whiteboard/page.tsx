@@ -556,10 +556,16 @@ function WhiteboardContent() {
     if (!canvas) return
     const ctx = canvas.getContext("2d")
     if (!ctx) return
-    // Use CSS/logical pixel dimensions (offsetWidth/Height), not physical pixel
-    // dimensions (canvas.width), so drawing coordinates always match pointer coords
-    const w = canvas.offsetWidth || canvas.width
-    const h = canvas.offsetHeight || canvas.height
+    const rect = canvas.getBoundingClientRect()
+    const w = Math.max(1, Math.round(rect.width || canvas.clientWidth || canvas.width))
+    const h = Math.max(1, Math.round(rect.height || canvas.clientHeight || canvas.height))
+    const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
+
+    // Always render in CSS/logical pixels so pointer coordinates and drawing
+    // coordinates stay aligned, while still using a DPR-aware backing store.
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     drawBackground(ctx, w, h, background, transform)
     renderElements(ctx, elements, transform, selectedId)
     if (currentElRef.current) {
@@ -581,23 +587,42 @@ function WhiteboardContent() {
   // Using renderFrameRef (not renderFrame directly) keeps this effect stable so it never
   // re-runs on state changes, which would reset the canvas context mid-draw.
   useEffect(() => {
-    const resize = () => {
+    const container = containerRef.current
+    if (!container) return
+
+    const syncCanvasSize = () => {
       const canvas = canvasRef.current
-      const container = containerRef.current
       if (!canvas || !container) return
       const rect = container.getBoundingClientRect()
-      // Simple 1:1 sizing — no DPR scaling to avoid coordinate system mismatches
-      if (canvas.width !== rect.width || canvas.height !== rect.height) {
-        canvas.width = rect.width
-        canvas.height = rect.height
+      const cssWidth = Math.max(1, Math.round(rect.width))
+      const cssHeight = Math.max(1, Math.round(rect.height))
+      const dpr = window.devicePixelRatio || 1
+      const pixelWidth = Math.max(1, Math.round(cssWidth * dpr))
+      const pixelHeight = Math.max(1, Math.round(cssHeight * dpr))
+
+      if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+        canvas.width = pixelWidth
+        canvas.height = pixelHeight
       }
-      canvas.style.width = `${rect.width}px`
-      canvas.style.height = `${rect.height}px`
+      canvas.style.width = `${cssWidth}px`
+      canvas.style.height = `${cssHeight}px`
       renderFrameRef.current()
     }
-    resize()
-    window.addEventListener("resize", resize)
-    return () => window.removeEventListener("resize", resize)
+
+    const observer = new ResizeObserver(() => {
+      syncCanvasSize()
+    })
+
+    syncCanvasSize()
+    const rafId = window.requestAnimationFrame(syncCanvasSize)
+    observer.observe(container)
+    window.addEventListener("resize", syncCanvasSize)
+
+    return () => {
+      window.cancelAnimationFrame(rafId)
+      observer.disconnect()
+      window.removeEventListener("resize", syncCanvasSize)
+    }
   }, []) // Empty deps — only mount/unmount, never triggered by state changes
 
   // ============================================================================
@@ -1272,7 +1297,7 @@ function WhiteboardContent() {
               }
             }
           }}
-          className="absolute inset-0"
+          className="absolute inset-0 block h-full w-full"
           style={{ cursor: tool === "pan" ? "grab" : tool === "select" ? "default" : "crosshair" }}
         />
       </div>
