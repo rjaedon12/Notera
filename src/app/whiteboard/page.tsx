@@ -548,43 +548,57 @@ function WhiteboardContent() {
   // CANVAS RENDERING
   // ============================================================================
 
+  // Stable ref so the resize effect never needs to re-run due to renderFrame identity changes
+  const renderFrameRef = useRef<() => void>(() => {})
+
   const renderFrame = useCallback(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext("2d")
     if (!ctx) return
-    drawBackground(ctx, canvas.width, canvas.height, background, transform)
+    // Use CSS/logical pixel dimensions (offsetWidth/Height), not physical pixel
+    // dimensions (canvas.width), so drawing coordinates always match pointer coords
+    const w = canvas.offsetWidth || canvas.width
+    const h = canvas.offsetHeight || canvas.height
+    drawBackground(ctx, w, h, background, transform)
     renderElements(ctx, elements, transform, selectedId)
     if (currentElRef.current) {
       renderElements(ctx, [currentElRef.current], transform, null)
     }
   }, [elements, transform, background, selectedId])
 
+  // Keep the ref in sync so the resize handler always calls the latest version
+  useEffect(() => {
+    renderFrameRef.current = renderFrame
+  }, [renderFrame])
+
   useEffect(() => {
     const id = requestAnimationFrame(renderFrame)
     return () => cancelAnimationFrame(id)
   }, [renderFrame])
 
-  // Resize canvas to fill container
+  // Resize canvas to fill container — runs ONCE on mount + on actual window resize only.
+  // Using renderFrameRef (not renderFrame directly) keeps this effect stable so it never
+  // re-runs on state changes, which would reset the canvas context mid-draw.
   useEffect(() => {
     const resize = () => {
       const canvas = canvasRef.current
       const container = containerRef.current
       if (!canvas || !container) return
-      const dpr = window.devicePixelRatio || 1
       const rect = container.getBoundingClientRect()
-      canvas.width = rect.width * dpr
-      canvas.height = rect.height * dpr
+      // Simple 1:1 sizing — no DPR scaling to avoid coordinate system mismatches
+      if (canvas.width !== rect.width || canvas.height !== rect.height) {
+        canvas.width = rect.width
+        canvas.height = rect.height
+      }
       canvas.style.width = `${rect.width}px`
       canvas.style.height = `${rect.height}px`
-      const ctx = canvas.getContext("2d")
-      if (ctx) ctx.scale(dpr, dpr)
-      renderFrame()
+      renderFrameRef.current()
     }
     resize()
     window.addEventListener("resize", resize)
     return () => window.removeEventListener("resize", resize)
-  }, [renderFrame])
+  }, []) // Empty deps — only mount/unmount, never triggered by state changes
 
   // ============================================================================
   // HISTORY
