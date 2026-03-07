@@ -74,16 +74,23 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       >
         <div
           className={cn(
-            "relative inline-flex items-center gap-3 whitespace-nowrap rounded-[10px] text-sm font-medium transition-all w-full h-10 px-3",
+            "relative inline-flex items-center gap-3 whitespace-nowrap rounded-[10px] text-sm font-medium transition-all w-full h-9 px-3",
             isCollapsed && "justify-center px-0",
-            isActive 
-              ? "bg-[rgba(79,142,247,0.18)] text-[var(--primary)]"
-              : "text-[var(--text-secondary,var(--muted-foreground))] hover:text-foreground hover:bg-[var(--glass-fill)]"
+            isActive
+              ? "text-foreground"
+              : "hover:text-foreground hover:bg-[var(--glass-fill)]"
           )}
+          style={isActive ? {
+            background: "rgba(255,255,255,0.10)",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12), 0 1px 3px rgba(0,0,0,0.10)",
+            color: "var(--foreground)",
+          } : {
+            color: "var(--muted-foreground)",
+          }}
         >
           {/* Active indicator bar */}
           {isActive && (
-            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[var(--primary)] transition-all" />
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full" style={{ background: "var(--primary)" }} />
           )}
           <span className={cn(isActive && !isCollapsed && "ml-1")}>{item.icon}</span>
           {!isCollapsed && <span>{item.label}</span>}
@@ -95,13 +102,15 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-16 h-[calc(100vh-4rem)] z-30 transition-all duration-300",
-        "backdrop-blur-[32px] border-r",
+        "fixed left-0 top-14 h-[calc(100vh-3.5rem)] z-30 transition-all duration-300",
+        "border-r",
         isCollapsed ? "w-16" : "w-56"
       )}
       style={{
         background: "var(--sidebar-bg)",
         borderColor: "var(--sidebar-border)",
+        backdropFilter: "saturate(180%) blur(48px)",
+        WebkitBackdropFilter: "saturate(180%) blur(48px)",
       }}
     >
       <div className="flex flex-col h-full p-3">

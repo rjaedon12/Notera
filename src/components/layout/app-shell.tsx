@@ -40,7 +40,7 @@ export function AppShell({ children }: AppShellProps) {
       <TopBar onMenuClick={toggleSidebar} />
       <Sidebar isCollapsed={sidebarCollapsed} onToggle={toggleSidebar} />
       <main
-        className="pt-16 transition-all duration-300 relative z-10"
+        className="pt-14 transition-all duration-300 relative z-10"
         style={{ paddingLeft: sidebarCollapsed ? "4rem" : "14rem" }}
       >
         <div

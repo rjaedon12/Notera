@@ -125,10 +125,10 @@ export default function AdminDashboard() {
   // Ban/Unban mutation
   const banMutation = useMutation({
     mutationFn: async ({ userId, isBanned }: { userId: string; isBanned: boolean }) => {
-      const res = await fetch(`/api/admin/users/${userId}/ban`, {
-        method: "PUT",
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isBanned }),
+        body: JSON.stringify({ userId, isBanned }),
       })
       if (!res.ok) throw new Error("Failed")
     },

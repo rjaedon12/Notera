@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/lib/auth"
+import { verifyAdminCookie } from "@/lib/admin-auth"
 
 // GET /api/admin/resources — list all resources (admin only)
 export async function GET() {
   try {
-    const session = await auth()
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!(await verifyAdminCookie())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
@@ -27,8 +26,7 @@ export async function GET() {
 // DELETE /api/admin/resources — delete a resource by id (admin only)
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!(await verifyAdminCookie())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 

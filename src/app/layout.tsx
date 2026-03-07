@@ -34,7 +34,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#0a0d14" />
+        <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)"/>
+        <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)"/>
       </head>
       <body className={`${heading.variable} ${body.variable} font-sans antialiased`}>
         <Providers>
