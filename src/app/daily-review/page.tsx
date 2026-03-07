@@ -19,7 +19,7 @@ interface ReviewCard {
   setTitle: string
   easeFactor: number
   interval: number
-  nextReviewAt: string
+  nextReviewAt: string | null
 }
 
 export default function DailyReviewPage() {
@@ -32,15 +32,28 @@ export default function DailyReviewPage() {
   const [completed, setCompleted] = useState<string[]>([])
   const [sessionStats, setSessionStats] = useState({ correct: 0, incorrect: 0 })
 
-  const { data: dueCards = [], isLoading } = useQuery<ReviewCard[]>({
+  const { data: rawCards, isLoading } = useQuery({
     queryKey: ["dailyReview"],
-    queryFn: async () => {
+    queryFn: async (): Promise<ReviewCard[]> => {
       const res = await fetch("/api/daily-review")
       if (!res.ok) throw new Error("Failed to fetch review cards")
-      return res.json()
+      const json = await res.json()
+      const all = [...(json.dueCards ?? []), ...(json.newCards ?? [])]
+      return all.map((c: Record<string, unknown>) => ({
+        id: c.id as string,
+        term: c.term as string,
+        definition: c.definition as string,
+        setId: (c.setId ?? (c.set as Record<string, unknown>)?.id) as string,
+        setTitle: ((c.set as Record<string, unknown>)?.title ?? "") as string,
+        easeFactor: ((c.progress as Record<string, unknown>)?.easeFactor ?? 2.5) as number,
+        interval: ((c.progress as Record<string, unknown>)?.interval ?? 0) as number,
+        nextReviewAt: ((c.progress as Record<string, unknown>)?.nextReviewAt ?? null) as string | null,
+      }))
     },
     enabled: !!session,
+    retry: false,
   })
+  const dueCards: ReviewCard[] = rawCards ?? []
 
   const reviewMutation = useMutation({
     mutationFn: async ({ cardId, quality }: { cardId: string; quality: number }) => {

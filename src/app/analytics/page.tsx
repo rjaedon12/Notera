@@ -9,21 +9,24 @@ import {
 } from "lucide-react"
 
 interface AnalyticsData {
-  totalSetsStudied: number
-  totalCardsReviewed: number
-  totalStudyTime: number
-  averageAccuracy: number
+  totalSets: number
+  totalCards: number
+  cardsMastered: number
+  cardsLearning: number
+  cardsNew: number
   currentStreak: number
-  longestStreak: number
-  last30Days: { date: string; cardsReviewed: number; minutesStudied: number }[]
-  topSets: { setId: string; title: string; cardsReviewed: number }[]
+  totalStudySessions: number
+  quizzesTaken: number
+  averageQuizScore: number
+  studyActivity: { date: string; count: number }[]
+  achievementsUnlocked: number
 }
 
 export default function AnalyticsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
 
-  const { data: analytics, isLoading } = useQuery<AnalyticsData>({
+  const { data: analytics, isLoading, isError } = useQuery<AnalyticsData>({
     queryKey: ["analytics"],
     queryFn: async () => {
       const res = await fetch("/api/analytics")
@@ -31,6 +34,7 @@ export default function AnalyticsPage() {
       return res.json()
     },
     enabled: !!session,
+    retry: false,
   })
 
   if (status === "loading" || isLoading) {
@@ -47,13 +51,13 @@ export default function AnalyticsPage() {
   }
 
   const stats = [
-    { label: "Sets Studied", value: analytics?.totalSetsStudied ?? 0, icon: <BookOpen className="h-5 w-5" />, color: "#4F8EF7" },
-    { label: "Cards Reviewed", value: analytics?.totalCardsReviewed ?? 0, icon: <Brain className="h-5 w-5" />, color: "#42d9a0" },
-    { label: "Study Minutes", value: analytics?.totalStudyTime ?? 0, icon: <Clock className="h-5 w-5" />, color: "#a050dc" },
-    { label: "Accuracy", value: `${analytics?.averageAccuracy ?? 0}%`, icon: <Target className="h-5 w-5" />, color: "#f59e0b" },
+    { label: "Study Sets", value: analytics?.totalSets ?? 0, icon: <BookOpen className="h-5 w-5" />, color: "#4F8EF7" },
+    { label: "Cards Mastered", value: analytics?.cardsMastered ?? 0, icon: <Brain className="h-5 w-5" />, color: "#42d9a0" },
+    { label: "Study Sessions", value: analytics?.totalStudySessions ?? 0, icon: <Clock className="h-5 w-5" />, color: "#a050dc" },
+    { label: "Avg Quiz Score", value: `${analytics?.averageQuizScore ?? 0}%`, icon: <Target className="h-5 w-5" />, color: "#f59e0b" },
   ]
 
-  const maxCards = Math.max(1, ...(analytics?.last30Days?.map(d => d.cardsReviewed) ?? [1]))
+  const maxCards = Math.max(1, ...(analytics?.studyActivity?.map((d: { date: string; count: number }) => d.count) ?? [1]))
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
@@ -94,29 +98,27 @@ export default function AnalyticsPage() {
               <p className="text-sm text-muted-foreground">Current streak (days)</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-muted-foreground">{analytics?.longestStreak ?? 0}</p>
-              <p className="text-sm text-muted-foreground">Longest streak</p>
+              <p className="text-2xl font-bold text-muted-foreground">{analytics?.quizzesTaken ?? 0}</p>
+              <p className="text-sm text-muted-foreground">Quizzes taken</p>
             </div>
           </div>
         </div>
         <div className="rounded-xl border p-6" style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}>
           <div className="flex items-center gap-3 mb-4">
             <TrendingUp className="h-6 w-6 text-green-500" />
-            <h2 className="text-lg font-semibold text-foreground">Top Sets</h2>
+            <h2 className="text-lg font-semibold text-foreground">Cards Progress</h2>
           </div>
           <div className="space-y-3">
-            {(analytics?.topSets ?? []).slice(0, 3).map((set, i) => (
-              <div key={set.setId} className="flex items-center justify-between">
-                <span className="text-sm text-foreground truncate max-w-[200px]">
-                  <span className="text-muted-foreground mr-2">#{i + 1}</span>
-                  {set.title}
-                </span>
-                <span className="text-sm text-muted-foreground">{set.cardsReviewed} cards</span>
+            {[
+              { label: "Mastered", value: analytics?.cardsMastered ?? 0, color: "#42d9a0" },
+              { label: "Learning", value: analytics?.cardsLearning ?? 0, color: "#f59e0b" },
+              { label: "New", value: analytics?.cardsNew ?? 0, color: "#4F8EF7" },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center justify-between">
+                <span className="text-sm text-foreground">{item.label}</span>
+                <span className="text-sm font-semibold" style={{ color: item.color }}>{item.value}</span>
               </div>
             ))}
-            {(!analytics?.topSets || analytics.topSets.length === 0) && (
-              <p className="text-sm text-muted-foreground">Start studying to see your top sets!</p>
-            )}
           </div>
         </div>
       </div>
@@ -128,18 +130,18 @@ export default function AnalyticsPage() {
           <h2 className="text-lg font-semibold text-foreground">Last 30 Days Activity</h2>
         </div>
         <div className="flex items-end gap-[2px] h-32">
-          {(analytics?.last30Days ?? Array.from({ length: 30 }, () => ({ date: "", cardsReviewed: 0, minutesStudied: 0 }))).map((day, i) => {
-            const height = Math.max(2, (day.cardsReviewed / maxCards) * 100)
+          {(analytics?.studyActivity ?? Array.from({ length: 30 }, () => ({ date: "", count: 0 }))).map((day: { date: string; count: number }, i: number) => {
+            const height = Math.max(2, (day.count / maxCards) * 100)
             return (
               <div
                 key={i}
                 className="flex-1 rounded-t-sm transition-all hover:opacity-80 group relative"
                 style={{
                   height: `${height}%`,
-                  background: day.cardsReviewed > 0 ? "var(--primary)" : "var(--glass-border)",
-                  opacity: day.cardsReviewed > 0 ? 1 : 0.3,
+                  background: day.count > 0 ? "var(--primary)" : "var(--glass-border)",
+                  opacity: day.count > 0 ? 1 : 0.3,
                 }}
-                title={`${day.date}: ${day.cardsReviewed} cards`}
+                title={`${day.date}: ${day.count} sessions`}
               />
             )
           })}
