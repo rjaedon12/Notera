@@ -105,31 +105,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       }}
     >
       <div className="flex flex-col h-full p-3">
-        {/* Logo monogram when collapsed */}
-        {isCollapsed && (
-          <div className="flex justify-center mb-4">
-            <div className="h-8 w-8 rounded-lg flex items-center justify-center font-heading"
-              style={{ background: "var(--primary)", color: "#fff", fontWeight: 700, fontSize: "1rem" }}
-            >
-              K
-            </div>
-          </div>
-        )}
-
-        {/* Koda wordmark when expanded */}
-        {!isCollapsed && (
-          <div className="flex items-center gap-2 px-3 mb-5">
-            <div className="h-7 w-7 rounded-lg flex items-center justify-center font-heading"
-              style={{ background: "var(--primary)", color: "#fff", fontWeight: 700, fontSize: "0.85rem" }}
-            >
-              K
-            </div>
-            <span className="font-heading text-lg font-bold tracking-tight text-foreground">Koda</span>
-          </div>
-        )}
-
         {/* Main Navigation */}
-        <nav className="flex-1 space-y-0.5 nav-stagger">
+        <nav className="flex-1 space-y-0.5 nav-stagger mt-2">
           {filterItems(navItems).map(renderNavItem)}
         </nav>
 

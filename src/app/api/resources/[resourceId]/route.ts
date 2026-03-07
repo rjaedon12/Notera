@@ -9,15 +9,12 @@ export async function GET(
 ) {
   try {
     const session = await auth()
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
     const { resourceId } = await params
 
     const resource = await prisma.resource.findUnique({
       where: { id: resourceId },
       include: {
+        user: { select: { id: true, name: true } },
         timelineEvents: { orderBy: { sortOrder: "asc" } },
         timelineArrows: true,
       },
@@ -27,11 +24,18 @@ export async function GET(
       return NextResponse.json({ error: "Not found" }, { status: 404 })
     }
 
-    if (resource.visibility === "PRIVATE" && resource.userId !== session.user.id) {
+    // Allow public resources for anyone, private only for owner
+    if (resource.visibility === "PRIVATE" && resource.userId !== session?.user?.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    return NextResponse.json(resource)
+    return NextResponse.json({
+      ...resource,
+      ownerId: resource.userId,
+      owner: { id: resource.user.id, name: resource.user.name },
+      storagePath: null,
+      tags: [],
+    })
   } catch (error) {
     console.error("Get resource error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

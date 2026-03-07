@@ -50,14 +50,14 @@ export function TopBar({ onMenuClick }: TopBarProps) {
             <Menu className="h-5 w-5" />
           </button>
           
-          <Link href="/" className="flex items-center gap-2 lg:hidden">
+          <Link href="/" className="flex items-center gap-2">
             <div
               className="h-8 w-8 rounded-lg flex items-center justify-center font-heading"
-              style={{ background: "var(--primary)", color: "#fff", fontWeight: 700, fontSize: "0.9rem" }}
+              style={{ background: "linear-gradient(135deg, #4F8EF7, #6366F1)", color: "#fff", fontWeight: 700, fontSize: "0.9rem" }}
             >
               K
             </div>
-            <span className="font-heading font-bold text-xl hidden sm:block text-foreground tracking-tight">Koda</span>
+            <span className="font-heading font-bold text-xl text-foreground tracking-tight">Koda</span>
           </Link>
         </div>
 

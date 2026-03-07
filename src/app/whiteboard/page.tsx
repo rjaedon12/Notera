@@ -36,6 +36,33 @@ import { ConfirmDialog } from "@/components/whiteboard/ConfirmDialog"
 import { useWhiteboardCanvas } from "@/components/whiteboard/useWhiteboardCanvas"
 
 // ============================================================================
+// Equation Preview (live KaTeX preview in equation dialog)
+// ============================================================================
+
+function EquationPreview({ latex }: { latex: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!ref.current || !latex.trim()) return
+    let cancelled = false
+    import("katex").then(({ default: katex }) => {
+      if (cancelled || !ref.current) return
+      try {
+        katex.render(latex, ref.current, { throwOnError: false, displayMode: true })
+        setError(null)
+      } catch (e: any) {
+        setError(e?.message || "Invalid LaTeX")
+      }
+    })
+    return () => { cancelled = true }
+  }, [latex])
+
+  if (error) return <span className="text-red-400 text-xs">{error}</span>
+  return <div ref={ref} className="text-white" />
+}
+
+// ============================================================================
 // Main Whiteboard Page Component
 // ============================================================================
 
@@ -48,21 +75,12 @@ export default function WhiteboardPage() {
 }
 
 function WhiteboardApp() {
-  const { user, isAdmin, announcement, login, signup, logout } = useWBAuth()
-
-  if (!user) {
-    return <LoginModal onLogin={login} onSignup={signup} />
-  }
+  const defaultUser = { id: "local-user", username: "User", isAdmin: false }
+  const user = defaultUser
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col overflow-hidden">
-      {announcement.enabled && announcement.text && (
-        <div className="px-4 py-2 text-center text-sm font-medium text-white shrink-0" style={{ backgroundColor: announcement.color || "#3b82f6" }}>
-          <Megaphone className="inline h-4 w-4 mr-2" />
-          {announcement.text}
-        </div>
-      )}
-      <WhiteboardMain user={user} isAdmin={isAdmin} onLogout={logout} />
+      <WhiteboardMain user={user} isAdmin={false} onLogout={() => {}} />
     </div>
   )
 }
@@ -761,11 +779,11 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
         )}
 
         {/* Canvas container */}
-        <div className="flex-1 relative overflow-hidden" style={{ touchAction: "none" }}>
+        <div className="flex-1 relative overflow-hidden" style={{ touchAction: "none", willChange: "transform" }}>
           <div
             ref={containerRef}
             className="absolute inset-0"
-            style={{ cursor: tool === "pan" ? "grab" : tool === "select" ? "default" : "crosshair" }}
+            style={{ cursor: tool === "pan" ? "grab" : tool === "select" ? "default" : "crosshair", willChange: "transform" }}
             onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "copy" }}
             onDrop={(e) => {
               e.preventDefault()
@@ -867,7 +885,7 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
               <button onClick={() => setShowTextDialog(false)} className="px-4 py-2 text-sm rounded-lg text-gray-400 hover:bg-white/5">Cancel</button>
               <button
                 onClick={() => {
-                  if (textInput.trim()) canvasActions.addText(textInput, 0, 0, style)
+                  if (textInput.trim()) { canvasActions.addText(textInput, 0, 0, style); setTool("select") }
                   setTextInput(""); setShowTextDialog(false)
                 }}
                 className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
@@ -932,7 +950,7 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
               type="text"
               value={equationInput}
               onChange={(e) => setEquationInput(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 mb-4 font-mono"
+              className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 mb-2 font-mono"
               placeholder="e.g. E = mc^2"
               autoFocus
               onKeyDown={(e) => {
@@ -942,6 +960,12 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
                 }
               }}
             />
+            {/* Live KaTeX preview */}
+            {equationInput.trim() && (
+              <div className="mb-4 p-3 rounded-lg bg-white/5 border border-white/10 text-center overflow-x-auto">
+                <EquationPreview latex={equationInput} />
+              </div>
+            )}
             <div className="flex justify-end gap-2">
               <button onClick={() => setShowEquationDialog(false)} className="px-4 py-2 text-sm rounded-lg text-gray-400 hover:bg-white/5">Cancel</button>
               <button

@@ -185,10 +185,23 @@ export function useWhiteboardCanvas({
         drawCanvasBackground(bgEl, background, customBgColor, canvas.viewportTransform || [1, 0, 0, 1, 0, 0], isDark)
       })
       canvas.on("mouse:wheel", (opt: any) => {
-        const delta = opt.e.deltaY; let zoom = canvas.getZoom()
+        const e = opt.e as WheelEvent
+        // Trackpad pan: if no ctrl key, treat as pan
+        if (!e.ctrlKey && !e.metaKey) {
+          const vpt = canvas.viewportTransform!
+          vpt[4] -= e.deltaX
+          vpt[5] -= e.deltaY
+          canvas.requestRenderAll()
+          e.preventDefault()
+          e.stopPropagation()
+          return
+        }
+        // Ctrl + wheel = zoom (pinch-to-zoom on trackpad)
+        const delta = e.deltaY
+        let zoom = canvas.getZoom()
         zoom *= 0.999 ** delta; zoom = Math.min(Math.max(zoom, 0.1), 30)
-        canvas.zoomToPoint(new fabric.Point(opt.e.offsetX, opt.e.offsetY), zoom)
-        opt.e.preventDefault(); opt.e.stopPropagation()
+        canvas.zoomToPoint(new fabric.Point(e.offsetX, e.offsetY), zoom)
+        e.preventDefault(); e.stopPropagation()
       })
       onCanvasReady(canvas)
       const ro = new ResizeObserver(() => {
@@ -344,8 +357,11 @@ export function useWhiteboardCanvas({
   const addText = useCallback((text: string, x: number, y: number, opts: Partial<StyleState>) => {
     const c = canvasRef.current; if (!c) return; pushState()
     const f = getFabricSync()
-    const t = new f.IText(text, { left: x || c.getWidth() / 2, top: y || c.getHeight() / 2, fontSize: opts.fontSize || style.fontSize, fontFamily: opts.fontFamily || style.fontFamily, fill: opts.strokeColor || style.strokeColor, fontWeight: opts.fontBold ? "bold" : "normal", fontStyle: opts.fontItalic ? "italic" : "normal", underline: opts.fontUnderline || false, textAlign: opts.textAlign || "left", originX: "center", originY: "center" })
-    c.add(t); c.setActiveObject(t); c.renderAll(); onModified()
+    const t = new f.IText(text, { left: x || c.getWidth() / 2, top: y || c.getHeight() / 2, fontSize: opts.fontSize || style.fontSize, fontFamily: opts.fontFamily || style.fontFamily, fill: opts.strokeColor || style.strokeColor, fontWeight: opts.fontBold ? "bold" : "normal", fontStyle: opts.fontItalic ? "italic" : "normal", underline: opts.fontUnderline || false, textAlign: opts.textAlign || "left", originX: "center", originY: "center", editable: true })
+    c.add(t); c.setActiveObject(t)
+    // Enter editing mode immediately so user can type
+    t.enterEditing(); t.selectAll()
+    c.renderAll(); onModified()
   }, [pushState, style, onModified])
 
   const addSticky = useCallback((text: string, x: number, y: number, color: string) => {
@@ -362,23 +378,61 @@ export function useWhiteboardCanvas({
     const f = getFabricSync()
     try {
       const katex = (await import("katex")).default
-      const div = document.createElement("div"); div.style.cssText = "position:absolute;left:-9999px;font-size:" + style.fontSize + "px"
-      document.body.appendChild(div)
-      katex.render(latex, div, { throwOnError: false, displayMode: true })
-      const html = div.innerHTML; const dw = div.offsetWidth + 20; const dh = div.offsetHeight + 20
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${dw}" height="${dh}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="font-size:${style.fontSize}px;color:${style.strokeColor};padding:10px">${html}</div></foreignObject></svg>`
-      document.body.removeChild(div)
-      const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" }); const url = URL.createObjectURL(blob)
+      // Render KaTeX to a temporary off-screen div to measure it
+      const wrapper = document.createElement("div")
+      wrapper.style.cssText = "position:absolute;left:-9999px;top:-9999px;font-size:" + style.fontSize + "px;color:" + style.strokeColor + ";padding:10px;background:transparent;display:inline-block"
+      document.body.appendChild(wrapper)
+      katex.render(latex, wrapper, { throwOnError: false, displayMode: true })
+      const w = wrapper.offsetWidth + 20
+      const h = wrapper.offsetHeight + 20
+      const html = wrapper.innerHTML
+      document.body.removeChild(wrapper)
+
+      // Build SVG with embedded KaTeX HTML via foreignObject
+      const svgNS = "http://www.w3.org/2000/svg"
+      const svgStr = [
+        `<svg xmlns="${svgNS}" width="${w}" height="${h}">`,
+        `<foreignObject width="100%" height="100%">`,
+        `<div xmlns="http://www.w3.org/1999/xhtml" style="font-size:${style.fontSize}px;color:${style.strokeColor};padding:10px;display:inline-block">`,
+        html,
+        `</div></foreignObject></svg>`,
+      ].join("")
+
+      const blob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" })
+      const url = URL.createObjectURL(blob)
       const img = new Image()
-      img.onload = () => {
-        const tc = document.createElement("canvas"); tc.width = img.width * 2; tc.height = img.height * 2
-        const ctx = tc.getContext("2d")!; ctx.scale(2, 2); ctx.drawImage(img, 0, 0); URL.revokeObjectURL(url)
-        const fi = new f.Image(tc, { left: x || c.getWidth() / 2 - img.width / 2, top: y || c.getHeight() / 2 - img.height / 2, scaleX: 0.5, scaleY: 0.5 })
-        c.add(fi); c.setActiveObject(fi); c.renderAll(); onModified()
-      }
-      img.src = url
+      img.crossOrigin = "anonymous"
+
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => {
+          // Rasterise at 2× for crispness
+          const tc = document.createElement("canvas")
+          tc.width = img.width * 2; tc.height = img.height * 2
+          const ctx = tc.getContext("2d")!
+          ctx.scale(2, 2); ctx.drawImage(img, 0, 0)
+          URL.revokeObjectURL(url)
+
+          const fi = new f.Image(tc, {
+            left: x || c.getWidth() / 2 - img.width / 2,
+            top: y || c.getHeight() / 2 - img.height / 2,
+            scaleX: 0.5, scaleY: 0.5,
+          })
+          // Store original latex for re-editing later
+          fi.set("data-latex" as any, latex)
+          c.add(fi); c.setActiveObject(fi); c.renderAll(); onModified()
+          resolve()
+        }
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Image failed")) }
+        img.src = url
+      })
     } catch {
-      const t = new f.IText(latex, { left: x || c.getWidth() / 2, top: y || c.getHeight() / 2, fontSize: style.fontSize, fontFamily: "'Times New Roman', serif", fontStyle: "italic", fill: style.strokeColor, originX: "center", originY: "center" })
+      // Fallback: plain italic text
+      const t = new f.IText(latex, {
+        left: x || c.getWidth() / 2, top: y || c.getHeight() / 2,
+        fontSize: style.fontSize, fontFamily: "'Times New Roman', serif",
+        fontStyle: "italic", fill: style.strokeColor,
+        originX: "center", originY: "center",
+      })
       c.add(t); c.setActiveObject(t); c.renderAll(); onModified()
     }
   }, [pushState, style, onModified])

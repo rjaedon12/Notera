@@ -20,9 +20,9 @@ export const metadata: Metadata = {
   title: "Koda - Learn Smarter",
   description: "Create flashcards, study with multiple modes, and track your progress",
   icons: {
-    icon: "/koda-logo.svg",
-    shortcut: "/koda-logo.svg",
-    apple: "/koda-logo.svg",
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
   },
 };
 

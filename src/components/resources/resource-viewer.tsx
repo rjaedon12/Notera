@@ -42,6 +42,8 @@ interface Resource {
   ownerId: string
   owner: { id: string; name: string | null }
   tags: { tag: { id: string; name: string; slug: string } }[]
+  userId?: string
+  user?: { id: string; name: string | null }
   timelineEvents?: TimelineEvent[]
 }
 
@@ -79,7 +81,7 @@ export function ResourceViewer({
   if (!resource) return null
   
   const Icon = resourceTypeIcons[resource.type] || FileIcon
-  const canEdit = currentUserId === resource.ownerId || isAdmin
+  const canEdit = currentUserId === (resource.ownerId || resource.userId) || isAdmin
   
   // Simple markdown rendering (handles basic formatting)
   const renderContent = (content: string) => {
@@ -162,12 +164,12 @@ export function ResourceViewer({
 
         {/* Meta info */}
         <div className="flex items-center justify-between text-sm text-muted-foreground mb-4 pb-4 border-b border-border">
-          <span>by {resource.owner.name || "Anonymous"}</span>
+          <span>by {resource.owner?.name || resource.user?.name || "Anonymous"}</span>
           <span>{new Date(resource.createdAt).toLocaleDateString()}</span>
         </div>
 
         {/* Tags */}
-        {resource.tags.length > 0 && (
+        {resource.tags && resource.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4">
             {resource.tags.map((t) => (
               <span

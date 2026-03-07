@@ -43,6 +43,8 @@ interface Resource {
   ownerId: string
   owner: { id: string; name: string | null }
   tags: { tag: { id: string; name: string; slug: string } }[]
+  userId?: string
+  user?: { id: string; name: string | null }
   timelineEvents?: TimelineEvent[]
 }
 
@@ -320,7 +322,7 @@ export default function ResourcesPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {resources.map((resource) => {
               const Icon = resourceTypeIcons[resource.type] || FileIcon
-              const isOwner = session?.user?.id === resource.owner.id
+              const isOwner = session?.user?.id === (resource.ownerId || resource.userId)
               const isAdmin = session?.user?.role === "ADMIN"
 
               return (
@@ -343,7 +345,7 @@ export default function ResourcesPage() {
                         </div>
                         
                         {/* Tags */}
-                        {resource.tags.length > 0 && (
+                        {resource.tags && resource.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mb-3">
                             {resource.tags.slice(0, 3).map((t) => (
                               <span
@@ -361,7 +363,7 @@ export default function ResourcesPage() {
                             {resource.visibility === "PRIVATE" && (
                               <Lock className="h-3.5 w-3.5 text-muted-foreground" />
                             )}
-                            <span>by {resource.owner.name || "Anonymous"}</span>
+                            <span>by {resource.owner?.name || resource.user?.name || "Anonymous"}</span>
                           </div>
                           <span>{new Date(resource.createdAt).toLocaleDateString()}</span>
                         </div>

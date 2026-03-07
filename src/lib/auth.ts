@@ -25,6 +25,9 @@ const providers: any[] = [
         const user = await prisma.user.findUnique({ where: { email } })
         if (!user || !user.password) return null
 
+        // Check if user is banned
+        if (user.isBanned) return null
+
         const valid = await bcrypt.compare(password, user.password)
         if (!valid) return null
 
@@ -98,7 +101,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session
     },
     async redirect({ baseUrl }) {
-      return `${baseUrl}/library`
+      return `${baseUrl}/`
     },
   },
 })

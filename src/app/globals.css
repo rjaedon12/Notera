@@ -45,40 +45,40 @@
 
 /* ---- DARK MODE (PRIMARY / HERO THEME) ---- */
 .dark {
-  --bg-base: #0a0d14;
-  --bg-glow-1: rgba(56, 100, 220, 0.35);
-  --bg-glow-2: rgba(160, 80, 220, 0.22);
-  --bg-glow-3: rgba(20, 180, 180, 0.18);
+  --bg-base: #0b0e16;
+  --bg-glow-1: rgba(56, 100, 220, 0.28);
+  --bg-glow-2: rgba(140, 70, 210, 0.18);
+  --bg-glow-3: rgba(20, 160, 170, 0.14);
 
-  --glass-fill: rgba(255, 255, 255, 0.07);
-  --glass-fill-hover: rgba(255, 255, 255, 0.12);
-  --glass-border: rgba(255, 255, 255, 0.14);
-  --glass-highlight: rgba(255, 255, 255, 0.28);
-  --glass-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 1.5px 4px rgba(0,0,0,0.10);
-  --glass-shadow-hover: 0 14px 44px rgba(0,0,0,0.28), 0 2px 8px rgba(0,0,0,0.15);
+  --glass-fill: rgba(255, 255, 255, 0.06);
+  --glass-fill-hover: rgba(255, 255, 255, 0.10);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-highlight: rgba(255, 255, 255, 0.15);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.28), 0 1.5px 4px rgba(0,0,0,0.16);
+  --glass-shadow-hover: 0 14px 44px rgba(0,0,0,0.36), 0 2px 8px rgba(0,0,0,0.20);
 
-  --background: #0a0d14;
-  --foreground: rgba(255, 255, 255, 0.95);
-  --card: rgba(255, 255, 255, 0.07);
-  --card-foreground: rgba(255, 255, 255, 0.95);
-  --popover: rgba(20, 25, 40, 0.92);
-  --popover-foreground: rgba(255, 255, 255, 0.95);
-  --muted: rgba(255, 255, 255, 0.06);
-  --muted-foreground: rgba(255, 255, 255, 0.55);
-  --border: rgba(255, 255, 255, 0.14);
+  --background: #0b0e16;
+  --foreground: #e8ecf4;
+  --card: rgba(255, 255, 255, 0.05);
+  --card-foreground: #e8ecf4;
+  --popover: rgba(16, 20, 34, 0.96);
+  --popover-foreground: #e8ecf4;
+  --muted: rgba(255, 255, 255, 0.05);
+  --muted-foreground: rgba(255, 255, 255, 0.50);
+  --border: rgba(255, 255, 255, 0.10);
   --input: rgba(255, 255, 255, 0.06);
-  --input-foreground: rgba(255, 255, 255, 0.95);
-  --primary: #4f8ef7;
+  --input-foreground: #e8ecf4;
+  --primary: #5b96f7;
   --primary-foreground: #ffffff;
-  --secondary: rgba(255, 255, 255, 0.08);
-  --secondary-foreground: rgba(255, 255, 255, 0.85);
-  --accent: rgba(255, 255, 255, 0.08);
-  --accent-foreground: rgba(255, 255, 255, 0.85);
-  --destructive: #f7655f;
+  --secondary: rgba(255, 255, 255, 0.07);
+  --secondary-foreground: rgba(255, 255, 255, 0.82);
+  --accent: rgba(255, 255, 255, 0.07);
+  --accent-foreground: rgba(255, 255, 255, 0.82);
+  --destructive: #f06b65;
   --destructive-foreground: #ffffff;
-  --ring: #4f8ef7;
-  --sidebar-bg: rgba(255, 255, 255, 0.04);
-  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --ring: #5b96f7;
+  --sidebar-bg: rgba(12, 15, 24, 0.80);
+  --sidebar-border: rgba(255, 255, 255, 0.07);
 }
 
 @theme inline {
