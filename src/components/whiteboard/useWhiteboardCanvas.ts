@@ -493,6 +493,56 @@ export function useWhiteboardCanvas({
     c.renderAll()
   }, [])
 
+  // ---- Alignment helpers ----
+  const alignObjects = useCallback((direction: "left" | "centerH" | "right" | "top" | "centerV" | "bottom") => {
+    const c = canvasRef.current; if (!c) return
+    const active = c.getActiveObject() as any; if (!active) return
+    const objs: any[] = active.type === "activeSelection" ? active.getObjects() : [active]
+    if (objs.length < 2) return; pushState()
+    const sel = active.getBoundingRect()
+    objs.forEach((obj: any) => {
+      const b = obj.getBoundingRect()
+      if (direction === "left") obj.set({ left: (obj.left ?? 0) + (sel.left - b.left) })
+      else if (direction === "centerH") obj.set({ left: (obj.left ?? 0) + (sel.left + sel.width / 2 - b.left - b.width / 2) })
+      else if (direction === "right") obj.set({ left: (obj.left ?? 0) + (sel.left + sel.width - b.left - b.width) })
+      else if (direction === "top") obj.set({ top: (obj.top ?? 0) + (sel.top - b.top) })
+      else if (direction === "centerV") obj.set({ top: (obj.top ?? 0) + (sel.top + sel.height / 2 - b.top - b.height / 2) })
+      else if (direction === "bottom") obj.set({ top: (obj.top ?? 0) + (sel.top + sel.height - b.top - b.height) })
+      obj.setCoords()
+    })
+    c.renderAll(); onModified()
+  }, [pushState, onModified])
+
+  const distributeObjects = useCallback((axis: "horizontal" | "vertical") => {
+    const c = canvasRef.current; if (!c) return
+    const active = c.getActiveObject() as any; if (!active || active.type !== "activeSelection") return
+    const objs: any[] = active.getObjects(); if (objs.length < 3) return; pushState()
+    if (axis === "horizontal") {
+      const sorted = [...objs].sort((a, b) => a.getBoundingRect().left - b.getBoundingRect().left)
+      const first = sorted[0].getBoundingRect(), last = sorted[sorted.length - 1].getBoundingRect()
+      const totalWidth = sorted.reduce((s, o) => s + o.getBoundingRect().width, 0)
+      const gap = (last.left + last.width - first.left - totalWidth) / (sorted.length - 1)
+      let cursor = first.left + first.width
+      for (let i = 1; i < sorted.length - 1; i++) {
+        const b = sorted[i].getBoundingRect()
+        sorted[i].set({ left: (sorted[i].left ?? 0) + (cursor + gap - b.left) }); sorted[i].setCoords()
+        cursor += gap + b.width
+      }
+    } else {
+      const sorted = [...objs].sort((a, b) => a.getBoundingRect().top - b.getBoundingRect().top)
+      const first = sorted[0].getBoundingRect(), last = sorted[sorted.length - 1].getBoundingRect()
+      const totalHeight = sorted.reduce((s, o) => s + o.getBoundingRect().height, 0)
+      const gap = (last.top + last.height - first.top - totalHeight) / (sorted.length - 1)
+      let cursor = first.top + first.height
+      for (let i = 1; i < sorted.length - 1; i++) {
+        const b = sorted[i].getBoundingRect()
+        sorted[i].set({ top: (sorted[i].top ?? 0) + (cursor + gap - b.top) }); sorted[i].setCoords()
+        cursor += gap + b.height
+      }
+    }
+    c.renderAll(); onModified()
+  }, [pushState, onModified])
+
   const zoomTo = useCallback((level: number) => {
     const c = canvasRef.current; if (!c) return
     const center = c.getCenterPoint(); c.zoomToPoint(center, level); c.renderAll()
@@ -530,7 +580,8 @@ export function useWhiteboardCanvas({
     deleteSelected, duplicateSelected, selectAll,
     groupSelected, ungroupSelected,
     bringForward, sendBackward, bringToFront, sendToBack,
-    lockObject, zoomTo, zoomToFit, resetView, getZoom,
+    lockObject, alignObjects, distributeObjects,
+    zoomTo, zoomToFit, resetView, getZoom,
     serializeCanvas, loadCanvasJSON, getCanvasEl, getSVGString,
     getMinimapDataUrl, undo, redo, canUndo, canRedo, pushState,
   }

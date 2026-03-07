@@ -56,6 +56,7 @@ export interface WBBoard {
   createdAt: string
   updatedAt: string
   canvasJSON: string // fabric.js canvas serialized JSON
+  thumbnail?: string // base64 PNG thumbnail for dashboard preview
 }
 
 export interface WBFrame {
