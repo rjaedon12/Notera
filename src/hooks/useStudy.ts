@@ -171,13 +171,12 @@ export function useReorderCards() {
 
 // Progress
 export function useUpdateProgress() {
-  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (data: { cardId: string; correct: boolean }) => {
-      const res = await fetch("/api/progress", {
+      const res = await fetch("/api/progress/card", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ flashcardId: data.cardId, correct: data.correct }),
       })
       if (!res.ok) throw new Error("Failed to update progress")
       return res.json()
@@ -355,6 +354,7 @@ export function useCreateShareLink() {
 
 // Sessions
 export function useSaveSession() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (data: { setId: string; mode: string; stats: Record<string, unknown> }) => {
       const res = await fetch("/api/sessions", {
@@ -364,6 +364,11 @@ export function useSaveSession() {
       })
       if (!res.ok) throw new Error("Failed to save session")
       return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["analytics"] })
+      queryClient.invalidateQueries({ queryKey: ["progress"] })
+      queryClient.invalidateQueries({ queryKey: ["dailyReview"] })
     },
   })
 }
@@ -395,6 +400,8 @@ export function useSaveMatchScore() {
     },
     onSuccess: (_, { setId }) => {
       queryClient.invalidateQueries({ queryKey: ["matchScores", setId] })
+      queryClient.invalidateQueries({ queryKey: ["analytics"] })
+      queryClient.invalidateQueries({ queryKey: ["progress"] })
     },
   })
 }
@@ -426,6 +433,8 @@ export function useSaveTimedScore() {
     },
     onSuccess: (_, { setId }) => {
       queryClient.invalidateQueries({ queryKey: ["timedScores", setId] })
+      queryClient.invalidateQueries({ queryKey: ["analytics"] })
+      queryClient.invalidateQueries({ queryKey: ["progress"] })
     },
   })
 }
