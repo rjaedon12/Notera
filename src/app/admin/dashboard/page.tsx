@@ -11,13 +11,12 @@ import {
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
 
-type PanelType = "users" | "sets" | "quizzes" | "resources" | "banned"
+type PanelType = "stats" | "users" | "sets" | "quizzes" | "resources" | "banned"
 
 interface AdminUser {
   id: string
   name: string | null
   email: string
-  password: string | null
   role: string
   isBanned: boolean
   createdAt: string
@@ -57,7 +56,7 @@ export default function AdminDashboard() {
   const { data: session } = useSession()
   const [authenticated, setAuthenticated] = useState(false)
   const [checking, setChecking] = useState(true)
-  const [activePanel, setActivePanel] = useState<PanelType>("users")
+  const [activePanel, setActivePanel] = useState<PanelType>("stats")
 
   // Verify admin cookie
   useEffect(() => {
@@ -86,7 +85,18 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error("Failed")
       return res.json()
     },
-    enabled: authenticated && (activePanel === "users" || activePanel === "banned"),
+    enabled: authenticated && (activePanel === "users" || activePanel === "banned" || activePanel === "stats"),
+  })
+
+  // Fetch stats
+  const { data: adminStats } = useQuery<{ totalUsers: number; totalSets: number; totalQuizzes: number; totalResources: number }>({
+    queryKey: ["admin-dash", "stats"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/stats")
+      if (!res.ok) throw new Error("Failed")
+      return res.json()
+    },
+    enabled: authenticated && activePanel === "stats",
   })
 
   // Fetch sets
@@ -199,6 +209,7 @@ export default function AdminDashboard() {
   }
 
   const panels: { key: PanelType; label: string; icon: React.ReactNode }[] = [
+    { key: "stats", label: "Overview", icon: <Shield className="h-4 w-4" /> },
     { key: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
     { key: "sets", label: "Sets", icon: <BookOpen className="h-4 w-4" /> },
     { key: "quizzes", label: "Quizzes", icon: <Brain className="h-4 w-4" /> },
@@ -253,6 +264,41 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <main className="flex-1 p-6 overflow-auto">
+        {/* Stats Overview Panel */}
+        {activePanel === "stats" && (
+          <div>
+            <h2 className="text-xl font-bold text-foreground mb-6 font-heading">Dashboard Overview</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {[
+                { label: "Total Users", value: adminStats?.totalUsers ?? users.length, icon: <Users className="h-5 w-5" />, color: "#4F8EF7" },
+                { label: "Study Sets", value: adminStats?.totalSets ?? sets.length, icon: <BookOpen className="h-5 w-5" />, color: "#42d9a0" },
+                { label: "Quizzes", value: adminStats?.totalQuizzes ?? quizzes.length, icon: <Brain className="h-5 w-5" />, color: "#a050dc" },
+                { label: "Resources", value: adminStats?.totalResources ?? resources.length, icon: <FileText className="h-5 w-5" />, color: "#f59e0b" },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-xl border p-5"
+                  style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: `${stat.color}20`, color: stat.color }}>
+                      {stat.icon}
+                    </div>
+                    <span className="text-sm font-medium" style={{ color: "var(--muted-foreground)" }}>{stat.label}</span>
+                  </div>
+                  <p className="text-3xl font-bold text-foreground">{stat.value}</p>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-xl border p-5" style={{ borderColor: "var(--glass-border)" }}>
+              <h3 className="font-semibold text-foreground mb-3">Banned Users</h3>
+              <p className="text-2xl font-bold" style={{ color: bannedUsers.length > 0 ? "var(--destructive)" : "var(--muted-foreground)" }}>
+                {bannedUsers.length}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Users Panel */}
         {activePanel === "users" && (
           <div>
@@ -263,8 +309,9 @@ export default function AdminDashboard() {
                   <tr style={{ background: "var(--glass-fill)" }}>
                     <th className="text-left px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>User</th>
                     <th className="text-left px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>Email</th>
-                    <th className="text-left px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>Password Hash</th>
                     <th className="text-left px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>Role</th>
+                    <th className="text-left px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>Sets</th>
+                    <th className="text-left px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>Joined</th>
                     <th className="text-right px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>Actions</th>
                   </tr>
                 </thead>
@@ -283,13 +330,6 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-4 py-3" style={{ color: "var(--muted-foreground)" }}>{user.email}</td>
                       <td className="px-4 py-3">
-                        <code className="text-xs px-2 py-0.5 rounded" style={{
-                          background: "var(--glass-fill)", color: "var(--muted-foreground)",
-                        }}>
-                          {user.password ? user.password.slice(0, 20) + "..." : "OAuth user"}
-                        </code>
-                      </td>
-                      <td className="px-4 py-3">
                         <span className={cn("px-2 py-0.5 text-xs rounded-full",
                           user.role === "ADMIN"
                             ? "bg-yellow-500/15 text-yellow-500"
@@ -298,6 +338,8 @@ export default function AdminDashboard() {
                           {user.role}
                         </span>
                       </td>
+                      <td className="px-4 py-3" style={{ color: "var(--muted-foreground)" }}>{user._count.sets}</td>
+                      <td className="px-4 py-3" style={{ color: "var(--muted-foreground)" }}>{new Date(user.createdAt).toLocaleDateString()}</td>
                       <td className="px-4 py-3 text-right">
                         <button
                           onClick={() => banMutation.mutate({ userId: user.id, isBanned: true })}

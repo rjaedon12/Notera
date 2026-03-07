@@ -1,16 +1,16 @@
 import { cookies } from "next/headers"
 
 /**
- * Verifies the admin_token cookie that is set by /api/admin/login.
- * Returns true if the cookie looks like a valid HMAC-SHA256 hex digest.
+ * Verifies the admin_token cookie matches the admin_token_verify cookie.
+ * Both are set during login with the same HMAC-SHA256 hash.
  */
 export async function verifyAdminCookie(): Promise<boolean> {
   try {
     const cookieStore = await cookies()
     const token = cookieStore.get("admin_token")?.value
-    if (!token) return false
-    // SHA-256 HMAC hex = exactly 64 lowercase hex chars
-    return token.length === 64 && /^[a-f0-9]+$/.test(token)
+    const verifyToken = cookieStore.get("admin_token_verify")?.value
+    if (!token || !verifyToken) return false
+    return token === verifyToken && token.length === 64 && /^[a-f0-9]+$/.test(token)
   } catch {
     return false
   }

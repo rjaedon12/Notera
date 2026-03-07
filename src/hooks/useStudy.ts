@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { StudySet, Card, Folder, Progress } from "@/types"
+import { StudySet, Card, Folder, Progress, SetComment, AppNotification, UserAnalytics, Achievement, UserAchievement } from "@/types"
 
 // Study Sets
 export function useStudySets() {
@@ -426,6 +426,228 @@ export function useSaveTimedScore() {
     },
     onSuccess: (_, { setId }) => {
       queryClient.invalidateQueries({ queryKey: ["timedScores", setId] })
+    },
+  })
+}
+
+// Comments
+export function useSetComments(setId: string) {
+  return useQuery<SetComment[]>({
+    queryKey: ["comments", setId],
+    queryFn: async () => {
+      const res = await fetch(`/api/sets/${setId}/comments`)
+      if (!res.ok) throw new Error("Failed to fetch comments")
+      return res.json()
+    },
+    enabled: !!setId,
+  })
+}
+
+export function useAddComment() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ setId, text }: { setId: string; text: string }) => {
+      const res = await fetch(`/api/sets/${setId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      })
+      if (!res.ok) throw new Error("Failed to add comment")
+      return res.json()
+    },
+    onSuccess: (_, { setId }) => {
+      queryClient.invalidateQueries({ queryKey: ["comments", setId] })
+    },
+  })
+}
+
+// Ratings
+export function useSetRatings(setId: string) {
+  return useQuery<{ average: number; count: number; userRating: number | null }>({
+    queryKey: ["ratings", setId],
+    queryFn: async () => {
+      const res = await fetch(`/api/sets/${setId}/ratings`)
+      if (!res.ok) throw new Error("Failed to fetch ratings")
+      return res.json()
+    },
+    enabled: !!setId,
+  })
+}
+
+export function useRateSet() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ setId, score }: { setId: string; score: number }) => {
+      const res = await fetch(`/api/sets/${setId}/ratings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ score }),
+      })
+      if (!res.ok) throw new Error("Failed to rate set")
+    },
+    onSuccess: (_, { setId }) => {
+      queryClient.invalidateQueries({ queryKey: ["ratings", setId] })
+    },
+  })
+}
+
+// Notifications
+export function useNotifications() {
+  return useQuery<{ notifications: AppNotification[]; unreadCount: number }>({
+    queryKey: ["notifications"],
+    queryFn: async () => {
+      const res = await fetch("/api/notifications")
+      if (!res.ok) throw new Error("Failed to fetch notifications")
+      return res.json()
+    },
+    refetchInterval: 30000,
+  })
+}
+
+export function useMarkNotificationRead() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id?: string) => {
+      const res = await fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(id ? { notificationId: id } : { markAllRead: true }),
+      })
+      if (!res.ok) throw new Error("Failed")
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] })
+    },
+  })
+}
+
+// Analytics
+export function useAnalytics() {
+  return useQuery<UserAnalytics>({
+    queryKey: ["analytics"],
+    queryFn: async () => {
+      const res = await fetch("/api/analytics")
+      if (!res.ok) throw new Error("Failed to fetch analytics")
+      return res.json()
+    },
+  })
+}
+
+// Achievements
+export function useAchievements() {
+  return useQuery({
+    queryKey: ["achievements"],
+    queryFn: async () => {
+      const res = await fetch("/api/achievements")
+      if (!res.ok) throw new Error("Failed to fetch achievements")
+      return res.json()
+    },
+  })
+}
+
+export function useCheckAchievements() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/achievements", { method: "POST" })
+      if (!res.ok) throw new Error("Failed")
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["achievements"] })
+    },
+  })
+}
+
+// Daily Review (Spaced Repetition)
+export function useDailyReview() {
+  return useQuery({
+    queryKey: ["dailyReview"],
+    queryFn: async () => {
+      const res = await fetch("/api/daily-review")
+      if (!res.ok) throw new Error("Failed to fetch review cards")
+      return res.json()
+    },
+  })
+}
+
+export function useSubmitReview() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ cardId, quality }: { cardId: string; quality: number }) => {
+      const res = await fetch("/api/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cardId, quality }),
+      })
+      if (!res.ok) throw new Error("Failed to submit review")
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dailyReview"] })
+      queryClient.invalidateQueries({ queryKey: ["progress"] })
+    },
+  })
+}
+
+// AI Features
+export function useAIGenerateCards() {
+  return useMutation({
+    mutationFn: async ({ topic, count }: { topic: string; count?: number }) => {
+      const res = await fetch("/api/ai/generate-cards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic, count }),
+      })
+      if (!res.ok) throw new Error("Failed to generate cards")
+      return res.json()
+    },
+  })
+}
+
+export function useAIExplain() {
+  return useMutation({
+    mutationFn: async ({ term, definition, question }: { term: string; definition: string; question?: string }) => {
+      const res = await fetch("/api/ai/explain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ term, definition, question }),
+      })
+      if (!res.ok) throw new Error("Failed to get explanation")
+      return res.json()
+    },
+  })
+}
+
+// Import/Export
+export function useImportSet() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ title, content, format }: { title: string; content: string; format?: string }) => {
+      const res = await fetch("/api/sets/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, content, format }),
+      })
+      if (!res.ok) throw new Error("Failed to import set")
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["studySets"] })
+    },
+  })
+}
+
+// Delete Folder
+export function useDeleteFolder() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (folderId: string) => {
+      const res = await fetch(`/api/folders/${folderId}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("Failed to delete folder")
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["folders"] })
     },
   })
 }

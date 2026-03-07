@@ -79,7 +79,7 @@ function ResetPasswordForm() {
               This password reset link is invalid or has expired.
               Please contact an administrator for a new reset link.
             </p>
-            <Link href="/auth/signin">
+            <Link href="/login">
               <Button variant="outline">Return to Sign In</Button>
             </Link>
           </CardContent>
@@ -98,7 +98,7 @@ function ResetPasswordForm() {
             <p className="text-muted-foreground mb-4">
               Your password has been updated. You can now sign in with your new password.
             </p>
-            <Link href="/auth/signin">
+            <Link href="/login">
               <Button>Sign In</Button>
             </Link>
           </CardContent>
@@ -192,7 +192,7 @@ function ResetPasswordForm() {
           </form>
 
           <div className="mt-6 text-center">
-            <Link href="/auth/signin" className="text-sm text-muted-foreground hover:underline">
+            <Link href="/login" className="text-sm text-muted-foreground hover:underline">
               Remember your password? Sign in
             </Link>
           </div>

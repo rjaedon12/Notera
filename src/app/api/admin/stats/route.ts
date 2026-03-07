@@ -1,30 +1,25 @@
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { verifyAdminCookie } from "@/lib/admin-auth"
 import { prisma } from "@/lib/prisma"
 
 // GET /api/admin/stats - Get admin dashboard stats
 export async function GET() {
-  try {
-    const session = await auth()
-    
-    if (!session?.user || session.user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
-    }
+  const isAdmin = await verifyAdminCookie()
+  if (!isAdmin) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
 
-    const [users, sets, cards, groups, quizBanks] = await Promise.all([
+  try {
+    const [totalUsers, totalSets, totalQuizzes, totalResources] = await Promise.all([
       prisma.user.count(),
       prisma.flashcardSet.count(),
-      prisma.flashcard.count(),
-      prisma.group.count(),
       prisma.questionBank.count(),
+      prisma.resource.count(),
     ])
 
-    return NextResponse.json({ users, sets, cards, groups, quizBanks })
+    return NextResponse.json({ totalUsers, totalSets, totalQuizzes, totalResources })
   } catch (error) {
-    console.error("Error fetching admin stats:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    console.error("Admin stats error:", error)
+    return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
   }
 }

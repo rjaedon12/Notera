@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ThemeToggleSimple } from "@/components/theme-toggle"
+import { NotificationBell } from "@/components/notification-bell"
 import { 
   Search, 
   Menu,
@@ -105,6 +106,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         {/* Right section */}
         <div className="flex items-center gap-2">
           <ThemeToggleSimple />
+          <NotificationBell />
           
           {session ? (
             <div className="relative group">

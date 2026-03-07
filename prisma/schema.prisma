@@ -31,6 +31,15 @@ enum GroupRole {
   MEMBER
 }
 
+enum NotificationType {
+  GROUP_INVITE
+  SET_SHARED
+  ACHIEVEMENT
+  STUDY_REMINDER
+  COMMENT
+  SYSTEM
+}
+
 // ─── Auth (NextAuth v5 Prisma Adapter) ───────────────────
 
 model Account {
@@ -99,6 +108,14 @@ model User {
   resources        Resource[]
   questionBanks    QuestionBank[]
   quizAttempts     QuizAttempt[]
+  starredSets      StarredSet[]
+  savedSets        SavedSet[]
+  starredCards     StarredCard[]
+  folders          Folder[]
+  comments         Comment[]
+  ratings          Rating[]
+  achievements     UserAchievement[]
+  notifications    Notification[]
 }
 
 // ─── Flashcards ──────────────────────────────────────────
@@ -118,6 +135,11 @@ model FlashcardSet {
   cards     Flashcard[]
   progress  StudyProgress[]
   groupSets GroupSet[]
+  starredBy StarredSet[]
+  savedBy   SavedSet[]
+  comments  Comment[]
+  ratings   Rating[]
+  folderSets FolderSet[]
 }
 
 model Flashcard {
@@ -130,6 +152,7 @@ model Flashcard {
   set   FlashcardSet @relation(fields: [setId], references: [id], onDelete: Cascade)
 
   cardProgress CardProgress[]
+  starredBy    StarredCard[]
 }
 
 // ─── Study Progress ──────────────────────────────────────
@@ -157,6 +180,11 @@ model CardProgress {
   correctCount   Int        @default(0)
   incorrectCount Int        @default(0)
   lastSeen       DateTime   @default(now())
+
+  // SM-2 spaced repetition fields
+  easeFactor     Float      @default(2.5)
+  interval       Int        @default(0)    // days until next review
+  nextReviewAt   DateTime?                 // when this card is due
 
   userId String
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -328,4 +356,129 @@ model AttemptAnswer {
   choice   Choice @relation(fields: [choiceId], references: [id], onDelete: Cascade)
 
   @@unique([attemptId, questionId])
+}
+
+// ─── Starred Sets ────────────────────────────────────────
+
+model StarredSet {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  setId String
+  set   FlashcardSet @relation(fields: [setId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, setId])
+}
+
+// ─── Saved Sets ──────────────────────────────────────────
+
+model SavedSet {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  setId String
+  set   FlashcardSet @relation(fields: [setId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, setId])
+}
+
+// ─── Starred Cards ───────────────────────────────────────
+
+model StarredCard {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  flashcardId String
+  flashcard   Flashcard @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, flashcardId])
+}
+
+// ─── Folders ─────────────────────────────────────────────
+
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  sets FolderSet[]
+}
+
+model FolderSet {
+  folderId String
+  setId    String
+
+  folder Folder       @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  set    FlashcardSet @relation(fields: [setId], references: [id], onDelete: Cascade)
+
+  @@id([folderId, setId])
+}
+
+// ─── Comments & Ratings ──────────────────────────────────
+
+model Comment {
+  id        String   @id @default(cuid())
+  text      String
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  setId String
+  set   FlashcardSet @relation(fields: [setId], references: [id], onDelete: Cascade)
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  score     Int      // 1-5 stars
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  setId String
+  set   FlashcardSet @relation(fields: [setId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, setId])
+}
+
+// ─── Achievements ────────────────────────────────────────
+
+model UserAchievement {
+  id         String   @id @default(cuid())
+  achieveKey String   // e.g. "first_set", "streak_7", "cards_100"
+  unlockedAt DateTime @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achieveKey])
+}
+
+// ─── Notifications ───────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  link      String?
+  createdAt DateTime         @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

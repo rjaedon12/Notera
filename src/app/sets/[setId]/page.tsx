@@ -3,6 +3,7 @@
 import { use, useState } from "react"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useStudySet, useSaveSet, useDuplicateStudySet, useDeleteStudySet, useCreateShareLink } from "@/hooks/useStudy"
 import { ModeTiles } from "@/components/study/mode-tiles"
 import { Button } from "@/components/ui/button"
@@ -17,7 +18,11 @@ import {
   MoreVertical,
   Globe,
   Lock,
-  BookmarkCheck
+  BookmarkCheck,
+  Star,
+  MessageSquare,
+  Send,
+  Download,
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { useRouter } from "next/navigation"
@@ -38,7 +43,7 @@ export default function SetPage({ params }: PageProps) {
   const [showMenu, setShowMenu] = useState(false)
   const [showAllCards, setShowAllCards] = useState(false)
 
-  const isOwner = session?.user?.id === set?.ownerId
+  const isOwner = session?.user?.id === set?.userId || session?.user?.id === set?.user?.id
 
   const handleSave = async () => {
     if (!session) {
@@ -247,6 +252,172 @@ export default function SetPage({ params }: PageProps) {
                 Show fewer cards
               </Button>
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* Export */}
+      <div className="mt-6 flex gap-2">
+        <Button variant="outline" size="sm" onClick={() => window.open(`/api/sets/${setId}/export?format=csv`, "_blank")}>
+          <Download className="h-4 w-4 mr-2" /> Export CSV
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => window.open(`/api/sets/${setId}/export?format=json`, "_blank")}>
+          <Download className="h-4 w-4 mr-2" /> Export JSON
+        </Button>
+      </div>
+
+      {/* Ratings & Comments */}
+      <SetRatingsComments setId={setId} session={session} />
+    </div>
+  )
+}
+
+// Ratings & Comments sub-component
+function SetRatingsComments({ setId, session }: { setId: string; session: ReturnType<typeof useSession>["data"] }) {
+  const queryClient = useQueryClient()
+  const [comment, setComment] = useState("")
+  const [userRating, setUserRating] = useState(0)
+  const [hoverRating, setHoverRating] = useState(0)
+
+  const { data: ratingsData } = useQuery<{ average: number; count: number; userRating: number | null }>({
+    queryKey: ["ratings", setId],
+    queryFn: async () => {
+      const res = await fetch(`/api/sets/${setId}/ratings`)
+      if (!res.ok) throw new Error("Failed")
+      return res.json()
+    },
+  })
+
+  const { data: comments = [] } = useQuery<{ id: string; text: string; createdAt: string; user: { name: string; id: string } }[]>({
+    queryKey: ["comments", setId],
+    queryFn: async () => {
+      const res = await fetch(`/api/sets/${setId}/comments`)
+      if (!res.ok) throw new Error("Failed")
+      return res.json()
+    },
+  })
+
+  const rateMutation = useMutation({
+    mutationFn: async (score: number) => {
+      const res = await fetch(`/api/sets/${setId}/ratings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ score }),
+      })
+      if (!res.ok) throw new Error("Failed")
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ratings", setId] })
+      toast.success("Rating submitted!")
+    },
+  })
+
+  const commentMutation = useMutation({
+    mutationFn: async (text: string) => {
+      const res = await fetch(`/api/sets/${setId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      })
+      if (!res.ok) throw new Error("Failed")
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comments", setId] })
+      setComment("")
+      toast.success("Comment added!")
+    },
+  })
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      const res = await fetch(`/api/sets/${setId}/comments?commentId=${commentId}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("Failed")
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comments", setId] })
+    },
+  })
+
+  return (
+    <div className="mt-10 space-y-6">
+      {/* Rating */}
+      <div className="rounded-xl border p-6" style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}>
+        <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+          <Star className="h-5 w-5 text-yellow-500" /> Rate this set
+        </h3>
+        <div className="flex items-center gap-4">
+          <div className="flex gap-1">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                onClick={() => { setUserRating(n); rateMutation.mutate(n) }}
+                onMouseEnter={() => setHoverRating(n)}
+                onMouseLeave={() => setHoverRating(0)}
+                className="transition-transform hover:scale-110"
+              >
+                <Star
+                  className="h-7 w-7"
+                  fill={(hoverRating || userRating || ratingsData?.userRating || 0) >= n ? "#f59e0b" : "none"}
+                  stroke={(hoverRating || userRating || ratingsData?.userRating || 0) >= n ? "#f59e0b" : "var(--muted-foreground)"}
+                />
+              </button>
+            ))}
+          </div>
+          <span className="text-sm text-muted-foreground">
+            {ratingsData?.average?.toFixed(1) ?? "–"} avg · {ratingsData?.count ?? 0} rating{ratingsData?.count !== 1 ? "s" : ""}
+          </span>
+        </div>
+      </div>
+
+      {/* Comments */}
+      <div className="rounded-xl border p-6" style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}>
+        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <MessageSquare className="h-5 w-5 text-primary" /> Comments ({comments.length})
+        </h3>
+
+        {session && (
+          <form
+            className="flex gap-2 mb-4"
+            onSubmit={(e) => { e.preventDefault(); if (comment.trim()) commentMutation.mutate(comment.trim()) }}
+          >
+            <input
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Add a comment..."
+              className="flex-1 rounded-lg px-4 py-2 text-sm border bg-transparent text-foreground placeholder:text-muted-foreground"
+              style={{ borderColor: "var(--glass-border)" }}
+            />
+            <Button size="sm" type="submit" disabled={!comment.trim() || commentMutation.isPending}>
+              <Send className="h-4 w-4" />
+            </Button>
+          </form>
+        )}
+
+        <div className="space-y-3">
+          {comments.map((c) => (
+            <div key={c.id} className="flex items-start gap-3 group">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "var(--primary)" }}>
+                {(c.user.name || "?")[0].toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-foreground">{c.user.name || "Anonymous"}</span>
+                  <span className="text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleDateString()}</span>
+                </div>
+                <p className="text-sm text-foreground mt-0.5">{c.text}</p>
+              </div>
+              {session?.user?.id === c.user.id && (
+                <button
+                  onClick={() => deleteCommentMutation.mutate(c.id)}
+                  className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"
+                >
+                  Delete
+                </button>
+              )}
+            </div>
+          ))}
+          {comments.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">No comments yet. Be the first!</p>
           )}
         </div>
       </div>

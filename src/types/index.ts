@@ -3,61 +3,74 @@ export interface StudySet {
   title: string
   description: string | null
   isPublic: boolean
-  createdAt: Date
-  updatedAt: Date
-  ownerId: string
+  tags?: string[]
+  createdAt: string
+  updatedAt: string
+  userId: string
+  user?: {
+    id: string
+    name: string | null
+    email?: string
+  }
+  // Aliases for backward compatibility
   owner?: {
     id: string
     name: string | null
-    email: string
+    email?: string
   }
   cards?: Card[]
   _count?: {
     cards: number
   }
+  averageRating?: number
+  ratingsCount?: number
 }
 
 export interface Card {
   id: string
   term: string
   definition: string
-  orderIndex: number
+  order: number
   setId: string
-  createdAt: Date
-  updatedAt: Date
   isStarred?: boolean
   progress?: Progress
 }
 
 export interface Progress {
   id: string
-  masteryLevel: number
-  streak: number
+  status: string
   correctCount: number
   incorrectCount: number
-  lastReviewedAt: Date | null
-  nextReviewAt?: Date | null
+  lastSeen: string
+  masteryLevel?: number
   easeFactor?: number
   interval?: number
+  nextReviewAt?: string | null
 }
 
 export interface Folder {
   id: string
   name: string
-  ownerId: string
-  createdAt: Date
-  updatedAt: Date
-  sets?: StudySet[]
+  userId: string
+  createdAt: string
+  updatedAt: string
+  sets?: FolderSetEntry[]
   _count?: {
     sets: number
   }
 }
 
+export interface FolderSetEntry {
+  folderId: string
+  setId: string
+  set: StudySet
+}
+
 export interface StudySession {
   id: string
   mode: string
-  startedAt: Date
-  endedAt: Date | null
+  startedAt: string
+  endedAt: string | null
   stats: SessionStats
   userId: string
   setId: string
@@ -75,7 +88,7 @@ export interface SessionStats {
 export interface MatchScore {
   id: string
   time: number
-  createdAt: Date
+  createdAt: string
   setId: string
   userId: string
 }
@@ -84,7 +97,7 @@ export interface TimedScore {
   id: string
   score: number
   mode: string
-  createdAt: Date
+  createdAt: string
   setId: string
   userId: string
 }
@@ -129,8 +142,8 @@ export interface Question {
   correctChoiceId: string
   orderIndex: number
   bankId: string
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string
+  updatedAt: string
   choices: QuestionChoice[]
 }
 
@@ -141,10 +154,10 @@ export interface QuestionBank {
   description: string | null
   imageUrl: string | null
   isPublic: boolean
-  createdAt: Date
-  updatedAt: Date
-  ownerId: string
-  owner?: { id: string; name: string | null }
+  createdAt: string
+  updatedAt: string
+  userId: string
+  user?: { id: string; name: string | null }
   questions?: Question[]
   _count?: { questions: number; attempts: number }
 }
@@ -163,11 +176,83 @@ export interface QuizAttempt {
   id: string
   score: number | null
   totalQuestions: number
-  completedAt: Date | null
-  createdAt: Date
+  completedAt: string | null
+  createdAt: string
   userId: string
   bankId: string
   bank?: { id: string; title: string }
   answers?: QuizAnswer[]
   _count?: { answers: number }
+}
+
+// ============================================
+// COMMENTS & RATINGS
+// ============================================
+
+export interface SetComment {
+  id: string
+  text: string
+  createdAt: string
+  userId: string
+  setId: string
+  user?: { id: string; name: string | null }
+}
+
+export interface Rating {
+  id: string
+  score: number
+  createdAt: string
+  userId: string
+  setId: string
+}
+
+// ============================================
+// ACHIEVEMENTS
+// ============================================
+
+export interface Achievement {
+  key: string
+  title: string
+  description: string
+  icon: string
+}
+
+export interface UserAchievement {
+  id: string
+  achieveKey: string
+  unlockedAt: string
+  userId: string
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+export interface AppNotification {
+  id: string
+  type: string
+  title: string
+  message: string
+  isRead: boolean
+  link: string | null
+  createdAt: string
+  userId: string
+}
+
+// ============================================
+// ANALYTICS
+// ============================================
+
+export interface UserAnalytics {
+  totalSets: number
+  totalCards: number
+  cardsMastered: number
+  cardsLearning: number
+  cardsNew: number
+  currentStreak: number
+  totalStudySessions: number
+  quizzesTaken: number
+  averageQuizScore: number
+  studyActivity: { date: string; count: number }[]
+  achievementsUnlocked: number
 }
