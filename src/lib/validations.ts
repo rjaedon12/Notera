@@ -67,6 +67,24 @@ export const submitAnswerSchema = z.object({
   choiceId: z.string().min(1),
 })
 
+// ============================================
+// DBQ SCHEMAS
+// ============================================
+
+export const dbqHighlightSchema = z.object({
+  docId: z.string().min(1),
+  text: z.string().min(1),
+  color: z.string().min(1),
+  startOffset: z.number().int().min(0),
+  endOffset: z.number().int().min(0),
+})
+
+export const dbqEssaySubmitSchema = z.object({
+  promptId: z.string().min(1, "Prompt is required"),
+  content: z.string().min(1, "Essay content is required"),
+  highlights: z.array(dbqHighlightSchema).optional(),
+})
+
 export type SignupInput = z.infer<typeof signupSchema>
 export type LoginInput = z.infer<typeof loginSchema>
 export type StudySetInput = z.infer<typeof studySetSchema>
@@ -77,3 +95,5 @@ export type QuestionChoiceInput = z.infer<typeof questionChoiceSchema>
 export type QuestionInput = z.infer<typeof questionSchema>
 export type QuestionBankInput = z.infer<typeof questionBankSchema>
 export type SubmitAnswerInput = z.infer<typeof submitAnswerSchema>
+export type DBQHighlightInput = z.infer<typeof dbqHighlightSchema>
+export type DBQEssaySubmitInput = z.infer<typeof dbqEssaySubmitSchema>

@@ -284,6 +284,10 @@ async function main() {
   console.log(`   👥 1 study group`)
   console.log(`\n   Demo login:  demo@koda.app  / demo1234`)
   console.log(`   Admin login: admin@koda.app / admin1234`)
+
+  // ── 6. Seed DBQ prompts ───────────────────────────────
+  const { seedDBQ } = await import("./seed-dbq")
+  await seedDBQ()
 }
 
 main()

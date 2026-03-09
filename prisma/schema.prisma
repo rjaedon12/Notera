@@ -116,6 +116,7 @@ model User {
   ratings          Rating[]
   achievements     UserAchievement[]
   notifications    Notification[]
+  dbqEssays        DBQEssay[]
 }
 
 // ─── Flashcards ──────────────────────────────────────────
@@ -466,6 +467,48 @@ model UserAchievement {
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, achieveKey])
+}
+
+// ─── DBQ (Document-Based Questions) ──────────────────────
+
+model DBQPrompt {
+  id        String   @id @default(cuid())
+  title     String
+  question  String
+  subject   String
+  era       String
+  createdAt DateTime @default(now())
+
+  documents DBQDocument[]
+  essays    DBQEssay[]
+}
+
+model DBQDocument {
+  id         String  @id @default(cuid())
+  docNumber  Int
+  title      String
+  source     String
+  content    String
+  imageUrl   String?
+  imageAlt   String?
+  orderIndex Int     @default(0)
+
+  promptId String
+  prompt   DBQPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+}
+
+model DBQEssay {
+  id          String    @id @default(cuid())
+  content     String
+  highlights  String?   // JSON array of highlight data
+  wordCount   Int       @default(0)
+  submittedAt DateTime  @default(now())
+
+  userId   String
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  promptId String
+  prompt   DBQPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
 }
 
 // ─── Notifications ───────────────────────────────────────
