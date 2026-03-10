@@ -14,10 +14,7 @@ export async function GET() {
 
     const sets = await prisma.flashcardSet.findMany({
       where: {
-        OR: [
-          { isPublic: true },
-          { userId: session.user.id },
-        ],
+        userId: session.user.id,
       },
       include: {
         _count: { select: { cards: true } },

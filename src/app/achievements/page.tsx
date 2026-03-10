@@ -4,12 +4,25 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
-import {
-  Trophy, Star, BookOpen, Brain, Clock, Flame,
-  Target, Zap, Award, Crown, Medal, Heart,
-  Loader2
-} from "lucide-react"
+import Image from "next/image"
+import { Trophy, Loader2 } from "lucide-react"
 import toast from "react-hot-toast"
+
+// Map each achievement key to its animal photo in /public/achievements/
+const ACHIEVEMENT_IMAGES: Record<string, string> = {
+  first_set:      "/achievements/first_set.jpg",
+  ten_sets:       "/achievements/ten_sets.jpg",
+  first_quiz:     "/achievements/first_quiz.jpg",
+  perfect_quiz:   "/achievements/perfect_quiz.jpg",
+  streak_3:       "/achievements/streak_3.jpg",
+  streak_7:       "/achievements/streak_7.jpg",
+  streak_30:      "/achievements/streak_30.gif",
+  cards_50:       "/achievements/cards_50.jpg",
+  cards_100:      "/achievements/cards_100.jpg",
+  first_group:    "/achievements/first_group.jpg",
+  first_comment:  "/achievements/first_comment.jpg",
+  first_rating:   "/achievements/first_rating.jpg",
+}
 
 interface Achievement {
   key: string
@@ -112,10 +125,14 @@ export default function AchievementsPage() {
                 style={{ borderColor: "#f59e0b40", background: "#f59e0b08" }}
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-2xl"
-                    style={{ background: "#f59e0b20" }}
-                  >
-                    {a.icon}
+                  <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 relative shadow-md">
+                    <Image
+                      src={ACHIEVEMENT_IMAGES[a.key] ?? "/achievements/first_set.jpg"}
+                      alt={a.title}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground">{a.title}</h3>
@@ -147,10 +164,14 @@ export default function AchievementsPage() {
                 style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-2xl"
-                    style={{ background: "var(--glass-fill)" }}
-                  >
-                    {a.icon}
+                  <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 relative shadow-sm">
+                    <Image
+                      src={ACHIEVEMENT_IMAGES[a.key] ?? "/achievements/first_set.jpg"}
+                      alt={a.title}
+                      fill
+                      className="object-cover grayscale opacity-50"
+                      unoptimized
+                    />
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground">{a.title}</h3>
