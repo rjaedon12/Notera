@@ -90,6 +90,7 @@ model User {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   streak            Int       @default(0)
+  longestStreak     Int       @default(0)
   lastStudied       DateTime?
   role              String    @default("USER") // USER | ADMIN
   resetToken        String?
@@ -117,6 +118,8 @@ model User {
   achievements     UserAchievement[]
   notifications    Notification[]
   dbqEssays        DBQEssay[]
+  studySessions    StudySession[]
+  sightreadingAttempts SightreadingAttempt[]
 }
 
 // ─── Flashcards ──────────────────────────────────────────
@@ -521,6 +524,31 @@ model Notification {
   isRead    Boolean          @default(false)
   link      String?
   createdAt DateTime         @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Study Sessions (real session tracking) ──────────────
+
+model StudySession {
+  id        String   @id @default(cuid())
+  type      String   // FLASHCARD, QUIZ, MATCH, TIMED, SIGHTREADING
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Sightreading ────────────────────────────────────────
+
+model SightreadingAttempt {
+  id        String   @id @default(cuid())
+  clef      String   // TREBLE, BASS, ALTO
+  level     String   // e.g. "naturals", "sharps", "flats", "all"
+  correct   Int      @default(0)
+  total     Int      @default(0)
+  createdAt DateTime @default(now())
 
   userId String
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import { updateStreak } from "@/lib/update-streak"
 
 // GET /api/progress — get user's progress across all sets
 export async function GET() {
@@ -80,49 +81,10 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // ─── Streak logic ────────────────────────────────────────
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { streak: true, lastStudied: true },
-    })
+    // ─── Streak + session tracking via shared utility ────────
+    const streakResult = await updateStreak(session.user.id, "FLASHCARD")
 
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-
-    let newStreak = 1
-
-    if (user?.lastStudied) {
-      const lastDate = new Date(user.lastStudied)
-      const lastDay = new Date(
-        lastDate.getFullYear(),
-        lastDate.getMonth(),
-        lastDate.getDate()
-      )
-
-      const diffMs = today.getTime() - lastDay.getTime()
-      const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24))
-
-      if (diffDays === 0) {
-        // Studied today already — keep streak
-        newStreak = user.streak
-      } else if (diffDays === 1) {
-        // Last studied yesterday — increment streak
-        newStreak = user.streak + 1
-      } else {
-        // 2+ days gap — reset streak to 1
-        newStreak = 1
-      }
-    }
-
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
-        streak: newStreak,
-        lastStudied: now,
-      },
-    })
-
-    return Response.json({ ...progress, streak: newStreak })
+    return Response.json({ ...progress, streak: streakResult.streak })
   } catch (error) {
     console.error("Update progress error:", error)
     return Response.json({ error: "Internal server error" }, { status: 500 })

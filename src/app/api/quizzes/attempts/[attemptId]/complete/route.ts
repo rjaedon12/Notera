@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import { updateStreak } from "@/lib/update-streak"
 
 // POST /api/quizzes/attempts/[attemptId]/complete — finish a quiz
 export async function POST(
@@ -24,14 +25,16 @@ export async function POST(
     if (attempt.userId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     if (attempt.completedAt) return NextResponse.json({ error: "Already completed" }, { status: 400 })
 
-    // Calculate score
+    // Calculate score as a percentage (0–100)
     const correctCount = attempt.answers.filter((a) => a.isCorrect).length
+    const totalQ = await prisma.question.count({ where: { bankId: attempt.bankId } })
+    const scorePercent = totalQ > 0 ? (correctCount / totalQ) * 100 : 0
 
     const completed = await prisma.quizAttempt.update({
       where: { id: attemptId },
       data: {
         completedAt: new Date(),
-        score: correctCount,
+        score: scorePercent,
       },
       include: {
         bank: { select: { id: true, title: true } },
@@ -44,11 +47,13 @@ export async function POST(
       },
     })
 
-    const totalQ = await prisma.question.count({ where: { bankId: attempt.bankId } })
+    // Update streak (quiz completions now count!)
+    const streakResult = await updateStreak(session.user.id, "QUIZ")
 
     return NextResponse.json({
       ...completed,
       totalQuestions: totalQ,
+      streak: streakResult.streak,
     })
   } catch (error) {
     console.error("Complete attempt error:", error)

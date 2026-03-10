@@ -197,8 +197,8 @@ export default function TakeQuizPage({
 
   // ─── Results Screen ───
   if (state === "results") {
-    const score = finalScore || 0
-    const percentage = Math.round((score / totalQuestions) * 100)
+    const percentage = Math.round(finalScore || 0)
+    const correctCount = answers.filter((a) => a.isCorrect).length
 
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
@@ -242,7 +242,7 @@ export default function TakeQuizPage({
               {percentage}%
             </div>
             <p className="text-muted-foreground mb-8">
-              {score} of {totalQuestions} correct
+              {correctCount} of {totalQuestions} correct
             </p>
 
             {/* Answer Summary */}

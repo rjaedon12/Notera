@@ -1,28 +1,7 @@
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
-
-async function applyStreak(userId: string): Promise<number> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { streak: true, lastStudied: true },
-  })
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  let newStreak = 1
-  if (user?.lastStudied) {
-    const lastDate = new Date(user.lastStudied)
-    const lastDay = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate())
-    const diffDays = Math.round((today.getTime() - lastDay.getTime()) / (1000 * 60 * 60 * 24))
-    if (diffDays === 0) newStreak = user.streak
-    else if (diffDays === 1) newStreak = user.streak + 1
-  }
-  await prisma.user.update({
-    where: { id: userId },
-    data: { streak: newStreak, lastStudied: now },
-  })
-  return newStreak
-}
+import { updateStreak } from "@/lib/update-streak"
 
 // POST /api/sets/[setId]/match-scores — save a match game completion
 export async function POST(
@@ -87,11 +66,11 @@ export async function POST(
       },
     })
 
-    const streak = await applyStreak(session.user.id)
+    const streakResult = await updateStreak(session.user.id, "MATCH")
 
     return Response.json({
       ...progress,
-      streak,
+      streak: streakResult.streak,
       bestTime: isBetter ? time : existing?.score,
       isPersonalBest: isBetter,
     })

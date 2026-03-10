@@ -22,6 +22,7 @@ import {
   CalendarCheck,
   Trophy,
   ScrollText,
+  Music,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -46,6 +47,7 @@ const navItems: NavItem[] = [
   { href: "/timeline-builder", label: "Timeline Builder", icon: <Clock className="h-5 w-5" />, requiresAuth: true },
   { href: "/whiteboard", label: "Whiteboard", icon: <PenTool className="h-5 w-5" />, requiresAuth: true },
   { href: "/quizzes", label: "Quizzes", icon: <Brain className="h-5 w-5" />, requiresAuth: true },
+  { href: "/sightreading", label: "Sightreading", icon: <Music className="h-5 w-5" />, requiresAuth: true },
   { href: "/dbq", label: "DBQ Practice", icon: <ScrollText className="h-5 w-5" />, requiresAuth: true },
   { href: "/daily-review", label: "Daily Review", icon: <CalendarCheck className="h-5 w-5" />, requiresAuth: true },
   { href: "/analytics", label: "Analytics", icon: <BarChart3 className="h-5 w-5" />, requiresAuth: true },

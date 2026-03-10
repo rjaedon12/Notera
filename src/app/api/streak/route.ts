@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 
-// GET /api/streak — get user's current streak and lastStudied date
+// GET /api/streak — get user's current streak, longest streak, and studiedToday
 export async function GET() {
   try {
     const session = await auth()
@@ -13,6 +13,7 @@ export async function GET() {
       where: { id: session.user.id },
       select: {
         streak: true,
+        longestStreak: true,
         lastStudied: true,
       },
     })
@@ -23,6 +24,7 @@ export async function GET() {
 
     // Check if the streak is still valid (hasn't expired)
     let currentStreak = user.streak
+    let studiedToday = false
 
     if (user.lastStudied) {
       const now = new Date()
@@ -37,8 +39,10 @@ export async function GET() {
       const diffMs = today.getTime() - lastDay.getTime()
       const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24))
 
-      // If more than 1 day has passed since last study, streak is broken
-      if (diffDays > 1) {
+      if (diffDays === 0) {
+        studiedToday = true
+      } else if (diffDays > 1) {
+        // Streak is broken — reset
         currentStreak = 0
         await prisma.user.update({
           where: { id: session.user.id },
@@ -48,8 +52,9 @@ export async function GET() {
     }
 
     return Response.json({
-      streak: currentStreak,
-      lastStudied: user.lastStudied,
+      currentStreak,
+      longestStreak: user.longestStreak ?? 0,
+      studiedToday,
     })
   } catch (error) {
     console.error("Get streak error:", error)

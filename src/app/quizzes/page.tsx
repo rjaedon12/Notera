@@ -301,11 +301,7 @@ export default function QuizzesPage() {
                         {attempt.completedAt ? (
                           <span className="flex items-center gap-1">
                             <BarChart3 className="h-3.5 w-3.5" />
-                            {attempt.score}/{attempt.totalQuestions} (
-                            {Math.round(
-                              ((attempt.score || 0) / attempt.totalQuestions) * 100
-                            )}
-                            %)
+                            {Math.round(attempt.score || 0)}%
                           </span>
                         ) : (
                           <span className="text-yellow-600 dark:text-yellow-400">
@@ -318,17 +314,14 @@ export default function QuizzesPage() {
                       <div
                         className={cn(
                           "text-2xl font-bold",
-                          ((attempt.score || 0) / attempt.totalQuestions) >= 0.7
+                          (attempt.score || 0) >= 70
                             ? "text-green-600 dark:text-green-400"
-                            : ((attempt.score || 0) / attempt.totalQuestions) >= 0.5
+                            : (attempt.score || 0) >= 50
                             ? "text-yellow-600 dark:text-yellow-400"
                             : "text-red-600 dark:text-red-400"
                         )}
                       >
-                        {Math.round(
-                          ((attempt.score || 0) / attempt.totalQuestions) * 100
-                        )}
-                        %
+                        {Math.round(attempt.score || 0)}%
                       </div>
                     )}
                   </CardContent>
