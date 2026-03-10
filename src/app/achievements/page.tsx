@@ -10,18 +10,18 @@ import toast from "react-hot-toast"
 
 // Map each achievement key to its animal photo in /public/achievements/
 const ACHIEVEMENT_IMAGES: Record<string, string> = {
-  first_set:      "/achievements/first_set.jpg",
-  ten_sets:       "/achievements/ten_sets.jpg",
-  first_quiz:     "/achievements/first_quiz.jpg",
-  perfect_quiz:   "/achievements/perfect_quiz.jpg",
-  streak_3:       "/achievements/streak_3.jpg",
-  streak_7:       "/achievements/streak_7.jpg",
-  streak_30:      "/achievements/streak_30.gif",
-  cards_50:       "/achievements/cards_50.jpg",
-  cards_100:      "/achievements/cards_100.jpg",
-  first_group:    "/achievements/first_group.jpg",
-  first_comment:  "/achievements/first_comment.jpg",
-  first_rating:   "/achievements/first_rating.jpg",
+  first_set:      "/achievements/first_set.png",
+  ten_sets:       "/achievements/ten_sets.png",
+  first_quiz:     "/achievements/first_quiz.png",
+  perfect_quiz:   "/achievements/perfect_quiz.png",
+  streak_3:       "/achievements/streak_3.png",
+  streak_7:       "/achievements/streak_7.png",
+  streak_30:      "/achievements/streak_30.png",
+  cards_50:       "/achievements/cards_50.png",
+  cards_100:      "/achievements/cards_100.png",
+  first_group:    "/achievements/first_group.png",
+  first_comment:  "/achievements/first_comment.png",
+  first_rating:   "/achievements/first_rating.png",
 }
 
 interface Achievement {

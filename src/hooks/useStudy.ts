@@ -249,6 +249,7 @@ export function useToggleSetStar() {
       queryClient.invalidateQueries({ queryKey: ["starredSets"] })
       queryClient.invalidateQueries({ queryKey: ["publicSets"] })
       queryClient.invalidateQueries({ queryKey: ["studySets"] })
+      queryClient.invalidateQueries({ queryKey: ["savedSets"] })
     },
   })
 }

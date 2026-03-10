@@ -13,11 +13,18 @@ export async function POST(
       return Response.json({ error: "Unauthorized" }, { status: 401 })
     }
     const { setId } = await params
-    await prisma.starredSet.upsert({
-      where: { userId_setId: { userId: session.user.id, setId } },
-      create: { userId: session.user.id, setId },
-      update: {},
-    })
+    await prisma.$transaction([
+      prisma.starredSet.upsert({
+        where: { userId_setId: { userId: session.user.id, setId } },
+        create: { userId: session.user.id, setId },
+        update: {},
+      }),
+      prisma.savedSet.upsert({
+        where: { userId_setId: { userId: session.user.id, setId } },
+        create: { userId: session.user.id, setId },
+        update: {},
+      }),
+    ])
     return Response.json({ starred: true })
   } catch (error) {
     console.error("Star set error:", error)
@@ -36,9 +43,10 @@ export async function DELETE(
       return Response.json({ error: "Unauthorized" }, { status: 401 })
     }
     const { setId } = await params
-    await prisma.starredSet.deleteMany({
-      where: { userId: session.user.id, setId },
-    })
+    await prisma.$transaction([
+      prisma.starredSet.deleteMany({ where: { userId: session.user.id, setId } }),
+      prisma.savedSet.deleteMany({ where: { userId: session.user.id, setId } }),
+    ])
     return Response.json({ starred: false })
   } catch (error) {
     console.error("Unstar set error:", error)
