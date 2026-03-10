@@ -27,6 +27,7 @@ export default function SightreadingPage() {
   // ─── Setup state ─────────────────────────────────────
   const [clef, setClef] = useState<Clef>("treble")
   const [level, setLevel] = useState<DifficultyLevel>(DIFFICULTY_LEVELS[0])
+  const [questionCount, setQuestionCount] = useState<number>(DIFFICULTY_LEVELS[0].questionCount)
   const [phase, setPhase] = useState<Phase>("select")
 
   // ─── Playing state ───────────────────────────────────
@@ -48,14 +49,14 @@ export default function SightreadingPage() {
   // ─── Start a round ───────────────────────────────────
   const startRound = useCallback(() => {
     const pool = getNotesForLevel(clef, level)
-    const qs = generateQuestions(pool, level.questionCount)
+    const qs = generateQuestions(pool, questionCount)
     setQuestions(qs)
     setCurrentIndex(0)
     setCorrectCount(0)
     setSelectedAnswer(null)
     setIsRevealed(false)
     setPhase("playing")
-  }, [clef, level])
+  }, [clef, level, questionCount])
 
   // ─── Handle answer ──────────────────────────────────
   const handleSelect = useCallback(
@@ -173,7 +174,10 @@ export default function SightreadingPage() {
             {DIFFICULTY_LEVELS.map((l) => (
               <button
                 key={l.id}
-                onClick={() => setLevel(l)}
+                onClick={() => {
+                  setLevel(l)
+                  setQuestionCount(l.questionCount)
+                }}
                 className={cn(
                   "w-full flex items-center justify-between rounded-xl border-2 px-4 py-3 transition-all text-left",
                   level.id === l.id
@@ -185,9 +189,51 @@ export default function SightreadingPage() {
                   <div className="font-semibold text-foreground">{l.label}</div>
                   <div className="text-sm text-muted-foreground">{l.description}</div>
                 </div>
-                <div className="text-sm text-muted-foreground whitespace-nowrap ml-4">
-                  {l.questionCount} questions
+                <div
+                  className={cn(
+                    "text-sm font-medium whitespace-nowrap ml-4 px-2 py-0.5 rounded-full",
+                    level.id === l.id
+                      ? "bg-[var(--primary)] text-white"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  {l.accidentals.join(" + ")}
                 </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Question Count */}
+        <div
+          className="rounded-xl border p-6"
+          style={{
+            borderColor: "var(--glass-border)",
+            background: "var(--glass-fill)",
+          }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-foreground">Number of Questions</h2>
+            <span
+              className="text-2xl font-bold"
+              style={{ color: "var(--primary)" }}
+            >
+              {questionCount}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {[5, 10, 15, 20, 25, 30, 40, 50].map((n) => (
+              <button
+                key={n}
+                onClick={() => setQuestionCount(n)}
+                className={cn(
+                  "w-12 h-10 rounded-lg font-semibold text-sm border-2 transition-all",
+                  questionCount === n
+                    ? "text-white border-[var(--primary)] bg-[var(--primary)]"
+                    : "border-zinc-200 dark:border-zinc-700 text-foreground hover:border-zinc-400 dark:hover:border-zinc-500"
+                )}
+              >
+                {n}
               </button>
             ))}
           </div>
