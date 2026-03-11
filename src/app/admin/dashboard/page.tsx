@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -53,28 +53,21 @@ interface AdminResource {
 export default function AdminDashboard() {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const { data: session } = useSession()
-  const [authenticated, setAuthenticated] = useState(false)
-  const [checking, setChecking] = useState(true)
+  const { data: session, status } = useSession()
   const [activePanel, setActivePanel] = useState<PanelType>("stats")
 
-  // Verify admin cookie
-  useEffect(() => {
-    fetch("/api/admin/verify")
-      .then((res) => {
-        if (res.ok) {
-          setAuthenticated(true)
-        } else {
-          router.replace("/admin")
-        }
-      })
-      .catch(() => router.replace("/admin"))
-      .finally(() => setChecking(false))
-  }, [router])
+  // Check admin role via NextAuth session
+  const authenticated = status === "authenticated" && session?.user?.role === "ADMIN"
 
-  const handleLogout = async () => {
-    await fetch("/api/admin/logout", { method: "POST" })
-    router.push("/admin")
+  useEffect(() => {
+    if (status === "loading") return
+    if (!authenticated) {
+      router.replace("/admin")
+    }
+  }, [status, authenticated, router])
+
+  const handleLogout = () => {
+    router.push("/")
   }
 
   // Fetch users
@@ -200,7 +193,7 @@ export default function AdminDashboard() {
     onError: () => toast.error("Failed to delete resource"),
   })
 
-  if (checking || !authenticated) {
+  if (status === "loading" || !authenticated) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-[var(--primary)]" />

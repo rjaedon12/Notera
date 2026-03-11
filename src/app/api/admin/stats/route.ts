@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server"
-import { verifyAdminCookie } from "@/lib/admin-auth"
+import { verifyAdminAuth } from "@/lib/admin-auth"
 import { prisma } from "@/lib/prisma"
 
 // GET /api/admin/stats - Get admin dashboard stats
 export async function GET() {
-  const isAdmin = await verifyAdminCookie()
+  const isAdmin = await verifyAdminAuth()
   if (!isAdmin) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }

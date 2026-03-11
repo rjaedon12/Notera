@@ -1,16 +1,13 @@
-import { cookies } from "next/headers"
+import { auth } from "@/lib/auth"
 
 /**
- * Verifies the admin_token cookie matches the admin_token_verify cookie.
- * Both are set during login with the same HMAC-SHA256 hash.
+ * Verifies the current user has ADMIN role via NextAuth session.
+ * Used to protect all /api/admin/* routes.
  */
-export async function verifyAdminCookie(): Promise<boolean> {
+export async function verifyAdminAuth(): Promise<boolean> {
   try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get("admin_token")?.value
-    const verifyToken = cookieStore.get("admin_token_verify")?.value
-    if (!token || !verifyToken) return false
-    return token === verifyToken && token.length === 64 && /^[a-f0-9]+$/.test(token)
+    const session = await auth()
+    return session?.user?.role === "ADMIN"
   } catch {
     return false
   }

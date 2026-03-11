@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { verifyAdminCookie } from "@/lib/admin-auth"
+import { verifyAdminAuth } from "@/lib/admin-auth"
 
 // GET /api/admin/sets — list all study sets (admin only)
 export async function GET() {
   try {
-    if (!(await verifyAdminCookie())) {
+    if (!(await verifyAdminAuth())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
@@ -27,7 +27,7 @@ export async function GET() {
 // DELETE /api/admin/sets — delete a study set by id (admin only)
 export async function DELETE(request: NextRequest) {
   try {
-    if (!(await verifyAdminCookie())) {
+    if (!(await verifyAdminAuth())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 

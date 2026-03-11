@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { verifyAdminCookie } from "@/lib/admin-auth"
+import { verifyAdminAuth } from "@/lib/admin-auth"
 
 // GET /api/admin/users - Get all users (admin only)
 export async function GET() {
   try {
-    if (!(await verifyAdminCookie())) {
+    if (!(await verifyAdminAuth())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
@@ -34,7 +34,7 @@ export async function GET() {
 // PATCH /api/admin/users — ban or unban a user
 export async function PATCH(request: NextRequest) {
   try {
-    if (!(await verifyAdminCookie())) {
+    if (!(await verifyAdminAuth())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
     const { userId, isBanned } = await request.json()
@@ -53,7 +53,7 @@ export async function PATCH(request: NextRequest) {
 // DELETE /api/admin/users — delete a user
 export async function DELETE(request: NextRequest) {
   try {
-    if (!(await verifyAdminCookie())) {
+    if (!(await verifyAdminAuth())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
     const { userId } = await request.json()

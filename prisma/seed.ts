@@ -136,7 +136,8 @@ async function main() {
 
   // ── 1. Create users ─────────────────────────────────
   const hashedDemo = await bcrypt.hash("demo1234", 12)
-  const hashedAdmin = await bcrypt.hash("admin1234", 12)
+  const adminPassword = process.env.ADMIN_SEED_PASSWORD || "admin123"
+  const hashedAdmin = await bcrypt.hash(adminPassword, 12)
 
   const demoUser = await prisma.user.create({
     data: { email: "demo@koda.app", name: "Demo User", password: hashedDemo, streak: 3, lastStudied: new Date() },
@@ -144,7 +145,7 @@ async function main() {
   console.log(`✅ Created demo user: ${demoUser.email}`)
 
   const adminUser = await prisma.user.create({
-    data: { email: "admin@koda.app", name: "Koda Admin", password: hashedAdmin, role: "ADMIN", streak: 7, lastStudied: new Date() },
+    data: { email: "admin@koda.com", name: "Koda Admin", password: hashedAdmin, role: "ADMIN", streak: 7, lastStudied: new Date() },
   })
   console.log(`✅ Created admin user: ${adminUser.email}`)
 
@@ -283,7 +284,7 @@ async function main() {
   console.log(`   🃏 ${totalCards} flashcards`)
   console.log(`   👥 1 study group`)
   console.log(`\n   Demo login:  demo@koda.app  / demo1234`)
-  console.log(`   Admin login: admin@koda.app / admin1234`)
+  console.log(`   Admin login: admin@koda.com / ${adminPassword}`)
 
   // ── 6. Seed DBQ prompts ───────────────────────────────
   const { seedDBQ, seedIndustrialRevolutionDBQ, seedImperialismDBQ } = await import("./seed-dbq")
