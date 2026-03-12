@@ -504,6 +504,210 @@ async function main() {
     ],
   })
 
+  // ============================================================
+  // AP WORLD HISTORY — Stimulus Analysis I: Medieval to Early Modern
+  // Stimuli: Magna Carta (1215) · Black Death Population Data (c. 1340–1360)
+  // ============================================================
+  await createBank(admin.id, {
+    title: "AP World History — Stimulus Analysis I (1200–1650)",
+    subject: "AP World History",
+    description: "Stimulus-based multiple choice questions examining a primary source document (Magna Carta, 1215) and historical demographic data (Black Death, c. 1340–1360).",
+    questions: [
+      // ─── STIMULUS 1: Magna Carta, Clauses 39–40 (1215) ───
+      {
+        passage: "\"No free man shall be seized or imprisoned, or stripped of his rights or possessions, or outlawed or exiled, or deprived of his standing in any other way, nor will we proceed with force against him, or send others to do so, except by the lawful judgment of his equals or by the law of the land. To no one will we sell, to no one deny or delay right or justice.\"\n\n— Magna Carta, Clauses 39–40, sealed by King John of England at Runnymede, June 15, 1215. Original manuscript held at the British Library, London (Cotton MS Augustus II.106).",
+        prompt: "The guarantees in this passage most directly established which legal principle?",
+        explanation: "Clauses 39–40 of Magna Carta articulated the foundational principle of due process — that no free person could be imprisoned, exiled, or punished except by 'the lawful judgment of his equals or by the law of the land,' establishing that even the king was subject to established law. Option B is wrong: Magna Carta made no provisions for religious freedom — Clause 1 actually confirmed existing Church privileges rather than creating new ones. Option C is wrong: the document said nothing about elections or representative assemblies; Parliament did not yet exist in its recognizable form in 1215. Option D is wrong: separation of church and state was not addressed; the document preserved, not dismantled, Church authority.",
+        choices: [
+          { text: "Due process — that punishment requires lawful judgment according to established law", isCorrect: true },
+          { text: "Freedom of religious practice for all English subjects", isCorrect: false },
+          { text: "The right of free men to elect representatives to Parliament", isCorrect: false },
+          { text: "The separation of church and state in English law", isCorrect: false },
+        ],
+      },
+      {
+        passage: "\"No free man shall be seized or imprisoned, or stripped of his rights or possessions, or outlawed or exiled, or deprived of his standing in any other way, nor will we proceed with force against him, or send others to do so, except by the lawful judgment of his equals or by the law of the land. To no one will we sell, to no one deny or delay right or justice.\"\n\n— Magna Carta, Clauses 39–40, sealed by King John of England at Runnymede, June 15, 1215. Original manuscript held at the British Library, London (Cotton MS Augustus II.106).",
+        prompt: "Which group most directly compelled King John to seal the Magna Carta in 1215?",
+        explanation: "The Magna Carta was forced upon King John by a coalition of rebellious English barons angered by his excessive taxation, arbitrary seizure of property, and violations of feudal obligations. After the barons captured London in May 1215, John agreed to negotiate at Runnymede. Option A is wrong: English serfs and peasants lacked the political and military power to compel royal concessions; the charter's protections explicitly applied to 'free men,' not serfs. Option C is wrong: Pope Innocent III initially endorsed the charter but later annulled it — he was a bystander to the barons' military revolt, not its instigator. Option D is wrong: Parliament as a formal institution did not yet exist in 1215 and had no authority to constrain the king.",
+        choices: [
+          { text: "A coalition of English barons who revolted against royal violations of feudal obligations", isCorrect: true },
+          { text: "English peasants and serfs demanding relief from oppressive royal taxation", isCorrect: false },
+          { text: "Pope Innocent III asserting Church authority over English royal policy", isCorrect: false },
+          { text: "Parliament exercising constitutional authority to limit royal prerogative", isCorrect: false },
+        ],
+      },
+      {
+        passage: "\"No free man shall be seized or imprisoned, or stripped of his rights or possessions, or outlawed or exiled, or deprived of his standing in any other way, nor will we proceed with force against him, or send others to do so, except by the lawful judgment of his equals or by the law of the land. To no one will we sell, to no one deny or delay right or justice.\"\n\n— Magna Carta, Clauses 39–40, sealed by King John of England at Runnymede, June 15, 1215. Original manuscript held at the British Library, London (Cotton MS Augustus II.106).",
+        prompt: "The phrase 'by the lawful judgment of his equals' is most widely cited as the historical origin of which modern legal right?",
+        explanation: "The phrase 'judgment of his equals' (Latin: judicium parium) is the historical origin of the right to trial by jury — the right to be judged by a panel of one's peers rather than solely by royal officials. This concept was foundational to English common law and was later enshrined in the 6th Amendment to the U.S. Constitution. Option B is wrong: habeas corpus — the right to challenge unlawful imprisonment before a judge — is a closely related but legally distinct concept, formally codified much later in the Habeas Corpus Act (1679). Option C is wrong: the right to legal counsel was not mentioned in the Magna Carta at all. Option D is wrong: the presumption of innocence is a related procedural principle but is a distinct legal doctrine not stated in this passage.",
+        choices: [
+          { text: "Trial by a jury of one's peers", isCorrect: true },
+          { text: "Habeas corpus — the right to challenge unlawful imprisonment before a judge", isCorrect: false },
+          { text: "The right to legal counsel when accused of a crime", isCorrect: false },
+          { text: "The presumption of innocence until proven guilty", isCorrect: false },
+        ],
+      },
+      {
+        passage: "\"No free man shall be seized or imprisoned, or stripped of his rights or possessions, or outlawed or exiled, or deprived of his standing in any other way, nor will we proceed with force against him, or send others to do so, except by the lawful judgment of his equals or by the law of the land. To no one will we sell, to no one deny or delay right or justice.\"\n\n— Magna Carta, Clauses 39–40, sealed by King John of England at Runnymede, June 15, 1215. Original manuscript held at the British Library, London (Cotton MS Augustus II.106).",
+        prompt: "A historian studying the development of constitutional government would most likely cite the Magna Carta as evidence for which argument?",
+        explanation: "The Magna Carta is the foundational document in the English constitutional tradition that gradually limited royal power and protected individual rights. It directly preceded and influenced the Petition of Right (1628), the Habeas Corpus Act (1679), and the English Bill of Rights (1689). Option B is wrong: the document had precisely the opposite effect — it limited rather than justified absolute royal authority. Option C is wrong: while King John had quarreled with Pope Innocent III, the document addressed barons' feudal rights, not religious reform; the Protestant Reformation came three centuries later. Option D is wrong: the Magna Carta contained no provisions regarding overseas colonialism or expansion.",
+        choices: [
+          { text: "The English constitutional tradition of limiting royal power traces its origins to medieval precedents", isCorrect: true },
+          { text: "Medieval English monarchs derived authority from divine right that transcended law", isCorrect: false },
+          { text: "Religious conflict between the papacy and English kings was the primary driver of legal reform", isCorrect: false },
+          { text: "English common law traditions actively supported overseas colonial expansion", isCorrect: false },
+        ],
+      },
+      // ─── STIMULUS 2: Black Death Population Data (c. 1340–1360) ───
+      {
+        passage: "Estimated Population During the Black Death (in millions)\n\nRegion            c. 1340   c. 1360   Approx. Loss\nEngland              4.8       2.8        −42%\nFrance              18.0      11.5        −36%\nItaly                9.5       5.5        −42%\nSpain                7.5       5.0        −33%\nWestern Europe     ~75.0     ~50.0        −33%\n\nNote: The Black Death (bubonic plague) arrived in Sicily in October 1347 and swept across Western Europe through 1353. A second wave struck in 1361–62.\nSources: J.C. Russell, \"Late Ancient and Medieval Population,\" Transactions of the American Philosophical Society (1958); David Herlihy, The Black Death and the Transformation of the West (Harvard University Press, 1997).",
+        prompt: "Based on the data, which of the following conclusions is best supported by the evidence?",
+        explanation: "The data shows all Western European regions experienced dramatic population declines of 33–42%. England and Italy each lost 42% — a significantly higher proportion than France (36%) or Spain (33%). Overall, Western Europe fell from ~75 million to ~50 million. Option B is wrong: France (−36%) did not suffer the most severe proportional decline; England and Italy (both −42%) did. Option C is wrong: the data shows population had fallen sharply by 1360 with no recovery evident — historians note recovery did not begin until the late 15th century. Option D is wrong: Spain (−33%) was actually the least affected region in the table, not France.",
+        choices: [
+          { text: "England and Italy experienced proportionally greater population loss than France or Spain", isCorrect: true },
+          { text: "France suffered the most severe proportional population decline of any region shown", isCorrect: false },
+          { text: "Western European population had largely recovered to pre-plague levels by 1360", isCorrect: false },
+          { text: "France was the least affected Western European region in terms of percentage population lost", isCorrect: false },
+        ],
+      },
+      {
+        passage: "Estimated Population During the Black Death (in millions)\n\nRegion            c. 1340   c. 1360   Approx. Loss\nEngland              4.8       2.8        −42%\nFrance              18.0      11.5        −36%\nItaly                9.5       5.5        −42%\nSpain                7.5       5.0        −33%\nWestern Europe     ~75.0     ~50.0        −33%\n\nNote: The Black Death (bubonic plague) arrived in Sicily in October 1347 and swept across Western Europe through 1353. A second wave struck in 1361–62.\nSources: J.C. Russell, \"Late Ancient and Medieval Population,\" Transactions of the American Philosophical Society (1958); David Herlihy, The Black Death and the Transformation of the West (Harvard University Press, 1997).",
+        prompt: "The dramatic population decline shown in the data most directly contributed to which economic change in medieval Europe?",
+        explanation: "The massive labor shortage caused by Black Death mortality fundamentally shifted economic power from landowners to surviving workers. With far fewer laborers available, surviving peasants could demand higher wages and better conditions, weakening serfdom and the feudal system — lords could no longer compel labor service when workers could simply leave for better situations. Option B is wrong: while markets were disrupted, the most direct labor-market consequence was rising wages, not a uniform economic collapse across all sectors. Option C is wrong: long-distance trade networks were disrupted but did not collapse; surviving merchants often profited from scarcity. Option D is wrong: feudal lords generally lost economic leverage relative to surviving workers rather than gaining additional power.",
+        choices: [
+          { text: "Rising wages for surviving laborers due to the severe scarcity of workers", isCorrect: true },
+          { text: "Widespread economic collapse across all sectors of European society", isCorrect: false },
+          { text: "The collapse of long-distance trade networks connecting Europe and Asia", isCorrect: false },
+          { text: "Increased power for feudal lords who could now demand higher rents from desperate survivors", isCorrect: false },
+        ],
+      },
+      {
+        passage: "Estimated Population During the Black Death (in millions)\n\nRegion            c. 1340   c. 1360   Approx. Loss\nEngland              4.8       2.8        −42%\nFrance              18.0      11.5        −36%\nItaly                9.5       5.5        −42%\nSpain                7.5       5.0        −33%\nWestern Europe     ~75.0     ~50.0        −33%\n\nNote: The Black Death (bubonic plague) arrived in Sicily in October 1347 and swept across Western Europe through 1353. A second wave struck in 1361–62.\nSources: J.C. Russell, \"Late Ancient and Medieval Population,\" Transactions of the American Philosophical Society (1958); David Herlihy, The Black Death and the Transformation of the West (Harvard University Press, 1997).",
+        prompt: "The English Peasants' Revolt (1381) is most directly connected to the population data above because:",
+        explanation: "The Peasants' Revolt was directly triggered by social tensions following the Black Death. With labor now scarce and wages rising, the English Parliament — dominated by landowners — passed the Statute of Laborers (1351) to freeze wages at pre-plague levels, suppressing peasants' new economic leverage. When Parliament added a poll tax in 1380, it sparked Wat Tyler's uprising. Option A is wrong: serfdom actually weakened after the plague — surviving laborers gained bargaining power that lords could not easily suppress. Option C is wrong: cities were hit harder by plague than rural areas, so there was no mass rural-to-urban migration producing volatile urban populations. Option D is wrong: the Church's authority was undermined by the plague (priests failed to stop it; the institution lost huge numbers of clergy), not strengthened.",
+        choices: [
+          { text: "The labor shortage gave surviving peasants economic leverage that landlords tried to legislate away, fueling violent unrest", isCorrect: true },
+          { text: "Serfdom was strengthened as lords used law to bind scarce workers to their estates", isCorrect: false },
+          { text: "Mass migration of rural survivors to cities created volatile and easily mobilized urban populations", isCorrect: false },
+          { text: "The Catholic Church's authority was strengthened as survivors turned to religion for comfort and guidance", isCorrect: false },
+        ],
+      },
+      {
+        passage: "Estimated Population During the Black Death (in millions)\n\nRegion            c. 1340   c. 1360   Approx. Loss\nEngland              4.8       2.8        −42%\nFrance              18.0      11.5        −36%\nItaly                9.5       5.5        −42%\nSpain                7.5       5.0        −33%\nWestern Europe     ~75.0     ~50.0        −33%\n\nNote: The Black Death (bubonic plague) arrived in Sicily in October 1347 and swept across Western Europe through 1353. A second wave struck in 1361–62.\nSources: J.C. Russell, \"Late Ancient and Medieval Population,\" Transactions of the American Philosophical Society (1958); David Herlihy, The Black Death and the Transformation of the West (Harvard University Press, 1997).",
+        prompt: "A historian analyzing the spread patterns in the data would most likely emphasize which factor to explain why Italy was among the first and most severely affected regions?",
+        explanation: "Italy's major Mediterranean port cities — Venice, Genoa, and Pisa — made it the most commercially integrated and internationally connected region in Western Europe. The Black Death arrived on Genoese trading ships from the Black Sea (Crimea) at Messina in October 1347. Because disease traveled along trade routes, Italy's position as Europe's commercial hub made it both the entry point and one of the hardest-hit regions. Option A is wrong: France had the largest absolute population but suffered lower percentage mortality than Italy, undermining a simple density argument. Option C is wrong: medieval medical knowledge was uniformly inadequate across Europe; there is no evidence of meaningful regional differences in medical effectiveness. Option D is wrong: while malnutrition from the Great Famine (1315–22) may have increased vulnerability, the primary spread mechanism was commercial contact via port cities, not climate.",
+        choices: [
+          { text: "Italy's role as Europe's commercial hub, with major port cities serving as entry points for trade-borne disease", isCorrect: true },
+          { text: "Italy's higher overall population density compared to France or Spain", isCorrect: false },
+          { text: "Italy's inferior medical knowledge relative to northern European regions", isCorrect: false },
+          { text: "Italy's warmer Mediterranean climate, which allowed the plague to spread more rapidly year-round", isCorrect: false },
+        ],
+      },
+    ],
+  })
+
+  // ============================================================
+  // AP WORLD HISTORY — Stimulus Analysis II: Revolution & Imperialism
+  // Stimuli: Communist Manifesto (1848) · "Dropping the Pilot" cartoon (Punch, 1890)
+  // ============================================================
+  await createBank(admin.id, {
+    title: "AP World History — Stimulus Analysis II (1750–1914)",
+    subject: "AP World History",
+    description: "Stimulus-based multiple choice questions using a primary source document (Communist Manifesto, 1848) and a political cartoon (\"Dropping the Pilot,\" Punch, 1890) from the age of revolution, industrialization, and imperialism.",
+    questions: [
+      // ─── STIMULUS 1: Communist Manifesto (1848) ───
+      {
+        passage: "\"A spectre is haunting Europe — the spectre of communism. All the Powers of old Europe have entered into a holy alliance to exorcise this spectre: Pope and Czar, Metternich and Guizot, French Radicals and German police-spies...\n\nThe history of all hitherto existing society is the history of class struggles. Freeman and slave, patrician and plebeian, lord and serf, guild-master and journeyman, in a word, oppressor and oppressed, stood in constant opposition to one another...\n\nThe proletarians have nothing to lose but their chains. They have a world to win. Working Men of All Countries, Unite!\"\n\n— Karl Marx and Friedrich Engels, Manifesto of the Communist Party, Communist League, London. First published February 21, 1848.",
+        prompt: "The opening claim that 'the history of all hitherto existing society is the history of class struggles' most directly reflects which philosophical approach to understanding history?",
+        explanation: "Marx's statement is the foundational principle of historical materialism — the idea that material economic conditions and the conflict between social classes are the primary drivers of historical change, not ideas, religion, or national identity. This was a direct challenge to Hegel's idealist philosophy (which held that ideas drive history) and to religious explanations of historical events. Option B is wrong: divine providence is a religious interpretation of history that Marx explicitly rejected — he famously called religion 'the opium of the people.' Option C is wrong: nationalism explains history through ethnic and cultural competition, which Marx considered 'false consciousness' that obscured workers' true class interests. Option D is wrong: the 'Great Man' theory holds that exceptional individual leaders shape history, which Marx rejected in favor of structural, class-based explanations.",
+        choices: [
+          { text: "Historical materialism — that economic conditions and class conflict are the primary drivers of historical change", isCorrect: true },
+          { text: "Divine providence — that a higher power directs the course of human events", isCorrect: false },
+          { text: "Nationalism — that competition among distinct ethnic and cultural groups shapes history", isCorrect: false },
+          { text: "The 'Great Man' theory — that exceptional individual leaders are the primary agents of historical change", isCorrect: false },
+        ],
+      },
+      {
+        passage: "\"A spectre is haunting Europe — the spectre of communism. All the Powers of old Europe have entered into a holy alliance to exorcise this spectre: Pope and Czar, Metternich and Guizot, French Radicals and German police-spies...\n\nThe history of all hitherto existing society is the history of class struggles. Freeman and slave, patrician and plebeian, lord and serf, guild-master and journeyman, in a word, oppressor and oppressed, stood in constant opposition to one another...\n\nThe proletarians have nothing to lose but their chains. They have a world to win. Working Men of All Countries, Unite!\"\n\n— Karl Marx and Friedrich Engels, Manifesto of the Communist Party, Communist League, London. First published February 21, 1848.",
+        prompt: "The Communist Manifesto was written in the context of which major historical development that most directly created the 'proletarians' Marx described?",
+        explanation: "The Industrial Revolution transformed European society by creating a large urban industrial working class — factory workers who owned no means of production and sold their labor under exploitative conditions (child labor, 14–16 hour workdays, dangerous factories, and urban slums). This directly inspired Marx's analysis of the proletariat. Option A is wrong: the American Revolution was a political event that did not create an industrial proletariat; it predates the industrial factory system by decades. Option C is wrong: the Revolutions of 1848 were occurring simultaneously with the Manifesto's publication — they were a product of the same social conditions, not their cause. Option D is wrong: European colonial expansion created peasant and enslaved labor forces in the colonies, not the urban industrial proletariat Marx specifically described in European factories.",
+        choices: [
+          { text: "The Industrial Revolution, which created an urban working class in exploitative factory conditions", isCorrect: true },
+          { text: "The American Revolution, which inspired republican political movements across Europe", isCorrect: false },
+          { text: "The Revolutions of 1848, which swept France, Austria, and the German states", isCorrect: false },
+          { text: "European colonial expansion, which drove economic growth and global resource extraction", isCorrect: false },
+        ],
+      },
+      {
+        passage: "\"A spectre is haunting Europe — the spectre of communism. All the Powers of old Europe have entered into a holy alliance to exorcise this spectre: Pope and Czar, Metternich and Guizot, French Radicals and German police-spies...\n\nThe history of all hitherto existing society is the history of class struggles. Freeman and slave, patrician and plebeian, lord and serf, guild-master and journeyman, in a word, oppressor and oppressed, stood in constant opposition to one another...\n\nThe proletarians have nothing to lose but their chains. They have a world to win. Working Men of All Countries, Unite!\"\n\n— Karl Marx and Friedrich Engels, Manifesto of the Communist Party, Communist League, London. First published February 21, 1848.",
+        prompt: "The concluding call 'Working Men of All Countries, Unite!' most directly challenged which competing 19th-century ideology?",
+        explanation: "The explicitly internationalist call to unite workers 'of all countries' was a direct challenge to nationalism — the dominant rival ideology of the 19th century — which organized people along national lines rather than by class. Marx argued that national identity was 'false consciousness' preventing workers from recognizing their shared interests across borders. A German worker had more in common with a French worker than with a German capitalist. Option A is wrong: while liberalism emphasized individual rights rather than collective class action (a genuine tension with Marxism), the specific 'all countries' formulation most directly counters nationalism's emphasis on separate national communities. Option C is wrong: Marx broadly opposed conservatism, but the international organizing call specifically targets the nationalist ideology that divided workers by country. Option D is wrong: Social Darwinism emerged after Darwin's 1859 publication and was not yet a major competing ideology when the Manifesto was written in 1848.",
+        choices: [
+          { text: "Nationalism, which divided the working class by national identity rather than shared class interests", isCorrect: true },
+          { text: "Liberalism's emphasis on individual rights, free markets, and gradual parliamentary reform", isCorrect: false },
+          { text: "Conservatism's defense of traditional monarchy, aristocracy, and established social order", isCorrect: false },
+          { text: "Social Darwinism's application of evolutionary theory to justify existing social hierarchies", isCorrect: false },
+        ],
+      },
+      {
+        passage: "\"A spectre is haunting Europe — the spectre of communism. All the Powers of old Europe have entered into a holy alliance to exorcise this spectre: Pope and Czar, Metternich and Guizot, French Radicals and German police-spies...\n\nThe history of all hitherto existing society is the history of class struggles. Freeman and slave, patrician and plebeian, lord and serf, guild-master and journeyman, in a word, oppressor and oppressed, stood in constant opposition to one another...\n\nThe proletarians have nothing to lose but their chains. They have a world to win. Working Men of All Countries, Unite!\"\n\n— Karl Marx and Friedrich Engels, Manifesto of the Communist Party, Communist League, London. First published February 21, 1848.",
+        prompt: "The list 'Freeman and slave, patrician and plebeian, lord and serf, guild-master and journeyman' most likely serves which rhetorical purpose in the document?",
+        explanation: "By citing class antagonisms from ancient Rome (freeman/slave, patrician/plebeian), medieval feudalism (lord/serf), and the early modern guild system (master/journeyman) before arriving at the industrial present (bourgeois/proletarian), Marx and Engels argued that class struggle was not a new or temporary anomaly but a universal constant throughout all human history. This historical sweep was designed to persuade readers that the current capitalist class conflict would inevitably follow the same pattern — and ultimately be resolved — in proletarian revolution. Option B is wrong: Marx did not view these past struggles with nostalgia; he presented them as the necessary, progressive engine of historical change. Option C is wrong: Marx was not appealing to tradition or conservative values — he was establishing a historical pattern leading to revolution, not reform. Option D is wrong: Marx explicitly called for revolutionary overthrow of capitalist institutions, not incremental democratic reform.",
+        choices: [
+          { text: "To establish that class conflict has been a universal feature of all human history, implying it will inevitably continue and be resolved in the industrial age", isCorrect: true },
+          { text: "To mourn the passing of simpler, more equal pre-industrial societies destroyed by capitalism", isCorrect: false },
+          { text: "To appeal to historical tradition as a conservative foundation for gradual social reform", isCorrect: false },
+          { text: "To argue that capitalist institutions should be reformed incrementally through democratic means", isCorrect: false },
+        ],
+      },
+      // ─── STIMULUS 2: "Dropping the Pilot" Political Cartoon (Punch, 1890) ───
+      {
+        passage: "[Political cartoon: \"Dropping the Pilot.\" John Tenniel, Punch magazine (London), Vol. 98, March 29, 1890, p. 146. Available at the British Library, London, and numerous digital archives.\n\nDescription: Kaiser Wilhelm II of Germany — depicted as a young, uniformed naval captain standing on the deck of a large ship — watches from above as Otto von Bismarck, shown as an experienced, elderly pilot in a long coat and admiral's hat, descends the rope ladder at the ship's side. Bismarck carries his pilot's orders. The ship, representing Germany, continues on its course without him. Caption reads: 'DROPPING THE PILOT.']",
+        prompt: "The cartoon most directly comments on which specific historical event?",
+        explanation: "Tenniel's cartoon was published on March 29, 1890, eleven days after Kaiser Wilhelm II dismissed Chancellor Otto von Bismarck on March 18, 1890. Bismarck had served as Chancellor since German unification in 1871 and was widely regarded as Europe's master statesman. His dismissal was seen as reckless, and the metaphor of a ship losing its experienced pilot at sea perfectly captured widespread alarm. Option A is wrong: the Franco-Prussian War (1870–71) was a German victory that occurred 19 years before this cartoon was drawn. Option C is wrong: Bismarck's unification of Germany through 'blood and iron' occurred 1864–1871, not in 1890. Option D is wrong: the Triple Alliance between Germany, Austria-Hungary, and Italy was formed in 1882, eight years before this cartoon.",
+        choices: [
+          { text: "Kaiser Wilhelm II's dismissal of Chancellor Otto von Bismarck in March 1890", isCorrect: true },
+          { text: "Germany's defeat in the Franco-Prussian War (1870–71) and the resulting peace treaty", isCorrect: false },
+          { text: "Bismarck's unification of Germany through 'blood and iron' (1864–71)", isCorrect: false },
+          { text: "The formation of the Triple Alliance between Germany, Austria-Hungary, and Italy (1882)", isCorrect: false },
+        ],
+      },
+      {
+        passage: "[Political cartoon: \"Dropping the Pilot.\" John Tenniel, Punch magazine (London), Vol. 98, March 29, 1890, p. 146. Available at the British Library, London, and numerous digital archives.\n\nDescription: Kaiser Wilhelm II of Germany — depicted as a young, uniformed naval captain standing on the deck of a large ship — watches from above as Otto von Bismarck, shown as an experienced, elderly pilot in a long coat and admiral's hat, descends the rope ladder at the ship's side. Bismarck carries his pilot's orders. The ship, representing Germany, continues on its course without him. Caption reads: 'DROPPING THE PILOT.']",
+        prompt: "The cartoonist's choice to depict Bismarck as the experienced 'pilot' most directly conveys which viewpoint about the political change?",
+        explanation: "By casting Bismarck as the experienced, essential navigator who guided the ship through dangerous waters, Tenniel expressed widespread concern that Germany was recklessly discarding its most capable statesman — leaving an inexperienced captain (Wilhelm II) to steer an unpredictable course. The metaphor implies danger ahead without skilled guidance. Option A is wrong: the cartoon portrays Bismarck sympathetically as a capable and indispensable navigator, not as a figure whose outdated policies needed replacing. Option C is wrong: Wilhelm II is depicted as a young, untested captain watching the experienced expert leave — the visual contrast conveys inexperience, not capability. Option D is wrong: the tone of the cartoon is one of alarm and foreboding about Germany's future course, not confidence or optimism.",
+        choices: [
+          { text: "That Germany was recklessly abandoning its most skilled statesman, risking dangerous instability", isCorrect: true },
+          { text: "That Bismarck's conservative policies were outdated and Germany needed a new strategic direction", isCorrect: false },
+          { text: "That Kaiser Wilhelm II was a capable and decisive leader ready to modernize German foreign policy", isCorrect: false },
+          { text: "That Germany's rise to European dominance was now assured under energetic new leadership", isCorrect: false },
+        ],
+      },
+      {
+        passage: "[Political cartoon: \"Dropping the Pilot.\" John Tenniel, Punch magazine (London), Vol. 98, March 29, 1890, p. 146. Available at the British Library, London, and numerous digital archives.\n\nDescription: Kaiser Wilhelm II of Germany — depicted as a young, uniformed naval captain standing on the deck of a large ship — watches from above as Otto von Bismarck, shown as an experienced, elderly pilot in a long coat and admiral's hat, descends the rope ladder at the ship's side. Bismarck carries his pilot's orders. The ship, representing Germany, continues on its course without him. Caption reads: 'DROPPING THE PILOT.']",
+        prompt: "Historians studying Europe from 1890 to 1914 would most likely use this cartoon as evidence to support which argument?",
+        explanation: "After Bismarck's dismissal, Germany's foreign policy changed dramatically. Wilhelm II allowed the Reinsurance Treaty with Russia to lapse in 1890, driving Russia toward France. He pursued aggressive naval expansion and colonial claims that alarmed Britain. By 1907, France, Russia, and Britain had formed the Triple Entente directly opposing Germany. Bismarck had deliberately kept France diplomatically isolated; without him, Germany itself became isolated. These missteps contributed directly to the conditions that made World War I possible in 1914. Option A is wrong: Bismarck's alliance system was specifically designed to prevent major European war; it was only after his removal that the path to WWI opened. Option C is wrong: German industrialization was already well advanced and continued regardless of Bismarck's presence — it was not a cause of diplomatic failure. Option D is wrong: under Wilhelm II, Germany's imperial and naval ambitions actually expanded aggressively, directly contradicting this claim.",
+        choices: [
+          { text: "The abandonment of Bismarck's cautious alliance system contributed to the diplomatic conditions that led to World War I", isCorrect: true },
+          { text: "Bismarck's own aggressive alliance policies had already made a major European war inevitable before 1890", isCorrect: false },
+          { text: "German industrialization under Bismarck created economic pressures that destabilized European diplomacy", isCorrect: false },
+          { text: "Germany successfully pursued a restrained, peaceful foreign policy under Wilhelm II's leadership", isCorrect: false },
+        ],
+      },
+      {
+        passage: "[Political cartoon: \"Dropping the Pilot.\" John Tenniel, Punch magazine (London), Vol. 98, March 29, 1890, p. 146. Available at the British Library, London, and numerous digital archives.\n\nDescription: Kaiser Wilhelm II of Germany — depicted as a young, uniformed naval captain standing on the deck of a large ship — watches from above as Otto von Bismarck, shown as an experienced, elderly pilot in a long coat and admiral's hat, descends the rope ladder at the ship's side. Bismarck carries his pilot's orders. The ship, representing Germany, continues on its course without him. Caption reads: 'DROPPING THE PILOT.']",
+        prompt: "The publication of this cartoon in a British magazine most directly reflects which British perspective on German affairs in 1890?",
+        explanation: "Punch, Britain's leading satirical weekly, published this cartoon with an unmistakably cautionary tone. In 1890, Britain still viewed Bismarck's Germany as a manageable and relatively cooperative partner in European affairs — Bismarck had deliberately cultivated good relations with Britain and shown little interest in naval or colonial rivalry with it. The cartoon reflects British concern that Wilhelm II's Germany might become erratic and aggressive — a concern that proved prescient, as Germany soon embarked on a naval arms race with Britain and pursued colonial ambitions (the Moroccan Crises) that directly threatened British interests. Option A is wrong: the cartoon's tone is one of alarm, not approval of the new German leadership. Option C is wrong: Britain feared destabilization of the European order, not an opportunity to profit from German weakness. Option D is wrong: it was Bismarck's dismissal that later helped push Russia toward France, forming the Franco-Russian Alliance (1894) — but in 1890, Britain's concern was primarily about German unpredictability, not this specific diplomatic consequence.",
+        choices: [
+          { text: "Concern that losing Bismarck's steady leadership would make Germany more unpredictable and destabilizing in European affairs", isCorrect: true },
+          { text: "Approval that Germany's new leadership would be more cooperative with British imperial interests", isCorrect: false },
+          { text: "Satisfaction that German instability would create new opportunities for British expansion on the Continent", isCorrect: false },
+          { text: "Alarm that Bismarck's departure would immediately strengthen the Franco-Russian alliance at British expense", isCorrect: false },
+        ],
+      },
+    ],
+  })
+
   // Summary
   const total = await prisma.questionBank.count({ where: { isPremade: true } })
   console.log(`\n🎉 Done! ${total} premade quiz banks in database.`)
