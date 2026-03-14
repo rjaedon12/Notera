@@ -110,7 +110,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       // Block banned users from getting a valid session
       if (token.isBanned) {
-        return { ...session, user: undefined } as typeof session
+        return null as unknown as typeof session
       }
       if (session.user && token.id) {
         session.user.id = token.id as string
