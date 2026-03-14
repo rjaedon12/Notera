@@ -2,8 +2,8 @@ import { z } from "zod"
 
 /**
  * Server-side environment variable validation.
- * Import this module early (e.g., in instrumentation.ts or lib/prisma.ts)
- * to fail fast on missing environment variables.
+ * Validation is skipped during Next.js build phase because runtime secrets
+ * (e.g. NEXTAUTH_SECRET) are not available in Vercel's build environment.
  */
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
@@ -22,6 +22,13 @@ const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>
 
 function validateEnv(): Env {
+  // Skip strict validation during the Next.js build phase — runtime-only secrets
+  // (NEXTAUTH_SECRET, etc.) are not injected into the build environment on Vercel.
+  const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build"
+  if (isBuildPhase) {
+    return process.env as unknown as Env
+  }
+
   const parsed = envSchema.safeParse(process.env)
 
   if (!parsed.success) {
