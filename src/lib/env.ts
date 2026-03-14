@@ -3,11 +3,11 @@ import { z } from "zod"
 /**
  * Server-side environment variable validation.
  * Validation is skipped during Next.js build phase because runtime secrets
- * (e.g. NEXTAUTH_SECRET) are not available in Vercel's build environment.
+ * (e.g. AUTH_SECRET) are not available in Vercel's build environment.
  */
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
-  NEXTAUTH_SECRET: z.string().min(1, "NEXTAUTH_SECRET is required"),
+  AUTH_SECRET: z.string().min(1, "AUTH_SECRET is required"),
   // Optional OAuth providers
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
@@ -23,7 +23,7 @@ export type Env = z.infer<typeof envSchema>
 
 function validateEnv(): Env {
   // Skip strict validation during the Next.js build phase — runtime-only secrets
-  // (NEXTAUTH_SECRET, etc.) are not injected into the build environment on Vercel.
+  // (AUTH_SECRET, etc.) are not injected into the build environment on Vercel.
   const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build"
   if (isBuildPhase) {
     return process.env as unknown as Env
