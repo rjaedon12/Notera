@@ -50,7 +50,8 @@ export async function logUserEventToGoogleSheets(data: UserEventData): Promise<b
   const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL
 
   if (!webhookUrl) {
-      // Google Sheets webhook URL not configured, skipping
+    // Google Sheets webhook URL not configured, skipping
+    return false
   }
 
   try {
