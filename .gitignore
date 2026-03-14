@@ -58,7 +58,8 @@ coverage/
 # TypeScript cache
 *.tsbuildinfo
 
-# Optional: Recovered files (can remove after verification)
-# _recovered/
+# Recovered files (IDE recovery artifacts)
+_recovered/
+
 .neon
 .vercel

@@ -31,11 +31,17 @@ export async function PATCH(request: NextRequest) {
     if (!session?.user?.id) {
       return Response.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const { notificationIds, markAllRead } = await request.json()
+    const { notificationId, notificationIds, markAllRead } = await request.json()
     
     if (markAllRead) {
       await prisma.notification.updateMany({
         where: { userId: session.user.id, isRead: false },
+        data: { isRead: true },
+      })
+    } else if (notificationId) {
+      // Support singular notificationId from the frontend
+      await prisma.notification.updateMany({
+        where: { id: notificationId, userId: session.user.id },
         data: { isRead: true },
       })
     } else if (notificationIds?.length) {

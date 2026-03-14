@@ -44,7 +44,10 @@ export async function GET(
     if (format === "tsv") {
       const tsvRows = ["term\tdefinition"]
       for (const card of set.cards) {
-        tsvRows.push(`${card.term}\t${card.definition}`)
+        // Escape tabs and newlines to prevent TSV corruption
+        const term = card.term.replace(/[\t\n\r]/g, ' ')
+        const def = card.definition.replace(/[\t\n\r]/g, ' ')
+        tsvRows.push(`${term}\t${def}`)
       }
       return new Response(tsvRows.join("\n"), {
         headers: {

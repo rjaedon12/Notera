@@ -50,8 +50,7 @@ export async function logUserEventToGoogleSheets(data: UserEventData): Promise<b
   const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL
 
   if (!webhookUrl) {
-    console.log("Google Sheets webhook URL not configured, skipping signup logging")
-    return false
+      // Google Sheets webhook URL not configured, skipping
   }
 
   try {
@@ -75,7 +74,7 @@ export async function logUserEventToGoogleSheets(data: UserEventData): Promise<b
       return false
     }
 
-    console.log("User event logged to Google Sheets:", data.event, data.email)
+    // Event logged successfully
     return true
   } catch (error) {
     // Don't throw - logging failure shouldn't break signup flow
@@ -94,7 +93,7 @@ export async function logSignupToGoogleSheetsAPI(data: SignupData): Promise<bool
   const sheetName = process.env.GOOGLE_SHEETS_SHEET_NAME || "Signups"
 
   if (!spreadsheetId || !apiKey) {
-    console.log("Google Sheets API not configured, skipping signup logging")
+    // Google Sheets API not configured, skipping
     return false
   }
 

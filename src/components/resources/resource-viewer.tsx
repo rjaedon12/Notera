@@ -112,10 +112,22 @@ export function ResourceViewer({
     })
   }
 
+  // Escape HTML entities to prevent XSS
+  const escapeHtml = (str: string): string => {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+  }
+
   // Format inline elements (bold, italic, links, images)
   const formatInline = (text: string) => {
+    // First escape HTML to prevent XSS, then apply markdown formatting
+    let result = escapeHtml(text)
     // Handle bold **text**
-    let result = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     // Handle italic *text*
     result = result.replace(/\*(.+?)\*/g, '<em>$1</em>')
     // Handle inline code `code`

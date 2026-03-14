@@ -25,17 +25,20 @@ export async function GET(request: NextRequest) {
       take: 50,
     })
 
-    // Map totalQuestions from bank question count
-    const mapped = await Promise.all(
-      attempts.map(async (a) => {
-        const totalQ = await prisma.question.count({ where: { bankId: a.bankId } })
-        return {
-          ...a,
-          totalQuestions: totalQ,
-          createdAt: a.startedAt,
-        }
-      })
-    )
+    // Batch count total questions per bank to avoid N+1 queries
+    const bankIds = [...new Set(attempts.map((a) => a.bankId))]
+    const questionCounts = await prisma.question.groupBy({
+      by: ['bankId'],
+      where: { bankId: { in: bankIds } },
+      _count: { id: true },
+    })
+    const countMap = new Map(questionCounts.map((q) => [q.bankId, q._count.id]))
+
+    const mapped = attempts.map((a) => ({
+      ...a,
+      totalQuestions: countMap.get(a.bankId) ?? 0,
+      createdAt: a.startedAt,
+    }))
 
     return NextResponse.json(mapped)
   } catch (error) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { randomBytes } from "crypto"
+import { randomBytes, createHash } from "crypto"
 
 /**
  * SECURE PASSWORD RECOVERY IMPLEMENTATION
@@ -52,11 +52,12 @@ export async function POST(
     // Set expiry to 24 hours from now
     const resetTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
-    // Store the token (in production, this should be hashed)
+    // Hash the token before storing for security
+    const hashedToken = createHash('sha256').update(resetToken).digest('hex')
     await prisma.user.update({
       where: { id: userId },
       data: {
-        resetToken,
+        resetToken: hashedToken,
         resetTokenExpiry
       }
     })

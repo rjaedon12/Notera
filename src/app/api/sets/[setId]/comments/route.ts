@@ -50,15 +50,17 @@ export async function POST(
 // DELETE /api/sets/[setId]/comments — delete own comment
 export async function DELETE(
   request: NextRequest,
+  { params }: { params: Promise<{ setId: string }> }
 ) {
   try {
     const session = await auth()
     if (!session?.user?.id) {
       return Response.json({ error: "Unauthorized" }, { status: 401 })
     }
+    const { setId } = await params
     const { commentId } = await request.json()
     const comment = await prisma.comment.findUnique({ where: { id: commentId } })
-    if (!comment || comment.userId !== session.user.id) {
+    if (!comment || comment.userId !== session.user.id || comment.setId !== setId) {
       return Response.json({ error: "Not found" }, { status: 404 })
     }
     await prisma.comment.delete({ where: { id: commentId } })

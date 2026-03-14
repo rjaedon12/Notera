@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { hash } from "bcryptjs"
+import { createHash } from "crypto"
 
 /**
  * POST /api/auth/reset-password
@@ -28,10 +29,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Hash the token before comparing (tokens are stored hashed)
+    const hashedToken = createHash('sha256').update(token).digest('hex')
+
     // Find user with valid, non-expired token
     const user = await prisma.user.findFirst({
       where: {
-        resetToken: token,
+        resetToken: hashedToken,
         resetTokenExpiry: { gt: new Date() },
       },
     })

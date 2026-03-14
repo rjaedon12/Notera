@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useState, useEffect, useMemo } from "react"
+import { use, useState, useEffect, useMemo, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useStudySet, useUpdateProgress, useSaveSession, useCardProgress } from "@/hooks/useStudy"
 import { MultipleChoice } from "@/components/study/multiple-choice"
@@ -44,6 +44,7 @@ export default function LearnPage({ params }: PageProps) {
   const [startTime] = useState(Date.now())
   const [isComplete, setIsComplete] = useState(false)
   const [weakestCards, setWeakestCards] = useState<string[]>([])
+  const questionsInitialized = useRef(false)
 
   // Generate questions based on cards and progress with adaptive prioritization
   const generateQuestions = useMemo(() => {
@@ -105,8 +106,9 @@ export default function LearnPage({ params }: PageProps) {
   }, [set?.cards, progressData, promptType, adaptiveMode])
 
   useEffect(() => {
-    if (generateQuestions.length > 0) {
+    if (generateQuestions.length > 0 && !questionsInitialized.current) {
       setQuestions(shuffleArray(generateQuestions))
+      questionsInitialized.current = true
     }
   }, [generateQuestions])
 
@@ -183,7 +185,9 @@ export default function LearnPage({ params }: PageProps) {
   }
 
   const handleRestart = () => {
+    questionsInitialized.current = false
     setQuestions(shuffleArray(generateQuestions))
+    questionsInitialized.current = true
     setCurrentIndex(0)
     setSelectedAnswer(null)
     setShowResult(false)

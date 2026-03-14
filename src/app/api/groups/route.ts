@@ -57,23 +57,38 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const group = await prisma.group.create({
-      data: {
-        name,
-        inviteCode: generateInviteCode(),
-        ownerId: session.user.id,
-        members: {
-          create: {
-            userId: session.user.id,
-            role: "OWNER",
+    let group;
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        group = await prisma.group.create({
+          data: {
+            name,
+            inviteCode: generateInviteCode(),
+            ownerId: session.user.id,
+            members: {
+              create: {
+                userId: session.user.id,
+                role: "OWNER",
+              },
+            },
           },
-        },
-      },
-      include: {
-        owner: { select: { id: true, name: true, email: true } },
-        _count: { select: { members: true, sets: true } },
-      },
-    })
+          include: {
+            owner: { select: { id: true, name: true, email: true } },
+            _count: { select: { members: true, sets: true } },
+          },
+        })
+        break
+      } catch (err: unknown) {
+        const prismaError = err as { code?: string }
+        // P2002 = unique constraint violation (invite code collision)
+        if (prismaError.code === 'P2002' && retries > 1) {
+          retries--
+          continue
+        }
+        throw err
+      }
+    }
 
     return Response.json(group, { status: 201 })
   } catch (error) {

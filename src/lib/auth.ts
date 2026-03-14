@@ -83,17 +83,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: user.id as string },
-            select: { role: true },
+            select: { role: true, isBanned: true },
           })
           token.role = dbUser?.role ?? "USER"
+          token.isBanned = dbUser?.isBanned ?? false
         } catch (error) {
           console.error("JWT callback: failed to fetch user role", error)
           token.role = "USER"
+          token.isBanned = false
+        }
+      }
+      // Periodically re-check ban status (every token refresh)
+      if (token.id && !user) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { isBanned: true },
+          })
+          token.isBanned = dbUser?.isBanned ?? false
+        } catch {
+          // Keep existing ban status on DB error
         }
       }
       return token
     },
     async session({ session, token }) {
+      // Block banned users from getting a valid session
+      if (token.isBanned) {
+        return { ...session, user: undefined } as typeof session
+      }
       if (session.user && token.id) {
         session.user.id = token.id as string
         session.user.role = (token.role as string) ?? "USER"

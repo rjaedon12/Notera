@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import { studySetSchema } from "@/lib/validations"
 
 // GET /api/sets/[id] — get set with cards (check public or owner)
 export async function GET(
@@ -35,7 +36,7 @@ export async function GET(
   }
 }
 
-// PUT /api/sets/[id] — update set title/description/tags/isPublic (owner only)
+// PUT/PATCH /api/sets/[id] — update set title/description/tags/isPublic (owner only)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ setId: string }> }
@@ -56,7 +57,17 @@ export async function PUT(
       return Response.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const { title, description, tags, isPublic } = await request.json()
+    const body = await request.json()
+
+    // Validate update payload (allow partial updates)
+    const updateSchema = studySetSchema.partial()
+    const parsed = updateSchema.safeParse(body)
+    if (!parsed.success) {
+      return Response.json({ error: parsed.error.issues[0].message }, { status: 400 })
+    }
+
+    const { title, description, isPublic } = parsed.data
+    const { tags } = body // tags not in studySetSchema, allow passthrough
 
     const updated = await prisma.flashcardSet.update({
       where: { id: setId },
@@ -108,3 +119,6 @@ export async function DELETE(
     return Response.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+// Support PATCH as alias for PUT (frontend hooks use PATCH)
+export { PUT as PATCH }

@@ -36,7 +36,7 @@ export async function GET() {
         _count: { cards: p.set._count.cards }
       },
       studiedAt: p.lastStudied.toISOString(),
-      mode: "FLASHCARD"
+      mode: p.mode
     }))
 
     return NextResponse.json(result)

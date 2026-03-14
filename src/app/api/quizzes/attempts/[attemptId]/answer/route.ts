@@ -33,9 +33,17 @@ export async function POST(
       return NextResponse.json({ error: "Already answered this question" }, { status: 400 })
     }
 
-    // Check if the choice is correct
-    const choice = await prisma.choice.findUnique({ where: { id: choiceId } })
+    // Check if the choice is correct and belongs to the right question/bank
+    const choice = await prisma.choice.findUnique({
+      where: { id: choiceId },
+      include: { question: { select: { bankId: true } } },
+    })
     if (!choice) return NextResponse.json({ error: "Choice not found" }, { status: 404 })
+
+    // Verify the question belongs to the bank associated with the attempt
+    if (choice.question.bankId !== attempt.bankId) {
+      return NextResponse.json({ error: "Question does not belong to this quiz" }, { status: 400 })
+    }
 
     const answer = await prisma.attemptAnswer.create({
       data: {

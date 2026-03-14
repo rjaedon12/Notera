@@ -37,9 +37,17 @@ export async function POST(
       )
     }
 
-    // Update each card's order
+    // Verify all cards belong to this set
+    const validCards = await prisma.flashcard.findMany({
+      where: { id: { in: cardIds }, setId },
+      select: { id: true },
+    })
+    const validCardIds = new Set(validCards.map((c) => c.id))
+    const filteredCardIds = cardIds.filter((id: string) => validCardIds.has(id))
+
+    // Update each card's order (only cards belonging to this set)
     await Promise.all(
-      cardIds.map((cardId: string, index: number) =>
+      filteredCardIds.map((cardId: string, index: number) =>
         prisma.flashcard.update({
           where: { id: cardId },
           data: { order: index },
