@@ -6,12 +6,13 @@ import { useSession } from "next-auth/react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   Shield, Users, BookOpen, Brain, FileText, Ban, Trash2,
-  LogOut, Loader2, ChevronRight, UserX, Crown, User,
+  LogOut, Loader2, ChevronRight, UserX, Crown, User, Megaphone,
+  Plus, ToggleLeft, ToggleRight, Clock,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
 
-type PanelType = "stats" | "users" | "sets" | "quizzes" | "resources" | "banned"
+type PanelType = "stats" | "users" | "sets" | "quizzes" | "resources" | "banned" | "announcements"
 
 interface AdminUser {
   id: string
@@ -48,6 +49,18 @@ interface AdminResource {
   type: string
   createdAt: string
   user: { id: string; name: string | null; email: string }
+}
+
+interface AdminAnnouncement {
+  id: string
+  title: string
+  message: string
+  type: string
+  isActive: boolean
+  expiresAt: string | null
+  createdAt: string
+  createdBy: { name: string | null; email: string }
+  _count: { dismissals: number }
 }
 
 export default function AdminDashboard() {
@@ -123,6 +136,83 @@ export default function AdminDashboard() {
       return res.json()
     },
     enabled: authenticated && activePanel === "resources",
+  })
+
+  // Fetch announcements
+  const { data: announcements = [] } = useQuery<AdminAnnouncement[]>({
+    queryKey: ["admin-dash", "announcements"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/announcements")
+      if (!res.ok) throw new Error("Failed")
+      return res.json()
+    },
+    enabled: authenticated && activePanel === "announcements",
+  })
+
+  // Announcement form state
+  const [annTitle, setAnnTitle] = useState("")
+  const [annMessage, setAnnMessage] = useState("")
+  const [annType, setAnnType] = useState("INFO")
+  const [annExpiry, setAnnExpiry] = useState("")
+
+  // Create announcement mutation
+  const createAnnouncementMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/admin/announcements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: annTitle,
+          message: annMessage,
+          type: annType,
+          expiresAt: annExpiry || null,
+        }),
+      })
+      if (!res.ok) throw new Error("Failed")
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-dash", "announcements"] })
+      setAnnTitle("")
+      setAnnMessage("")
+      setAnnType("INFO")
+      setAnnExpiry("")
+      toast.success("Announcement created")
+    },
+    onError: () => toast.error("Failed to create announcement"),
+  })
+
+  // Toggle announcement active status
+  const toggleAnnouncementMutation = useMutation({
+    mutationFn: async ({ announcementId, isActive }: { announcementId: string; isActive: boolean }) => {
+      const res = await fetch("/api/admin/announcements", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ announcementId, isActive }),
+      })
+      if (!res.ok) throw new Error("Failed")
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-dash", "announcements"] })
+      toast.success("Announcement updated")
+    },
+    onError: () => toast.error("Failed to update announcement"),
+  })
+
+  // Delete announcement mutation
+  const deleteAnnouncementMutation = useMutation({
+    mutationFn: async (announcementId: string) => {
+      const res = await fetch("/api/admin/announcements", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ announcementId }),
+      })
+      if (!res.ok) throw new Error("Failed")
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-dash", "announcements"] })
+      toast.success("Announcement deleted")
+    },
+    onError: () => toast.error("Failed to delete announcement"),
   })
 
   // Ban/Unban mutation
@@ -208,6 +298,7 @@ export default function AdminDashboard() {
     { key: "quizzes", label: "Quizzes", icon: <Brain className="h-4 w-4" /> },
     { key: "resources", label: "Resources", icon: <FileText className="h-4 w-4" /> },
     { key: "banned", label: "Banned Users", icon: <UserX className="h-4 w-4" /> },
+    { key: "announcements", label: "Announcements", icon: <Megaphone className="h-4 w-4" /> },
   ]
 
   const bannedUsers = users.filter((u) => u.isBanned)
@@ -518,6 +609,147 @@ export default function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Announcements Panel */}
+        {activePanel === "announcements" && (
+          <div>
+            <h2 className="text-xl font-bold text-foreground mb-6 font-heading">Announcements</h2>
+
+            {/* Create Announcement Form */}
+            <div className="rounded-xl border p-5 mb-6" style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}>
+              <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Plus className="h-4 w-4" style={{ color: "var(--primary)" }} />
+                New Announcement
+              </h3>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Title"
+                  value={annTitle}
+                  onChange={(e) => setAnnTitle(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg text-sm bg-transparent border outline-none focus:ring-2 focus:ring-[var(--primary)]/30 text-foreground"
+                  style={{ borderColor: "var(--glass-border)" }}
+                />
+                <textarea
+                  placeholder="Message"
+                  value={annMessage}
+                  onChange={(e) => setAnnMessage(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 rounded-lg text-sm bg-transparent border outline-none focus:ring-2 focus:ring-[var(--primary)]/30 text-foreground resize-none"
+                  style={{ borderColor: "var(--glass-border)" }}
+                />
+                <div className="flex flex-wrap gap-3">
+                  <select
+                    value={annType}
+                    onChange={(e) => setAnnType(e.target.value)}
+                    className="px-3 py-2 rounded-lg text-sm bg-transparent border outline-none text-foreground"
+                    style={{ borderColor: "var(--glass-border)" }}
+                  >
+                    <option value="INFO">ℹ️ Info</option>
+                    <option value="UPDATE">✨ Update</option>
+                    <option value="WARNING">⚠️ Warning</option>
+                    <option value="MAINTENANCE">🔧 Maintenance</option>
+                  </select>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
+                    <input
+                      type="datetime-local"
+                      value={annExpiry}
+                      onChange={(e) => setAnnExpiry(e.target.value)}
+                      className="px-3 py-2 rounded-lg text-sm bg-transparent border outline-none text-foreground"
+                      style={{ borderColor: "var(--glass-border)" }}
+                      placeholder="Expiry (optional)"
+                    />
+                  </div>
+                  <button
+                    onClick={() => createAnnouncementMutation.mutate()}
+                    disabled={!annTitle.trim() || !annMessage.trim() || createAnnouncementMutation.isPending}
+                    className="ml-auto px-4 py-2 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-40"
+                    style={{ background: "linear-gradient(135deg, #3B4FE8, #5B8FFF)" }}
+                  >
+                    {createAnnouncementMutation.isPending ? "Creating..." : "Publish"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Existing Announcements */}
+            {announcements.length === 0 ? (
+              <div className="rounded-xl border p-8 text-center" style={{ borderColor: "var(--glass-border)" }}>
+                <Megaphone className="h-12 w-12 mx-auto mb-3" style={{ color: "var(--muted-foreground)", opacity: 0.3 }} />
+                <p style={{ color: "var(--muted-foreground)" }}>No announcements yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {announcements.map((ann) => (
+                  <div
+                    key={ann.id}
+                    className="rounded-xl border p-4"
+                    style={{
+                      borderColor: ann.isActive ? "var(--glass-border)" : "rgba(239,68,68,0.2)",
+                      background: ann.isActive ? "var(--glass-fill)" : "rgba(239,68,68,0.04)",
+                      opacity: ann.isActive ? 1 : 0.7,
+                    }}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={cn(
+                            "px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full",
+                            ann.type === "INFO" && "bg-blue-500/15 text-blue-400",
+                            ann.type === "UPDATE" && "bg-green-500/15 text-green-400",
+                            ann.type === "WARNING" && "bg-yellow-500/15 text-yellow-400",
+                            ann.type === "MAINTENANCE" && "bg-red-500/15 text-red-400",
+                          )}>
+                            {ann.type}
+                          </span>
+                          {!ann.isActive && (
+                            <span className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-red-500/15 text-red-400">
+                              Inactive
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="text-sm font-semibold text-foreground">{ann.title}</h4>
+                        <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>{ann.message}</p>
+                        <div className="flex items-center gap-3 mt-2 text-[11px]" style={{ color: "var(--muted-foreground)" }}>
+                          <span>{new Date(ann.createdAt).toLocaleDateString()}</span>
+                          <span>•</span>
+                          <span>{ann._count.dismissals} dismissed</span>
+                          {ann.expiresAt && (
+                            <>
+                              <span>•</span>
+                              <span>Expires {new Date(ann.expiresAt).toLocaleDateString()}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => toggleAnnouncementMutation.mutate({ announcementId: ann.id, isActive: !ann.isActive })}
+                          className="p-1.5 rounded-lg transition-colors hover:bg-[var(--glass-fill)]"
+                          title={ann.isActive ? "Deactivate" : "Activate"}
+                        >
+                          {ann.isActive
+                            ? <ToggleRight className="h-5 w-5 text-green-400" />
+                            : <ToggleLeft className="h-5 w-5" style={{ color: "var(--muted-foreground)" }} />
+                          }
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Delete announcement "${ann.title}"?`)) deleteAnnouncementMutation.mutate(ann.id)
+                          }}
+                          className="p-1.5 rounded-lg transition-colors hover:bg-red-500/10 text-red-400"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

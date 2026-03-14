@@ -120,6 +120,8 @@ model User {
   dbqEssays        DBQEssay[]
   studySessions    StudySession[]
   sightreadingAttempts SightreadingAttempt[]
+  announcements    Announcement[]       @relation("AnnouncementAuthor")
+  dismissedAnnouncements AnnouncementDismissal[]
 }
 
 // ─── Flashcards ──────────────────────────────────────────
@@ -552,4 +554,32 @@ model SightreadingAttempt {
 
   userId String
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Announcements (broadcast from admin) ────────────────
+
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  message     String
+  type        String    @default("INFO") // INFO, WARNING, UPDATE, MAINTENANCE
+  isActive    Boolean   @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  createdById String
+  createdBy   User @relation("AnnouncementAuthor", fields: [createdById], references: [id], onDelete: Cascade)
+
+  dismissals  AnnouncementDismissal[]
+}
+
+model AnnouncementDismissal {
+  userId         String
+  announcementId String
+  dismissedAt    DateTime @default(now())
+
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@id([userId, announcementId])
 }

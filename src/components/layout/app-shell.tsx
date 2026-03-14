@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Sidebar } from "./sidebar"
 import { TopBar } from "./top-bar"
+import { AnnouncementBanner } from "@/components/announcement-banner"
 
 interface AppShellProps {
   children: React.ReactNode
@@ -43,6 +44,8 @@ export function AppShell({ children }: AppShellProps) {
         className="pt-14 transition-all duration-300 relative z-10"
         style={{ paddingLeft: sidebarCollapsed ? "4rem" : "14rem" }}
       >
+        {/* Global Announcement Banner */}
+        <AnnouncementBanner />
         <div
           className={`min-h-[calc(100vh-4rem)] transition-all duration-500 ease-out ${
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
