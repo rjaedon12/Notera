@@ -25,6 +25,7 @@ import {
   FlaskConical,
   Beaker,
   ChevronDown,
+  NotebookPen,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 
@@ -45,6 +46,7 @@ const navItems: NavItem[] = [
   { href: "/", label: "Home", icon: <Home className="h-5 w-5" /> },
   { href: "/discover", label: "Discover", icon: <Compass className="h-5 w-5" /> },
   { href: "/library", label: "Library", icon: <Library className="h-5 w-5" />, requiresAuth: true },
+  { href: "/notes", label: "Notes", icon: <NotebookPen className="h-5 w-5" />, requiresAuth: true },
   { href: "/resources", label: "Resources", icon: <FileText className="h-5 w-5" />, requiresAuth: true },
   { href: "/timeline-builder", label: "Timeline Builder", icon: <Clock className="h-5 w-5" />, requiresAuth: true },
   { href: "/whiteboard", label: "Whiteboard", icon: <PenTool className="h-5 w-5" />, requiresAuth: true },

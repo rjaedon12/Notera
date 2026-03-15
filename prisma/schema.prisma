@@ -122,6 +122,7 @@ model User {
   sightreadingAttempts SightreadingAttempt[]
   announcements    Announcement[]       @relation("AnnouncementAuthor")
   dismissedAnnouncements AnnouncementDismissal[]
+  notePages        NotePage[]
 }
 
 // ─── Flashcards ──────────────────────────────────────────
@@ -214,6 +215,7 @@ model Group {
 
   members GroupMember[]
   sets    GroupSet[]
+  notePages NotePage[]
 }
 
 model GroupMember {
@@ -582,4 +584,39 @@ model AnnouncementDismissal {
   announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
 
   @@id([userId, announcementId])
+}
+
+// ─── Notes (Notion-style pages) ──────────────────────────
+
+model NotePage {
+  id          String      @id @default(cuid())
+  title       String      @default("Untitled")
+  icon        String?     // emoji or URL
+  coverImage  String?     // URL to cover photo
+  content     Json?       // Tiptap ProseMirror JSON document
+  isFullWidth Boolean     @default(false)
+  isFavorite  Boolean     @default(false)
+  isArchived  Boolean     @default(false)
+  isPublic    Boolean     @default(false)
+
+  // Hierarchy
+  parentId    String?
+  parent      NotePage?   @relation("PageHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    NotePage[]  @relation("PageHierarchy")
+  sortOrder   Int         @default(0)
+
+  // Ownership
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Optional group attachment
+  groupId     String?
+  group       Group?      @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([parentId])
+  @@index([groupId])
 }

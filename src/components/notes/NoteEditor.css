@@ -1,0 +1,220 @@
+/* ========================================
+   TIPTAP / NOTE EDITOR STYLES — KODA NOTES
+   Matches Notion's editor aesthetic
+   ======================================== */
+
+.ProseMirror {
+  outline: none;
+  caret-color: inherit;
+}
+
+.ProseMirror > * + * {
+  margin-top: 0;
+}
+
+/* Placeholder text */
+.ProseMirror p.is-empty::before {
+  content: attr(data-placeholder);
+  color: #9b9a97;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+.ProseMirror h1.is-empty::before,
+.ProseMirror h2.is-empty::before,
+.ProseMirror h3.is-empty::before {
+  content: attr(data-placeholder);
+  color: #9b9a97;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+/* Headings */
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3 {
+  margin-top: 1.4em;
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
+
+.ProseMirror h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+}
+
+.ProseMirror h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.ProseMirror h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+/* Paragraph */
+.ProseMirror p {
+  margin: 2px 0;
+  line-height: 1.7;
+}
+
+/* Lists */
+.ProseMirror ul,
+.ProseMirror ol {
+  padding-left: 1.5em;
+}
+
+.ProseMirror li {
+  line-height: 1.7;
+}
+
+/* Blockquote */
+.ProseMirror blockquote {
+  border-left: 3px solid currentColor;
+  opacity: 0.7;
+  padding-left: 0.8em;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Inline code */
+.ProseMirror code {
+  background: rgba(135, 131, 120, 0.15);
+  border-radius: 3px;
+  padding: 0.2em 0.4em;
+  font-size: 85%;
+  font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace;
+}
+
+/* Code block */
+.ProseMirror pre {
+  background: #2f3437;
+  color: #d4d4d4;
+  border-radius: 4px;
+  padding: 1em 1.2em;
+  font-size: 0.875rem;
+  overflow-x: auto;
+  font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace;
+}
+
+.ProseMirror pre code {
+  background: none;
+  border-radius: 0;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* Horizontal rule */
+.ProseMirror hr {
+  border: none;
+  border-top: 1px solid rgba(55, 53, 47, 0.16);
+  margin: 0.5em 0;
+}
+
+.dark .ProseMirror hr {
+  border-top: 1px solid rgba(255, 255, 255, 0.13);
+}
+
+/* Table */
+.ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5em 0;
+  overflow: hidden;
+}
+
+.ProseMirror td,
+.ProseMirror th {
+  border: 1px solid rgba(55, 53, 47, 0.2);
+  padding: 6px 10px;
+  min-width: 100px;
+  vertical-align: top;
+  position: relative;
+}
+
+.dark .ProseMirror td,
+.dark .ProseMirror th {
+  border-color: rgba(255, 255, 255, 0.13);
+}
+
+.ProseMirror th {
+  background: rgba(55, 53, 47, 0.04);
+  font-weight: 600;
+}
+
+.dark .ProseMirror th {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Task list */
+.ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.ProseMirror ul[data-type="taskList"] li > label {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #2383e2;
+  cursor: pointer;
+}
+
+.ProseMirror ul[data-type="taskList"] li > div {
+  flex: 1;
+}
+
+/* Task item checked state */
+.ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div {
+  text-decoration: line-through;
+  color: #9b9a97;
+}
+
+/* Image */
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin: 0.5em 0;
+}
+
+/* Selected node outline */
+.ProseMirror .ProseMirror-selectednode {
+  outline: 2px solid #2383e2;
+  border-radius: 4px;
+}
+
+/* Link styling */
+.ProseMirror a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(55, 53, 47, 0.4);
+  transition: text-decoration-color 0.1s ease;
+}
+
+.ProseMirror a:hover {
+  text-decoration-color: rgba(55, 53, 47, 0.8);
+}
+
+.dark .ProseMirror a {
+  text-decoration-color: rgba(255, 255, 255, 0.3);
+}
+
+.dark .ProseMirror a:hover {
+  text-decoration-color: rgba(255, 255, 255, 0.7);
+}

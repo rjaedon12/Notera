@@ -41,6 +41,7 @@
   --ring: #007AFF;
   --sidebar-bg: rgba(242, 242, 247, 0.82);
   --sidebar-border: rgba(0, 0, 0, 0.06);
+  --notes-sidebar-bg: rgba(247, 247, 247, 0.92);
 }
 
 /* ---- DARK MODE — PRIMARY THEME ---- */
@@ -79,6 +80,7 @@
   --ring: #0A84FF;
   --sidebar-bg: rgba(0, 0, 0, 0.76);
   --sidebar-border: rgba(255, 255, 255, 0.07);
+  --notes-sidebar-bg: rgba(15, 15, 15, 0.92);
 }
 
 @theme inline {
@@ -416,4 +418,20 @@ h1, h2, h3, .font-heading {
 }
 .logo-spark {
   animation: sparkPulse 5s ease-in-out infinite;
+}
+
+/* ---- NOTES — SLASH COMMAND MENU ---- */
+.note-slash-menu {
+  background: var(--popover);
+  border: 1px solid var(--border);
+  box-shadow: rgba(15,15,15,0.05) 0 0 0 1px, rgba(15,15,15,0.1) 0 3px 6px, rgba(15,15,15,0.2) 0 9px 24px;
+}
+
+.dark .note-slash-menu {
+  box-shadow: rgba(0,0,0,0.2) 0 0 0 1px, rgba(0,0,0,0.3) 0 3px 6px, rgba(0,0,0,0.4) 0 9px 24px;
+}
+
+.dark .note-slash-menu button[aria-selected="true"],
+.dark .note-slash-menu button:hover {
+  background: rgba(255,255,255,0.04) !important;
 }
