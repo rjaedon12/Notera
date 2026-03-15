@@ -6,6 +6,7 @@ export interface SlashCommandItem {
   title: string
   description: string
   icon: string
+  category: string
   command: (props: { editor: ReturnType<typeof import("@tiptap/react").useEditor>; range: { from: number; to: number } }) => void
 }
 
@@ -48,6 +49,7 @@ export function getSlashCommandItems(): SlashCommandItem[] {
       title: "Text",
       description: "Plain paragraph",
       icon: "📝",
+      category: "Basic blocks",
       command: ({ editor, range }) => {
         editor?.chain().focus().deleteRange(range).setNode("paragraph").run()
       },
@@ -56,6 +58,7 @@ export function getSlashCommandItems(): SlashCommandItem[] {
       title: "Heading 1",
       description: "Large section header",
       icon: "H1",
+      category: "Basic blocks",
       command: ({ editor, range }) => {
         editor?.chain().focus().deleteRange(range).setNode("heading", { level: 1 }).run()
       },
@@ -64,6 +67,7 @@ export function getSlashCommandItems(): SlashCommandItem[] {
       title: "Heading 2",
       description: "Medium section header",
       icon: "H2",
+      category: "Basic blocks",
       command: ({ editor, range }) => {
         editor?.chain().focus().deleteRange(range).setNode("heading", { level: 2 }).run()
       },
@@ -72,6 +76,7 @@ export function getSlashCommandItems(): SlashCommandItem[] {
       title: "Heading 3",
       description: "Small section header",
       icon: "H3",
+      category: "Basic blocks",
       command: ({ editor, range }) => {
         editor?.chain().focus().deleteRange(range).setNode("heading", { level: 3 }).run()
       },
@@ -80,6 +85,7 @@ export function getSlashCommandItems(): SlashCommandItem[] {
       title: "Bulleted list",
       description: "Unordered list",
       icon: "•",
+      category: "Basic blocks",
       command: ({ editor, range }) => {
         editor?.chain().focus().deleteRange(range).toggleBulletList().run()
       },
@@ -88,6 +94,7 @@ export function getSlashCommandItems(): SlashCommandItem[] {
       title: "Numbered list",
       description: "Ordered list",
       icon: "1.",
+      category: "Basic blocks",
       command: ({ editor, range }) => {
         editor?.chain().focus().deleteRange(range).toggleOrderedList().run()
       },
@@ -96,38 +103,61 @@ export function getSlashCommandItems(): SlashCommandItem[] {
       title: "To-do list",
       description: "Checkbox list",
       icon: "☑",
+      category: "Basic blocks",
       command: ({ editor, range }) => {
         editor?.chain().focus().deleteRange(range).toggleTaskList().run()
+      },
+    },
+    {
+      title: "Toggle list",
+      description: "Collapsible content",
+      icon: "▸",
+      category: "Basic blocks",
+      command: ({ editor, range }) => {
+        editor?.chain().focus().deleteRange(range).setToggleBlock().run()
       },
     },
     {
       title: "Quote",
       description: "Indented quote",
       icon: "❝",
+      category: "Basic blocks",
       command: ({ editor, range }) => {
         editor?.chain().focus().deleteRange(range).toggleBlockquote().run()
       },
     },
     {
-      title: "Code",
-      description: "Monospace with syntax highlight",
-      icon: "</>",
+      title: "Callout",
+      description: "Highlighted info block",
+      icon: "💡",
+      category: "Basic blocks",
       command: ({ editor, range }) => {
-        editor?.chain().focus().deleteRange(range).toggleCodeBlock().run()
+        editor?.chain().focus().deleteRange(range).setCallout().run()
       },
     },
     {
       title: "Divider",
       description: "Horizontal rule",
       icon: "─",
+      category: "Basic blocks",
       command: ({ editor, range }) => {
         editor?.chain().focus().deleteRange(range).setHorizontalRule().run()
+      },
+    },
+    {
+      title: "Code",
+      description: "Syntax highlighted code block",
+      icon: "</>",
+      category: "Advanced blocks",
+      command: ({ editor, range }) => {
+        editor?.chain().focus().deleteRange(range).toggleCodeBlock().run()
       },
     },
     {
       title: "Table",
       description: "3×3 starter table",
       icon: "⊞",
+      category: "Advanced blocks",
       command: ({ editor, range }) => {
         editor
           ?.chain()
@@ -135,6 +165,19 @@ export function getSlashCommandItems(): SlashCommandItem[] {
           .deleteRange(range)
           .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
           .run()
+      },
+    },
+    {
+      title: "Image",
+      description: "Upload or embed an image",
+      icon: "🖼️",
+      category: "Media",
+      command: ({ editor, range }) => {
+        editor?.chain().focus().deleteRange(range).run()
+        const url = ""
+        if (url) {
+          editor?.chain().focus().setImage({ src: url }).run()
+        }
       },
     },
   ]

@@ -13,6 +13,8 @@ interface NoteHeaderProps {
   isFullWidth: boolean
   updatedAt: string | null
   saveStatus: SaveStatus
+  wordCount?: number
+  characterCount?: number
   onTitleChange: (title: string) => void
   onIconChange: (icon: string | null) => void
   onCoverChange: (cover: string | null) => void
@@ -28,6 +30,8 @@ export function NoteHeader({
   isFullWidth,
   updatedAt,
   saveStatus,
+  wordCount,
+  characterCount,
   onTitleChange,
   onIconChange,
   onCoverChange,
@@ -215,6 +219,9 @@ export function NoteHeader({
             <span>
               Edited {new Date(updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
             </span>
+          )}
+          {typeof wordCount === "number" && (
+            <span>{wordCount} {wordCount === 1 ? "word" : "words"}</span>
           )}
           <button
             onClick={() => onFullWidthChange(!isFullWidth)}

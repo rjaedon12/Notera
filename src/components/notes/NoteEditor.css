@@ -1,5 +1,5 @@
 /* ========================================
-   TIPTAP / NOTE EDITOR STYLES — KODA NOTES
+   TIPTAP / NOTE EDITOR STYLES — KODA NOTES V2
    Matches Notion's editor aesthetic
    ======================================== */
 
@@ -15,7 +15,7 @@
 /* Placeholder text */
 .ProseMirror p.is-empty::before {
   content: attr(data-placeholder);
-  color: #9b9a97;
+  color: var(--muted-foreground, #9b9a97);
   pointer-events: none;
   float: left;
   height: 0;
@@ -25,7 +25,7 @@
 .ProseMirror h2.is-empty::before,
 .ProseMirror h3.is-empty::before {
   content: attr(data-placeholder);
-  color: #9b9a97;
+  color: var(--muted-foreground, #9b9a97);
   pointer-events: none;
   float: left;
   height: 0;
@@ -93,11 +93,12 @@
 .ProseMirror pre {
   background: #2f3437;
   color: #d4d4d4;
-  border-radius: 4px;
+  border-radius: 6px;
   padding: 1em 1.2em;
   font-size: 0.875rem;
   overflow-x: auto;
   font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace;
+  margin: 4px 0;
 }
 
 .ProseMirror pre code {
@@ -181,14 +182,14 @@
 /* Task item checked state */
 .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div {
   text-decoration: line-through;
-  color: #9b9a97;
+  color: var(--muted-foreground, #9b9a97);
 }
 
 /* Image */
 .ProseMirror img {
   max-width: 100%;
   height: auto;
-  border-radius: 4px;
+  border-radius: 6px;
   margin: 0.5em 0;
 }
 
@@ -217,4 +218,123 @@
 
 .dark .ProseMirror a:hover {
   text-decoration-color: rgba(255, 255, 255, 0.7);
+}
+
+/* ========================================
+   CALLOUT BLOCK
+   ======================================== */
+.ProseMirror .callout-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  margin: 4px 0;
+  background: rgba(55, 53, 47, 0.04);
+  border: 1px solid rgba(55, 53, 47, 0.06);
+}
+
+.dark .ProseMirror .callout-block {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.ProseMirror .callout-block[data-callout-type="warning"] {
+  background: rgba(255, 200, 0, 0.08);
+  border-color: rgba(255, 200, 0, 0.15);
+}
+
+.ProseMirror .callout-block[data-callout-type="error"] {
+  background: rgba(255, 59, 48, 0.06);
+  border-color: rgba(255, 59, 48, 0.12);
+}
+
+.ProseMirror .callout-block[data-callout-type="success"] {
+  background: rgba(48, 209, 88, 0.06);
+  border-color: rgba(48, 209, 88, 0.12);
+}
+
+.ProseMirror .callout-emoji {
+  font-size: 1.25rem;
+  line-height: 1.5;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.ProseMirror .callout-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.ProseMirror .callout-content > *:first-child {
+  margin-top: 0;
+}
+
+/* ========================================
+   TOGGLE / COLLAPSIBLE BLOCK
+   ======================================== */
+.ProseMirror .toggle-block {
+  margin: 4px 0;
+  border-radius: 6px;
+}
+
+.ProseMirror .toggle-block > summary {
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.15s;
+}
+
+.ProseMirror .toggle-block > summary:hover {
+  background: rgba(55, 53, 47, 0.04);
+}
+
+.dark .ProseMirror .toggle-block > summary:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ProseMirror .toggle-block > summary::before {
+  content: "▸";
+  display: inline-block;
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
+  margin-right: 2px;
+  flex-shrink: 0;
+}
+
+.ProseMirror .toggle-block[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.ProseMirror .toggle-block > summary::-webkit-details-marker {
+  display: none;
+}
+
+.ProseMirror .toggle-content {
+  padding-left: 20px;
+  padding-top: 2px;
+  padding-bottom: 4px;
+}
+
+/* ========================================
+   BUBBLE TOOLBAR OVERRIDE
+   ======================================== */
+.bubble-toolbar {
+  animation: bubbleFadeIn 0.15s ease-out;
+}
+
+@keyframes bubbleFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

@@ -1,11 +1,12 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { useRef, useCallback } from "react"
-import { useNotePage, useUpdateNotePage } from "@/hooks/useNotePages"
+import { useRef, useCallback, useState } from "react"
+import { useNotePage, useNotePages, useUpdateNotePage } from "@/hooks/useNotePages"
 import { useAutoSave } from "@/hooks/useAutoSave"
 import { NoteHeader } from "@/components/notes/NoteHeader"
 import { NoteEditor } from "@/components/notes/NoteEditor"
+import { NoteBreadcrumb } from "@/components/notes/NoteBreadcrumb"
 import type { useEditor } from "@tiptap/react"
 
 export default function NoteEditorPage() {
@@ -13,9 +14,11 @@ export default function NoteEditorPage() {
   const router = useRouter()
   const pageId = params.pageId as string
   const { data: page, isLoading, error } = useNotePage(pageId)
+  const { data: pages = [] } = useNotePages()
   const updatePage = useUpdateNotePage()
   const { status, save, retrySave } = useAutoSave(pageId)
   const editorRef = useRef<ReturnType<typeof useEditor>>(null)
+  const [wordCount, setWordCount] = useState(0)
 
   const handleTitleChange = useCallback(
     (title: string) => {
@@ -27,6 +30,11 @@ export default function NoteEditorPage() {
   const handleContentUpdate = useCallback(
     (content: Record<string, unknown>) => {
       save({ content })
+      // Update word count from editor
+      if (editorRef.current) {
+        const words = editorRef.current.storage.characterCount?.words?.() ?? 0
+        setWordCount(words)
+      }
     },
     [save]
   )
@@ -95,6 +103,7 @@ export default function NoteEditorPage() {
 
   return (
     <div className="min-h-full">
+      <NoteBreadcrumb pageId={pageId} pages={pages} />
       <NoteHeader
         title={page.title}
         icon={page.icon}
@@ -102,6 +111,7 @@ export default function NoteEditorPage() {
         isFullWidth={page.isFullWidth}
         updatedAt={page.updatedAt}
         saveStatus={status}
+        wordCount={wordCount}
         onTitleChange={handleTitleChange}
         onIconChange={handleIconChange}
         onCoverChange={handleCoverChange}

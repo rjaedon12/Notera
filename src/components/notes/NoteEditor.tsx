@@ -13,12 +13,15 @@ import TableHeader from "@tiptap/extension-table-header"
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight"
 import Underline from "@tiptap/extension-underline"
 import Typography from "@tiptap/extension-typography"
+import CharacterCount from "@tiptap/extension-character-count"
 import { common, createLowlight } from "lowlight"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { SlashCommands, getSlashCommandItems, type SlashCommandItem } from "./extensions/SlashCommands"
 import { TrailingNode } from "./extensions/TrailingNode"
 import { CustomPlaceholder } from "./extensions/Placeholder"
+import { Callout } from "./extensions/Callout"
+import { ToggleBlock, ToggleSummary, ToggleContent } from "./extensions/ToggleList"
 import { BubbleToolbar } from "./BubbleToolbar"
 import { BlockMenu } from "./BlockMenu"
 import "./NoteEditor.css"
@@ -60,8 +63,13 @@ export function NoteEditor({ content, isFullWidth, onUpdate, editorRef }: NoteEd
       TableHeader,
       CodeBlockLowlight.configure({ lowlight }),
       Typography,
+      CharacterCount,
       CustomPlaceholder,
       TrailingNode,
+      Callout,
+      ToggleBlock,
+      ToggleSummary,
+      ToggleContent,
       SlashCommands.configure({
         suggestion: {
           char: "/",
