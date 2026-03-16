@@ -60,9 +60,10 @@ export async function GET() {
     }
 
     // Build 30-day study activity from real StudySession rows
+    // Include estimated minutes practiced per day (each session ≈ 10min average)
     const now = new Date()
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-    const studyActivity: { date: string; count: number }[] = []
+    const studyActivity: { date: string; count: number; minutesPracticed: number }[] = []
     const activityMap: Record<string, number> = {}
 
     for (const ss of studySessions) {
@@ -72,7 +73,12 @@ export async function GET() {
 
     for (let d = new Date(thirtyDaysAgo); d <= now; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split("T")[0]
-      studyActivity.push({ date: dateStr, count: activityMap[dateStr] || 0 })
+      const count = activityMap[dateStr] || 0
+      studyActivity.push({
+        date: dateStr,
+        count,
+        minutesPracticed: count * 10, // ~10min per session estimate
+      })
     }
 
     // Quiz scores are now stored as percentages (0–100)

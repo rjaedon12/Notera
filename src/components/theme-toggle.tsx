@@ -69,9 +69,9 @@ export function ThemeToggleSimple() {
         className="theme-icon-enter"
       >
         {resolvedTheme === "dark" ? (
-          <Sun className="h-5 w-5" />
+          <Sun className="h-[18px] w-[18px]" />
         ) : (
-          <Moon className="h-5 w-5" />
+          <Moon className="h-[18px] w-[18px]" />
         )}
       </span>
     </button>

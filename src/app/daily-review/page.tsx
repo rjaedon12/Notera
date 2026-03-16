@@ -72,20 +72,34 @@ export default function DailyReviewPage() {
 
   const handleRate = useCallback((quality: number) => {
     const card = dueCards[currentIndex]
-    if (!card) return
+    if (!card || completed.includes(card.id)) return
 
     reviewMutation.mutate({ cardId: card.id, quality })
-    setCompleted(prev => [...prev, card.id])
+
+    const newCompleted = [...completed, card.id]
+    setCompleted(newCompleted)
     setSessionStats(prev => ({
       correct: prev.correct + (quality >= 3 ? 1 : 0),
       incorrect: prev.incorrect + (quality < 3 ? 1 : 0),
     }))
-    setShowAnswer(false)
 
-    if (currentIndex < dueCards.length - 1) {
-      setCurrentIndex(prev => prev + 1)
+    // If this was the last card, don't advance index — let the isFinished check handle it
+    if (newCompleted.length >= dueCards.length) {
+      // Session complete — just reset answer state; the component re-render will show completion screen
+      setShowAnswer(false)
+      return
     }
-  }, [currentIndex, dueCards, reviewMutation])
+
+    // Move to next un-reviewed card
+    setShowAnswer(false)
+    let nextIdx = currentIndex + 1
+    while (nextIdx < dueCards.length && newCompleted.includes(dueCards[nextIdx].id)) {
+      nextIdx++
+    }
+    if (nextIdx < dueCards.length) {
+      setCurrentIndex(nextIdx)
+    }
+  }, [currentIndex, dueCards, reviewMutation, completed])
 
   if (status === "loading" || isLoading) {
     return (
@@ -166,11 +180,16 @@ export default function DailyReviewPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground font-heading">Daily Review</h1>
-        <p className="text-muted-foreground mt-1">
-          {remainingCards.length} card{remainingCards.length !== 1 ? "s" : ""} due for review
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground font-heading">Daily Review</h1>
+          <p className="text-muted-foreground mt-1">
+            {remainingCards.length} card{remainingCards.length !== 1 ? "s" : ""} remaining
+          </p>
+        </div>
+        <div className="text-sm font-medium text-muted-foreground">
+          {completed.length + 1} / {dueCards.length}
+        </div>
       </div>
 
       {/* Progress bar */}
@@ -215,13 +234,14 @@ export default function DailyReviewPage() {
       )}
 
       {/* Rating buttons */}
-      {showAnswer && (
+      {showAnswer && currentCard && (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground text-center">How well did you know this?</p>
           <div className="grid grid-cols-3 gap-3">
             <button
               onClick={() => handleRate(1)}
-              className="flex flex-col items-center gap-1 px-4 py-3 rounded-xl border text-sm font-medium transition-all hover:scale-[1.02]"
+              disabled={reviewMutation.isPending}
+              className="flex flex-col items-center gap-1 px-4 py-3 rounded-xl border text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
               style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}
             >
               <XCircle className="h-5 w-5 text-red-500" />
@@ -229,7 +249,8 @@ export default function DailyReviewPage() {
             </button>
             <button
               onClick={() => handleRate(3)}
-              className="flex flex-col items-center gap-1 px-4 py-3 rounded-xl border text-sm font-medium transition-all hover:scale-[1.02]"
+              disabled={reviewMutation.isPending}
+              className="flex flex-col items-center gap-1 px-4 py-3 rounded-xl border text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
               style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}
             >
               <RotateCcw className="h-5 w-5 text-yellow-500" />
@@ -237,7 +258,8 @@ export default function DailyReviewPage() {
             </button>
             <button
               onClick={() => handleRate(5)}
-              className="flex flex-col items-center gap-1 px-4 py-3 rounded-xl border text-sm font-medium transition-all hover:scale-[1.02]"
+              disabled={reviewMutation.isPending}
+              className="flex flex-col items-center gap-1 px-4 py-3 rounded-xl border text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
               style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}
             >
               <CheckCircle2 className="h-5 w-5 text-green-500" />
@@ -245,6 +267,11 @@ export default function DailyReviewPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Tap-to-reveal hint when answer is hidden */}
+      {!showAnswer && currentCard && (
+        <p className="text-center text-xs text-muted-foreground">Tap the card to reveal the answer</p>
       )}
     </div>
   )

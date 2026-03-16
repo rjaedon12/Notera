@@ -18,7 +18,7 @@ interface StaffRendererProps {
 /**
  * Renders a professional music staff using VexFlow — correct clef glyphs,
  * properly positioned whole notes, accurate ledger lines and accidentals.
- * Always renders on a white background so it looks like sheet music.
+ * Uses a neutral white/near-white background for readability in both themes.
  */
 export function StaffRenderer({ note, clef }: StaffRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -44,9 +44,9 @@ export function StaffRenderer({ note, clef }: StaffRendererProps) {
       renderer.resize(W, H)
       const ctx = renderer.getContext()
 
-      // Always render in dark ink — the container has a white background
-      ctx.setFillStyle("#111827")
-      ctx.setStrokeStyle("#111827")
+      // Use dark ink on the staff for maximum contrast on the light card
+      ctx.setFillStyle("#1e293b")
+      ctx.setStrokeStyle("#1e293b")
       ctx.setFont("Arial", 10)
 
       // Stave: leave vertical padding so ledger-line notes above/below don't clip
@@ -101,8 +101,8 @@ export function StaffRenderer({ note, clef }: StaffRendererProps) {
       className="w-full rounded-xl overflow-hidden"
       style={{
         height: 200,
-        background: "#ffffff",
-        border: "1px solid #e5e7eb",
+        background: "#fafafa",
+        border: "1px solid var(--glass-border)",
       }}
     />
   )

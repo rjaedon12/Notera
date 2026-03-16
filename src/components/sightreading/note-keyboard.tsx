@@ -55,12 +55,31 @@ export function NoteKeyboard({
               className={cn(
                 "w-12 h-12 sm:w-14 sm:h-14 rounded-xl font-bold text-base sm:text-lg transition-all",
                 "border-2 shadow-sm active:scale-95",
-                state === "idle" && "bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-foreground hover:bg-zinc-50 dark:hover:bg-zinc-700",
-                state === "correct" && "bg-emerald-100 dark:bg-emerald-900/50 border-emerald-500 text-emerald-700 dark:text-emerald-300 scale-105",
-                state === "incorrect" && "bg-red-100 dark:bg-red-900/50 border-red-400 text-red-600 dark:text-red-300",
-                state === "dimmed" && "bg-zinc-100 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-600",
                 disabled && "cursor-default"
               )}
+              style={{
+                ...(state === "idle" ? {
+                  background: "var(--glass-fill)",
+                  borderColor: "var(--glass-border)",
+                  color: "var(--foreground)",
+                } : {}),
+                ...(state === "correct" ? {
+                  background: "rgba(16, 185, 129, 0.15)",
+                  borderColor: "#10b981",
+                  color: "#10b981",
+                  transform: "scale(1.05)",
+                } : {}),
+                ...(state === "incorrect" ? {
+                  background: "rgba(239, 68, 68, 0.15)",
+                  borderColor: "#ef4444",
+                  color: "#ef4444",
+                } : {}),
+                ...(state === "dimmed" ? {
+                  background: "var(--muted)",
+                  borderColor: "var(--glass-border)",
+                  color: "var(--muted-foreground)",
+                } : {}),
+              }}
             >
               {letter}
               {accidental === "sharp" && <span className="text-xs">♯</span>}

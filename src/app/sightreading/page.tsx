@@ -149,8 +149,9 @@ export default function SightreadingPage() {
                   "rounded-xl border-2 p-4 text-center transition-all",
                   clef === c
                     ? "border-[var(--primary)] bg-[var(--primary)]/10"
-                    : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600"
+                    : "hover:border-[var(--muted-foreground)]"
                 )}
+                style={clef !== c ? { borderColor: "var(--glass-border)" } : {}}
               >
                 <div className="text-3xl mb-2">
                   {c === "treble" ? "𝄞" : c === "bass" ? "𝄢" : "𝄡"}
@@ -182,8 +183,9 @@ export default function SightreadingPage() {
                   "w-full flex items-center justify-between rounded-xl border-2 px-4 py-3 transition-all text-left",
                   level.id === l.id
                     ? "border-[var(--primary)] bg-[var(--primary)]/10"
-                    : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600"
+                    : "hover:border-[var(--muted-foreground)]"
                 )}
+                style={level.id !== l.id ? { borderColor: "var(--glass-border)" } : {}}
               >
                 <div>
                   <div className="font-semibold text-foreground">{l.label}</div>
@@ -230,8 +232,9 @@ export default function SightreadingPage() {
                   "w-12 h-10 rounded-lg font-semibold text-sm border-2 transition-all",
                   questionCount === n
                     ? "text-white border-[var(--primary)] bg-[var(--primary)]"
-                    : "border-zinc-200 dark:border-zinc-700 text-foreground hover:border-zinc-400 dark:hover:border-zinc-500"
+                    : "text-foreground"
                 )}
+                style={questionCount !== n ? { borderColor: "var(--glass-border)" } : {}}
               >
                 {n}
               </button>
@@ -388,7 +391,7 @@ export default function SightreadingPage() {
             onClick={() => {
               setPhase("select")
             }}
-            className="flex-1 py-3 rounded-xl font-semibold border transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800"
+            className="flex-1 py-3 rounded-xl font-semibold border transition-all hover:bg-[var(--glass-fill-hover)]"
             style={{ borderColor: "var(--glass-border)" }}
           >
             <ArrowLeft className="h-4 w-4 inline mr-2" />

@@ -1,10 +1,28 @@
 "use client"
 
 import Link from "next/link"
-import { FlaskConical, Users, Beaker, ArrowRight, Sparkles } from "lucide-react"
+import { FlaskConical, Users, Beaker, ArrowRight, Sparkles, FileText, Clock } from "lucide-react"
 import { motion } from "framer-motion"
 
 const experimentalFeatures = [
+  {
+    href: "/resources",
+    title: "Resources",
+    description:
+      "Upload and manage study guides, timelines, images, and documents. Organize your study materials in one place and share them with others.",
+    icon: <FileText className="h-6 w-6" />,
+    color: "#34d399",
+    status: "Beta",
+  },
+  {
+    href: "/timeline-builder",
+    title: "Timeline Builder",
+    description:
+      "Create interactive visual timelines for historical events. Drag and drop events, connect them with arrows, and visualize the flow of history.",
+    icon: <Clock className="h-6 w-6" />,
+    color: "#f59e0b",
+    status: "Beta",
+  },
   {
     href: "/math",
     title: "Math Lab",

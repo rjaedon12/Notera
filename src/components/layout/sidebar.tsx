@@ -43,17 +43,18 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  // Core
   { href: "/", label: "Home", icon: <Home className="h-5 w-5" /> },
   { href: "/discover", label: "Discover", icon: <Compass className="h-5 w-5" /> },
   { href: "/library", label: "Library", icon: <Library className="h-5 w-5" />, requiresAuth: true },
+  // Study tools
   { href: "/notes", label: "Notes", icon: <NotebookPen className="h-5 w-5" />, requiresAuth: true },
-  { href: "/resources", label: "Resources", icon: <FileText className="h-5 w-5" />, requiresAuth: true },
-  { href: "/timeline-builder", label: "Timeline Builder", icon: <Clock className="h-5 w-5" />, requiresAuth: true },
   { href: "/whiteboard", label: "Whiteboard", icon: <PenTool className="h-5 w-5" />, requiresAuth: true },
   { href: "/quizzes", label: "Quizzes", icon: <Brain className="h-5 w-5" />, requiresAuth: true },
   { href: "/sightreading", label: "Sightreading", icon: <Music className="h-5 w-5" />, requiresAuth: true },
   { href: "/dbq", label: "DBQ Practice", icon: <ScrollText className="h-5 w-5" />, requiresAuth: true },
   { href: "/daily-review", label: "Daily Review", icon: <CalendarCheck className="h-5 w-5" />, requiresAuth: true },
+  // Progress
   { href: "/analytics", label: "Analytics", icon: <BarChart3 className="h-5 w-5" />, requiresAuth: true },
   { href: "/achievements", label: "Achievements", icon: <Trophy className="h-5 w-5" />, requiresAuth: true },
 ]
@@ -65,6 +66,8 @@ const bottomItems: NavItem[] = [
 ]
 
 const experimentalItems: NavItem[] = [
+  { href: "/resources", label: "Resources", icon: <FileText className="h-5 w-5" />, requiresAuth: true },
+  { href: "/timeline-builder", label: "Timeline Builder", icon: <Clock className="h-5 w-5" />, requiresAuth: true },
   { href: "/math", label: "Math Lab", icon: <FlaskConical className="h-5 w-5" /> },
   { href: "/groups", label: "Study Groups", icon: <Users className="h-5 w-5" />, requiresAuth: true },
 ]
@@ -99,7 +102,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       (item.href !== "/" && pathname.startsWith(item.href))
 
     return (
-      <Link key={item.href} href={item.href}>
+      <Link key={item.href} href={item.href} title={isCollapsed ? item.label : undefined}>
         <div
           className={cn(
             "relative inline-flex items-center gap-3 whitespace-nowrap rounded-[10px] text-sm font-medium transition-all w-full h-9 px-3",
@@ -119,12 +122,29 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           {isActive && (
             <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full" style={{ background: "var(--primary)" }} />
           )}
-          <span className={cn(isActive && !isCollapsed && "ml-1")}>{item.icon}</span>
+          <span className={cn("shrink-0", isActive && !isCollapsed && "ml-1")}>{item.icon}</span>
           {!isCollapsed && <span>{item.label}</span>}
         </div>
       </Link>
     )
   }
+
+  /** Renders a small section label when sidebar is expanded */
+  const renderSectionLabel = (label: string) => {
+    if (isCollapsed) return <div className="h-2" />
+    return (
+      <div className="px-3 pt-4 pb-1">
+        <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--muted-foreground)", opacity: 0.6 }}>
+          {label}
+        </span>
+      </div>
+    )
+  }
+
+  // Split navItems into sections for better organization
+  const coreItems = filterItems(navItems.filter(i => ["/", "/discover", "/library"].includes(i.href)))
+  const studyItems = filterItems(navItems.filter(i => ["/notes", "/whiteboard", "/quizzes", "/sightreading", "/dbq", "/daily-review"].includes(i.href)))
+  const progressItems = filterItems(navItems.filter(i => ["/analytics", "/achievements"].includes(i.href)))
 
   const isOnExperimentalPage = experimentalItems.some(
     item => pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
@@ -145,9 +165,30 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       }}
     >
       <div className="flex flex-col h-full p-3">
-        {/* Main Navigation — flex-1 + min-h-0 lets it compress so bottom sections never overflow */}
-        <nav className="flex-1 min-h-0 space-y-0.5 nav-stagger mt-2 overflow-y-auto">
-          {filterItems(navItems).map(renderNavItem)}
+        {/* Main Navigation — sectioned for clarity */}
+        <nav className="flex-1 min-h-0 nav-stagger mt-2 overflow-y-auto">
+          {/* Core */}
+          <div className="space-y-0.5">
+            {coreItems.map(renderNavItem)}
+          </div>
+          {/* Study Tools */}
+          {studyItems.length > 0 && (
+            <>
+              {renderSectionLabel("Study Tools")}
+              <div className="space-y-0.5">
+                {studyItems.map(renderNavItem)}
+              </div>
+            </>
+          )}
+          {/* Progress */}
+          {progressItems.length > 0 && (
+            <>
+              {renderSectionLabel("Progress")}
+              <div className="space-y-0.5">
+                {progressItems.map(renderNavItem)}
+              </div>
+            </>
+          )}
         </nav>
 
         {/* Experimental Features Section */}
