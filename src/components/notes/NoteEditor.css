@@ -338,3 +338,54 @@
     transform: translateY(0);
   }
 }
+
+/* ========================================
+   SLASH COMMAND MENU
+   ======================================== */
+@keyframes slashMenuIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.note-slash-menu {
+  animation: slashMenuIn 0.1s ease-out;
+}
+
+/* ========================================
+   BLOCK HOVER HANDLE (left gutter)
+   ======================================== */
+.ProseMirror > * {
+  position: relative;
+}
+
+.ProseMirror > *::after {
+  content: "\2807\2807";
+  position: absolute;
+  left: -28px;
+  top: 4px;
+  opacity: 0;
+  color: var(--muted-foreground, #9b9a97);
+  cursor: grab;
+  font-size: 0.75rem;
+  letter-spacing: -2px;
+  line-height: 1;
+  user-select: none;
+  transition: opacity 0.15s;
+  pointer-events: auto;
+}
+
+.ProseMirror > *:hover::after {
+  opacity: 0.35;
+}
+
+/* Don't show drag handle on these elements */
+.ProseMirror > .ProseMirror-gapcursor::after,
+.ProseMirror > hr::after {
+  display: none;
+}

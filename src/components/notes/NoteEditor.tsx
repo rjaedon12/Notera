@@ -38,6 +38,8 @@ interface NoteEditorProps {
 export function NoteEditor({ content, isFullWidth, onUpdate, editorRef }: NoteEditorProps) {
   const [slashMenuOpen, setSlashMenuOpen] = useState(false)
   const [slashRange, setSlashRange] = useState<{ from: number; to: number } | null>(null)
+  const [cursorRect, setCursorRect] = useState<DOMRect | null>(null)
+  const [slashQuery, setSlashQuery] = useState("")
   const hasInitialized = useRef(false)
 
   const editor = useEditor({
@@ -73,6 +75,7 @@ export function NoteEditor({ content, isFullWidth, onUpdate, editorRef }: NoteEd
       SlashCommands.configure({
         suggestion: {
           char: "/",
+          allowSpaces: false,
           items: ({ query }: { query: string }) => {
             return getSlashCommandItems().filter((item) =>
               item.title.toLowerCase().includes(query.toLowerCase())
@@ -80,28 +83,27 @@ export function NoteEditor({ content, isFullWidth, onUpdate, editorRef }: NoteEd
           },
           render: () => {
             return {
-              onStart: (props: { range: { from: number; to: number } }) => {
+              onStart: (props: { range: { from: number; to: number }; clientRect?: () => DOMRect | null; query?: string }) => {
                 setSlashMenuOpen(true)
                 setSlashRange(props.range)
+                setCursorRect(props.clientRect?.() ?? null)
+                setSlashQuery(props.query ?? "")
               },
-              onUpdate: (props: { range: { from: number; to: number } }) => {
+              onUpdate: (props: { range: { from: number; to: number }; clientRect?: () => DOMRect | null; query?: string }) => {
                 setSlashRange(props.range)
+                setCursorRect(props.clientRect?.() ?? null)
+                setSlashQuery(props.query ?? "")
               },
               onExit: () => {
                 setSlashMenuOpen(false)
                 setSlashRange(null)
+                setCursorRect(null)
+                setSlashQuery("")
               },
               onKeyDown: (props: { event: KeyboardEvent }) => {
                 if (props.event.key === "Escape") {
                   setSlashMenuOpen(false)
                   return true
-                }
-                if (
-                  props.event.key === "ArrowUp" ||
-                  props.event.key === "ArrowDown" ||
-                  props.event.key === "Enter"
-                ) {
-                  return true // Handled by BlockMenu
                 }
                 return false
               },
@@ -162,6 +164,8 @@ export function NoteEditor({ content, isFullWidth, onUpdate, editorRef }: NoteEd
       <BlockMenu
         editor={editor}
         isOpen={slashMenuOpen}
+        cursorRect={cursorRect}
+        query={slashQuery}
         onClose={() => setSlashMenuOpen(false)}
         command={handleSlashCommand}
       />

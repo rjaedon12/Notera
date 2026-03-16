@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect, KeyboardEvent } from "react"
-import { ImageIcon, Smile, Maximize2, Minimize2 } from "lucide-react"
+import { ImageIcon, Smile, Maximize2, Minimize2, Loader2, Check, X } from "lucide-react"
 import { IconPicker } from "./IconPicker"
 import { CoverImagePicker } from "./CoverImagePicker"
 import type { SaveStatus } from "@/hooks/useAutoSave"
@@ -86,6 +86,26 @@ export function NoteHeader({
       onMouseEnter={() => setIsHeaderHovered(true)}
       onMouseLeave={() => setIsHeaderHovered(false)}
     >
+      {/* Floating save status pill */}
+      {saveStatus !== "idle" && (
+        <div
+          className={`fixed top-4 right-4 z-40 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${saveStatus === "error" ? "cursor-pointer" : ""}`}
+          style={{
+            background: saveStatus === "error" ? "var(--destructive)" : "var(--popover)",
+            color: saveStatus === "error" ? "white" : "var(--muted-foreground)",
+            border: saveStatus === "error" ? "none" : "1px solid var(--border)",
+            boxShadow: "0 2px 8px rgba(0,0,0,.08)",
+          }}
+          onClick={saveStatus === "error" ? onRetrySave : undefined}
+          title={saveStatus === "error" ? "Click to retry" : undefined}
+        >
+          {saveStatus === "saving" && <Loader2 className="h-3 w-3 animate-spin" />}
+          {saveStatus === "saved" && <Check className="h-3 w-3" />}
+          {saveStatus === "error" && <X className="h-3 w-3" />}
+          <span>{saveStatusLabel}</span>
+        </div>
+      )}
+
       {/* Cover image */}
       {coverImage && (
         <div className="relative w-full h-[180px] group">
@@ -126,7 +146,7 @@ export function NoteHeader({
       <div className={`${isFullWidth ? "" : "max-w-[708px]"} mx-auto px-6`}>
         {/* Icon */}
         <div className="relative mt-6 mb-2">
-          {icon ? (
+          {icon && (
             <button
               onClick={() => setShowIconPicker(true)}
               className="text-6xl leading-none hover:opacity-80 transition-opacity cursor-pointer"
@@ -134,17 +154,6 @@ export function NoteHeader({
             >
               {icon}
             </button>
-          ) : (
-            isHeaderHovered && (
-              <button
-                onClick={() => setShowIconPicker(true)}
-                className="flex items-center gap-1 text-sm py-1 px-2 rounded transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-                style={{ color: "var(--muted-foreground)" }}
-              >
-                <Smile className="h-4 w-4" />
-                Add icon
-              </button>
-            )
           )}
           <IconPicker
             isOpen={showIconPicker}
@@ -154,35 +163,37 @@ export function NoteHeader({
           />
         </div>
 
-        {/* Control bar (appears on hover) */}
-        {isHeaderHovered && (
-          <div className="flex items-center gap-2 mb-2">
-            {!icon && (
-              <button
-                onClick={() => setShowIconPicker(true)}
-                className="hidden"
-              />
-            )}
-            {!coverImage && (
-              <button
-                onClick={() => setShowCoverPicker(true)}
-                className="flex items-center gap-1 text-sm py-1 px-2 rounded transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-                style={{ color: "var(--muted-foreground)" }}
-              >
-                <ImageIcon className="h-4 w-4" />
-                Add cover
-              </button>
-            )}
-            <div className="relative">
-              <CoverImagePicker
-                isOpen={showCoverPicker && !coverImage}
-                onClose={() => setShowCoverPicker(false)}
-                onSelect={onCoverChange}
-                currentCover={coverImage}
-              />
-            </div>
+        {/* Hover action row — always present, zero layout impact */}
+        <div className={`flex items-center gap-2 mb-2 h-8 transition-opacity duration-100 ${isHeaderHovered ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
+          {!icon && (
+            <button
+              onClick={() => setShowIconPicker(true)}
+              className="flex items-center gap-1 text-sm py-1 px-2 rounded transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+              style={{ color: "var(--muted-foreground)" }}
+            >
+              <Smile className="h-4 w-4" />
+              Add icon
+            </button>
+          )}
+          {!coverImage && (
+            <button
+              onClick={() => setShowCoverPicker(true)}
+              className="flex items-center gap-1 text-sm py-1 px-2 rounded transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+              style={{ color: "var(--muted-foreground)" }}
+            >
+              <ImageIcon className="h-4 w-4" />
+              Add cover
+            </button>
+          )}
+          <div className="relative">
+            <CoverImagePicker
+              isOpen={showCoverPicker && !coverImage}
+              onClose={() => setShowCoverPicker(false)}
+              onSelect={onCoverChange}
+              currentCover={coverImage}
+            />
           </div>
-        )}
+        </div>
 
         {/* Title */}
         <h1
@@ -206,15 +217,6 @@ export function NoteHeader({
 
         {/* Status bar */}
         <div className="flex items-center gap-3 mt-2 mb-4 text-xs" style={{ color: "var(--muted-foreground)" }}>
-          {saveStatusLabel && (
-            <span
-              className={saveStatus === "error" ? "cursor-pointer underline" : ""}
-              onClick={saveStatus === "error" ? onRetrySave : undefined}
-              style={saveStatus === "error" ? { color: "var(--destructive)" } : {}}
-            >
-              {saveStatusLabel}
-            </span>
-          )}
           {updatedAt && (
             <span>
               Edited {new Date(updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
