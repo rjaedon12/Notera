@@ -9,9 +9,68 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { SetCardSkeleton } from "@/components/ui/skeleton"
 import { BookOpen, Users, Layers, ArrowRight, Clock, Star, TrendingUp } from "lucide-react"
-import { Suspense } from "react"
+import { Suspense, useMemo } from "react"
 import { StreakHero } from "@/components/streak/streak-hero"
 import toast from "react-hot-toast"
+
+// ── Time-based greeting ──────────────────────────────────────────────────────
+const GREETINGS = {
+  night: [
+    { line1: (n: string | null) => n ? `Up late, ${n}.` : "Up late.", line2: "Let's make it count." },
+    { line1: (n: string | null) => n ? `Still at it, ${n}.` : "Still at it.", line2: "The quiet hours are good for focus." },
+    { line1: (n: string | null) => n ? `Late night, ${n}.` : "Late night.", line2: "Night sessions stick." },
+  ],
+  morning: [
+    { line1: (n: string | null) => n ? `Morning, ${n}.` : "Good morning.", line2: "Fresh start." },
+    { line1: (n: string | null) => n ? `Early start, ${n}.` : "Early start.", line2: "Best time to learn something new." },
+    { line1: (n: string | null) => n ? `Good morning, ${n}.` : "Good morning.", line2: "Let's get into it." },
+  ],
+  afternoon: [
+    { line1: (n: string | null) => n ? `Afternoon, ${n}.` : "Good afternoon.", line2: "Midday momentum." },
+    { line1: (n: string | null) => n ? `Good afternoon, ${n}.` : "Good afternoon.", line2: "Keep it going." },
+    { line1: (n: string | null) => n ? `Hey, ${n}.` : "Hey there.", line2: "What are we working on?" },
+  ],
+  evening: [
+    { line1: (n: string | null) => n ? `Evening, ${n}.` : "Good evening.", line2: "End-of-day review? Solid habit." },
+    { line1: (n: string | null) => n ? `Good evening, ${n}.` : "Good evening.", line2: "Evening sessions are great for retention." },
+    { line1: (n: string | null) => n ? `Hey, ${n}.` : "Hey.", line2: "What's on the study list tonight?" },
+  ],
+} as const
+
+function useTimeGreeting(name?: string | null) {
+  return useMemo(() => {
+    const hour = new Date().getHours()
+    const period =
+      hour >= 5 && hour < 12 ? "morning"
+      : hour >= 12 && hour < 17 ? "afternoon"
+      : hour >= 17 && hour < 21 ? "evening"
+      : "night"
+
+    const options = GREETINGS[period]
+    const pick = options[Math.floor(Math.random() * options.length)]
+    const firstName = name?.split(" ")[0] ?? null
+    return {
+      heading: pick.line1(firstName),
+      subtext: pick.line2,
+      period,
+    }
+  }, [name])
+}
+
+// ── Greeting header ────────────────────────────────────────────────────────────
+function GreetingBanner({ name }: { name?: string | null }) {
+  const { heading, subtext } = useTimeGreeting(name)
+  return (
+    <div className="mb-8 animate-slide-up">
+      <h1 className="text-3xl font-bold tracking-tight text-foreground font-heading">
+        {heading}
+      </h1>
+      <p className="mt-1 text-base" style={{ color: "var(--muted-foreground)" }}>
+        {subtext}
+      </p>
+    </div>
+  )
+}
 
 interface RecentStudy {
   id: string
@@ -112,6 +171,9 @@ function HomeContent() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Time-based greeting for logged-in users */}
+      {session?.user && <GreetingBanner name={session.user.name} />}
+
       {/* Streak Hero - Duolingo-style streak display for logged-in users */}
       {session?.user && <StreakHero />}
 

@@ -17,7 +17,33 @@ import {
   Quote,
   Code2,
   ChevronDown,
+  Highlighter,
+  Palette,
+  Sigma,
 } from "lucide-react"
+
+const HIGHLIGHT_COLORS = [
+  { label: "Yellow", value: "#fef08a" },
+  { label: "Green", value: "#bbf7d0" },
+  { label: "Blue", value: "#bfdbfe" },
+  { label: "Purple", value: "#e9d5ff" },
+  { label: "Pink", value: "#fce7f3" },
+  { label: "Orange", value: "#fed7aa" },
+  { label: "Red", value: "#fecaca" },
+  { label: "None", value: "" },
+]
+
+const TEXT_COLORS = [
+  { label: "Default", value: "" },
+  { label: "Red", value: "#ef4444" },
+  { label: "Orange", value: "#f97316" },
+  { label: "Yellow", value: "#eab308" },
+  { label: "Green", value: "#22c55e" },
+  { label: "Blue", value: "#3b82f6" },
+  { label: "Purple", value: "#a855f7" },
+  { label: "Pink", value: "#ec4899" },
+  { label: "Gray", value: "#9ca3af" },
+]
 
 interface BubbleToolbarProps {
   editor: Editor
@@ -25,9 +51,13 @@ interface BubbleToolbarProps {
 
 export function BubbleToolbar({ editor }: BubbleToolbarProps) {
   const [showTurnInto, setShowTurnInto] = useState(false)
+  const [showHighlight, setShowHighlight] = useState(false)
+  const [showTextColor, setShowTextColor] = useState(false)
   const [linkInput, setLinkInput] = useState("")
   const [showLinkInput, setShowLinkInput] = useState(false)
   const turnIntoRef = useRef<HTMLDivElement>(null)
+  const highlightRef = useRef<HTMLDivElement>(null)
+  const textColorRef = useRef<HTMLDivElement>(null)
 
   const setLink = useCallback(() => {
     if (linkInput === "") {
@@ -52,15 +82,21 @@ export function BubbleToolbar({ editor }: BubbleToolbarProps) {
 
   // Close Turn Into dropdown when clicking outside
   useEffect(() => {
-    if (!showTurnInto) return
+    if (!showTurnInto && !showHighlight && !showTextColor) return
     const handleClick = (e: MouseEvent) => {
-      if (turnIntoRef.current && !turnIntoRef.current.contains(e.target as Node)) {
+      if (showTurnInto && turnIntoRef.current && !turnIntoRef.current.contains(e.target as Node)) {
         setShowTurnInto(false)
+      }
+      if (showHighlight && highlightRef.current && !highlightRef.current.contains(e.target as Node)) {
+        setShowHighlight(false)
+      }
+      if (showTextColor && textColorRef.current && !textColorRef.current.contains(e.target as Node)) {
+        setShowTextColor(false)
       }
     }
     document.addEventListener("mousedown", handleClick)
     return () => document.removeEventListener("mousedown", handleClick)
-  }, [showTurnInto])
+  }, [showTurnInto, showHighlight, showTextColor])
 
   const btnClass =
     "flex h-7 w-7 items-center justify-center rounded-md transition-colors"
@@ -179,6 +215,120 @@ export function BubbleToolbar({ editor }: BubbleToolbarProps) {
             title="Link"
           >
             <Link className="h-3.5 w-3.5" />
+          </button>
+
+          {/* Highlight dropdown */}
+          <div className="relative" ref={highlightRef}>
+            <button
+              onMouseDown={(e) => {
+                e.preventDefault()
+                setShowHighlight(!showHighlight)
+                setShowTextColor(false)
+                setShowTurnInto(false)
+              }}
+              className={`${btnClass} ${hoverClass} ${editor.isActive("highlight") ? activeClass : ""}`}
+              title="Highlight"
+            >
+              <Highlighter className="h-3.5 w-3.5" />
+            </button>
+
+            {showHighlight && (
+              <div
+                className="absolute left-1/2 -translate-x-1/2 top-full mt-1 rounded-xl py-2 px-2 z-50"
+                style={{
+                  background: "rgba(15, 15, 15, 0.92)",
+                  backdropFilter: "blur(16px)",
+                  WebkitBackdropFilter: "blur(16px)",
+                  boxShadow: "0 0 0 1px rgba(255,255,255,0.08), 0 8px 30px rgba(0,0,0,0.35)",
+                }}
+              >
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-white/40 px-1 pb-1.5">Highlight</div>
+                <div className="flex gap-1.5">
+                  {HIGHLIGHT_COLORS.map((c) => (
+                    <button
+                      key={c.label}
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        if (c.value) {
+                          editor.chain().focus().toggleHighlight({ color: c.value }).run()
+                        } else {
+                          editor.chain().focus().unsetHighlight().run()
+                        }
+                        setShowHighlight(false)
+                      }}
+                      className="w-6 h-6 rounded-md border border-white/10 transition-transform hover:scale-110"
+                      style={{ background: c.value || "transparent" }}
+                      title={c.label}
+                    >
+                      {!c.value && <span className="text-[10px] text-white/50">✕</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Text Color dropdown */}
+          <div className="relative" ref={textColorRef}>
+            <button
+              onMouseDown={(e) => {
+                e.preventDefault()
+                setShowTextColor(!showTextColor)
+                setShowHighlight(false)
+                setShowTurnInto(false)
+              }}
+              className={`${btnClass} ${hoverClass}`}
+              title="Text color"
+            >
+              <Palette className="h-3.5 w-3.5" />
+            </button>
+
+            {showTextColor && (
+              <div
+                className="absolute left-1/2 -translate-x-1/2 top-full mt-1 rounded-xl py-2 px-2 z-50"
+                style={{
+                  background: "rgba(15, 15, 15, 0.92)",
+                  backdropFilter: "blur(16px)",
+                  WebkitBackdropFilter: "blur(16px)",
+                  boxShadow: "0 0 0 1px rgba(255,255,255,0.08), 0 8px 30px rgba(0,0,0,0.35)",
+                }}
+              >
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-white/40 px-1 pb-1.5">Text Color</div>
+                <div className="flex gap-1.5">
+                  {TEXT_COLORS.map((c) => (
+                    <button
+                      key={c.label}
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        if (c.value) {
+                          editor.chain().focus().setColor(c.value).run()
+                        } else {
+                          editor.chain().focus().unsetColor().run()
+                        }
+                        setShowTextColor(false)
+                      }}
+                      className="w-6 h-6 rounded-md border border-white/10 transition-transform hover:scale-110 flex items-center justify-center"
+                      style={{ background: c.value ? c.value + "20" : "transparent" }}
+                      title={c.label}
+                    >
+                      <span style={{ color: c.value || "#fff", fontSize: "13px", fontWeight: 700 }}>A</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Inline Math */}
+          <button
+            onMouseDown={(e) => {
+              e.preventDefault()
+              editor.chain().focus().setInlineMath().run()
+            }}
+            className={`${btnClass} ${hoverClass}`}
+            title="Inline math"
+          >
+            <Sigma className="h-3.5 w-3.5" />
           </button>
 
           <div className="mx-0.5 h-4 w-px bg-white/15" />

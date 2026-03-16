@@ -187,5 +187,43 @@ export function getSlashCommandItems(): SlashCommandItem[] {
         })
       },
     },
+    // Math & Science
+    {
+      title: "Math Equation",
+      description: "Display LaTeX equation",
+      icon: "∑",
+      category: "Advanced blocks",
+      command: ({ editor, range }) => {
+        editor?.chain().focus().deleteRange(range).setMathBlock().run()
+      },
+    },
+    {
+      title: "Inline Math",
+      description: "Inline LaTeX expression",
+      icon: "𝑥",
+      category: "Advanced blocks",
+      command: ({ editor, range }) => {
+        editor?.chain().focus().deleteRange(range).setInlineMath().run()
+      },
+    },
+    // Planning & Organization
+    {
+      title: "Timeline",
+      description: "Chronological event timeline",
+      icon: "📅",
+      category: "Advanced blocks",
+      command: ({ editor, range }) => {
+        editor?.chain().focus().deleteRange(range).setTimelineBlock().run()
+      },
+    },
+    {
+      title: "Calendar",
+      description: "Monthly calendar with events",
+      icon: "🗓️",
+      category: "Advanced blocks",
+      command: ({ editor, range }) => {
+        editor?.chain().focus().deleteRange(range).setCalendarBlock().run()
+      },
+    },
   ]
 }

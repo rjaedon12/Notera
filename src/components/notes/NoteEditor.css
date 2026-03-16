@@ -390,3 +390,884 @@
 .ProseMirror > hr::after {
   display: none;
 }
+
+/* ========================================
+   HIGHLIGHT MARKS
+   ======================================== */
+.ProseMirror mark {
+  border-radius: 2px;
+  padding: 1px 2px;
+}
+
+/* ========================================
+   TABLE CONTROLS BAR
+   ======================================== */
+.table-controls-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  background: var(--muted, rgba(55, 53, 47, 0.04));
+  border: 1px solid var(--border, rgba(55, 53, 47, 0.09));
+  animation: bubbleFadeIn 0.15s ease-out;
+  width: fit-content;
+}
+
+.table-ctrl-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--foreground);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.table-ctrl-btn:hover {
+  background: var(--accent, rgba(55, 53, 47, 0.08));
+}
+
+.table-ctrl-danger {
+  color: var(--muted-foreground);
+}
+
+.table-ctrl-danger:hover {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+.table-ctrl-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--border, rgba(55, 53, 47, 0.13));
+  flex-shrink: 0;
+}
+
+/* ========================================
+   MATH BLOCK STYLES
+   ======================================== */
+.math-block-wrapper {
+  margin: 8px 0;
+}
+
+.math-block-editor {
+  border-radius: 8px;
+  border: 1px solid var(--border, rgba(55, 53, 47, 0.16));
+  background: var(--muted, rgba(55, 53, 47, 0.03));
+  overflow: hidden;
+}
+
+.math-block-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border, rgba(55, 53, 47, 0.09));
+}
+
+.math-block-editor-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground, #9b9a97);
+}
+
+.math-block-editor-hint {
+  font-size: 11px;
+  color: var(--muted-foreground, #9b9a97);
+  opacity: 0.7;
+}
+
+.math-block-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  color: var(--foreground);
+  font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+}
+
+.math-block-preview {
+  border-top: 1px solid var(--border, rgba(55, 53, 47, 0.09));
+  padding: 8px 12px;
+}
+
+.math-block-preview-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground, #9b9a97);
+  margin-bottom: 4px;
+}
+
+.math-block-preview-render {
+  padding: 4px 0;
+  overflow-x: auto;
+}
+
+.math-block-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border, rgba(55, 53, 47, 0.09));
+}
+
+.math-block-cancel-btn,
+.math-block-save-btn {
+  padding: 4px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s;
+}
+
+.math-block-cancel-btn {
+  background: transparent;
+  color: var(--muted-foreground);
+}
+
+.math-block-cancel-btn:hover {
+  background: var(--accent, rgba(55, 53, 47, 0.08));
+}
+
+.math-block-save-btn {
+  background: #2383e2;
+  color: white;
+}
+
+.math-block-save-btn:hover {
+  background: #1a6fca;
+}
+
+.math-block-render {
+  padding: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: center;
+  overflow-x: auto;
+}
+
+.math-block-render:hover {
+  background: var(--muted, rgba(55, 53, 47, 0.04));
+}
+
+.math-block-render.selected {
+  outline: 2px solid #2383e2;
+  border-radius: 8px;
+}
+
+.math-block-placeholder {
+  color: var(--muted-foreground, #9b9a97);
+  font-style: italic;
+  font-size: 14px;
+}
+
+/* ========================================
+   INLINE MATH STYLES
+   ======================================== */
+.inline-math-wrapper {
+  display: inline;
+}
+
+.inline-math-input {
+  display: inline-block;
+  min-width: 60px;
+  max-width: 300px;
+  padding: 1px 6px;
+  border: 1px solid #2383e2;
+  border-radius: 4px;
+  background: rgba(35, 131, 226, 0.06);
+  color: var(--foreground);
+  font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 13px;
+  outline: none;
+}
+
+.inline-math-render {
+  display: inline;
+  cursor: pointer;
+  padding: 1px 2px;
+  border-radius: 3px;
+  transition: background 0.15s;
+}
+
+.inline-math-render:hover {
+  background: rgba(35, 131, 226, 0.08);
+}
+
+.inline-math-render.selected {
+  background: rgba(35, 131, 226, 0.15);
+}
+
+.inline-math-placeholder {
+  color: var(--muted-foreground, #9b9a97);
+  font-style: italic;
+  font-size: 13px;
+}
+
+/* ========================================
+   TIMELINE BLOCK
+   ======================================== */
+.timeline-block {
+  margin: 12px 0;
+  border-radius: 10px;
+  border: 1px solid var(--border, rgba(55, 53, 47, 0.13));
+  background: var(--card, var(--background));
+  overflow: hidden;
+}
+
+.timeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border, rgba(55, 53, 47, 0.09));
+}
+
+.timeline-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timeline-icon {
+  font-size: 16px;
+}
+
+.timeline-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.timeline-count {
+  font-size: 11px;
+  color: var(--muted-foreground);
+  background: var(--muted, rgba(55, 53, 47, 0.06));
+  padding: 1px 8px;
+  border-radius: 10px;
+}
+
+.timeline-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #2383e2;
+  background: rgba(35, 131, 226, 0.08);
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.timeline-add-btn:hover {
+  background: rgba(35, 131, 226, 0.15);
+}
+
+/* Timeline visual bar */
+.timeline-visual {
+  position: relative;
+  height: 64px;
+  margin: 0 16px;
+  padding-top: 28px;
+}
+
+.timeline-line {
+  position: absolute;
+  top: 36px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--border, rgba(55, 53, 47, 0.13));
+  border-radius: 1px;
+}
+
+.timeline-marker-group {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  z-index: 1;
+}
+
+.timeline-marker {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--background, #fff);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.timeline-marker:hover,
+.timeline-marker.active {
+  transform: scale(1.4);
+  box-shadow: 0 0 0 2px rgba(35, 131, 226, 0.3);
+}
+
+.timeline-marker-date {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+/* Timeline event list */
+.timeline-events {
+  padding: 8px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timeline-event {
+  display: flex;
+  align-items: stretch;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: background 0.15s;
+}
+
+.timeline-event:hover {
+  background: var(--muted, rgba(55, 53, 47, 0.04));
+}
+
+.timeline-event.editing {
+  background: var(--muted, rgba(55, 53, 47, 0.04));
+}
+
+.timeline-event-bar {
+  width: 3px;
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+
+.timeline-event-display {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 12px;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+}
+
+.timeline-event-date {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+.timeline-event-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.timeline-event-desc {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Timeline event edit mode */
+.timeline-event-edit {
+  padding: 10px 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.timeline-event-edit-row {
+  display: flex;
+  gap: 8px;
+}
+
+.timeline-input {
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border, rgba(55, 53, 47, 0.16));
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.timeline-input:focus {
+  border-color: #2383e2;
+}
+
+.timeline-date-input {
+  width: 150px;
+  flex-shrink: 0;
+}
+
+.timeline-title-input {
+  flex: 1;
+  font-weight: 500;
+}
+
+.timeline-desc-input {
+  resize: none;
+  font-family: inherit;
+}
+
+.timeline-event-edit-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.timeline-color-picker {
+  display: flex;
+  gap: 4px;
+}
+
+.timeline-color-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.timeline-color-dot:hover {
+  transform: scale(1.2);
+}
+
+.timeline-color-dot.active {
+  border-color: var(--foreground);
+}
+
+.timeline-event-edit-btns {
+  display: flex;
+  gap: 4px;
+}
+
+.timeline-btn-delete {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--muted-foreground);
+  transition: background 0.15s, color 0.15s;
+}
+
+.timeline-btn-delete:hover {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+.timeline-btn-done {
+  padding: 4px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #2383e2;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.timeline-btn-done:hover {
+  background: #1a6fca;
+}
+
+.timeline-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+.timeline-empty-icon {
+  font-size: 20px;
+  opacity: 0.4;
+}
+
+/* ========================================
+   CALENDAR BLOCK
+   ======================================== */
+.calendar-block {
+  margin: 12px 0;
+  border-radius: 10px;
+  border: 1px solid var(--border, rgba(55, 53, 47, 0.13));
+  background: var(--card, var(--background));
+  overflow: hidden;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border, rgba(55, 53, 47, 0.09));
+}
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--foreground);
+  transition: background 0.15s;
+}
+
+.calendar-nav-btn:hover {
+  background: var(--accent, rgba(55, 53, 47, 0.08));
+}
+
+.calendar-month-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--foreground);
+  min-width: 160px;
+  text-align: center;
+}
+
+.calendar-today-btn {
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--muted, rgba(55, 53, 47, 0.06));
+  border: none;
+  cursor: pointer;
+  color: var(--foreground);
+  transition: background 0.15s;
+}
+
+.calendar-today-btn:hover {
+  background: var(--accent, rgba(55, 53, 47, 0.1));
+}
+
+/* Calendar grid */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-day-headers {
+  border-bottom: 1px solid var(--border, rgba(55, 53, 47, 0.09));
+}
+
+.calendar-day-header {
+  padding: 8px 0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted-foreground);
+}
+
+.calendar-cell {
+  min-height: 80px;
+  padding: 4px;
+  border-right: 1px solid var(--border, rgba(55, 53, 47, 0.06));
+  border-bottom: 1px solid var(--border, rgba(55, 53, 47, 0.06));
+  cursor: pointer;
+  transition: background 0.1s;
+  position: relative;
+}
+
+.calendar-cell:nth-child(7n) {
+  border-right: none;
+}
+
+.calendar-cell:hover {
+  background: var(--muted, rgba(55, 53, 47, 0.03));
+}
+
+.calendar-cell.selected {
+  background: rgba(35, 131, 226, 0.06);
+}
+
+.calendar-cell.other-month {
+  opacity: 0.35;
+}
+
+.calendar-day-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--foreground);
+  border-radius: 50%;
+}
+
+.calendar-day-number.today-number {
+  background: #2383e2;
+  color: white;
+  font-weight: 600;
+}
+
+.calendar-cell-events {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 2px;
+}
+
+.calendar-event-pill {
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 10px;
+  line-height: 1.4;
+  overflow: hidden;
+}
+
+.calendar-event-pill-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.calendar-more-events {
+  font-size: 10px;
+  color: var(--muted-foreground);
+  padding-left: 4px;
+}
+
+/* Calendar detail panel */
+.calendar-detail-panel {
+  border-top: 1px solid var(--border, rgba(55, 53, 47, 0.09));
+  padding: 12px 16px;
+  animation: bubbleFadeIn 0.15s ease-out;
+}
+
+.calendar-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.calendar-detail-date {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.calendar-detail-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--muted-foreground);
+  transition: background 0.15s;
+}
+
+.calendar-detail-close:hover {
+  background: var(--accent, rgba(55, 53, 47, 0.08));
+}
+
+.calendar-detail-events {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.calendar-detail-empty {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  padding: 4px 0;
+}
+
+.calendar-detail-event {
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.calendar-detail-event-view {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.calendar-detail-event-view:hover {
+  background: var(--muted, rgba(55, 53, 47, 0.04));
+}
+
+.calendar-detail-event-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.calendar-detail-event-title {
+  font-size: 13px;
+  color: var(--foreground);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-detail-delete {
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--muted-foreground);
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+
+.calendar-detail-event-view:hover .calendar-detail-delete {
+  opacity: 1;
+}
+
+.calendar-detail-delete:hover {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+.calendar-detail-event-edit {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+}
+
+.calendar-detail-event-input {
+  flex: 1;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #2383e2;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 13px;
+  outline: none;
+}
+
+.calendar-detail-save {
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #2383e2;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.calendar-detail-save:hover {
+  background: #1a6fca;
+}
+
+.calendar-detail-add {
+  display: flex;
+  gap: 6px;
+}
+
+.calendar-detail-add-input {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border, rgba(55, 53, 47, 0.16));
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.calendar-detail-add-input:focus {
+  border-color: #2383e2;
+}
+
+.calendar-detail-add-input::placeholder {
+  color: var(--muted-foreground, #9b9a97);
+}
+
+.calendar-detail-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: #2383e2;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.calendar-detail-add-btn:hover {
+  background: #1a6fca;
+}
+
+.calendar-detail-add-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

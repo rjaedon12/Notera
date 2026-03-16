@@ -14,16 +14,24 @@ import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight"
 import Underline from "@tiptap/extension-underline"
 import Typography from "@tiptap/extension-typography"
 import CharacterCount from "@tiptap/extension-character-count"
+import Highlight from "@tiptap/extension-highlight"
+import { TextStyle } from "@tiptap/extension-text-style"
+import Color from "@tiptap/extension-color"
 import { common, createLowlight } from "lowlight"
 import { useCallback, useEffect, useRef, useState } from "react"
+import { Plus, Minus, Rows3, Columns3 } from "lucide-react"
 
 import { SlashCommands, getSlashCommandItems, type SlashCommandItem } from "./extensions/SlashCommands"
 import { TrailingNode } from "./extensions/TrailingNode"
 import { CustomPlaceholder } from "./extensions/Placeholder"
 import { Callout } from "./extensions/Callout"
 import { ToggleBlock, ToggleSummary, ToggleContent } from "./extensions/ToggleList"
+import { MathBlock, InlineMath } from "./extensions/Mathematics"
+import { TimelineBlock } from "./extensions/TimelineBlock"
+import { CalendarBlock } from "./extensions/CalendarBlock"
 import { BubbleToolbar } from "./BubbleToolbar"
 import { BlockMenu, type BlockMenuHandle } from "./BlockMenu"
+import "katex/dist/katex.min.css"
 import "./NoteEditor.css"
 
 const lowlight = createLowlight(common)
@@ -68,12 +76,19 @@ export function NoteEditor({ content, pageId, isFullWidth, onUpdate, editorRef }
       CodeBlockLowlight.configure({ lowlight }),
       Typography,
       CharacterCount,
+      Highlight.configure({ multicolor: true }),
+      TextStyle,
+      Color,
       CustomPlaceholder,
       TrailingNode,
       Callout,
       ToggleBlock,
       ToggleSummary,
       ToggleContent,
+      MathBlock,
+      InlineMath,
+      TimelineBlock,
+      CalendarBlock,
       SlashCommands.configure({
         suggestion: {
           char: "/",
@@ -170,9 +185,61 @@ export function NoteEditor({ content, pageId, isFullWidth, onUpdate, editorRef }
 
   if (!editor) return null
 
+  const isInTable = editor.isActive("table")
+
   return (
     <div className={`${isFullWidth ? "" : "max-w-[708px]"} mx-auto px-6`}>
       <EditorContent editor={editor} />
+
+      {/* Table controls — shown when cursor is inside a table */}
+      {isInTable && (
+        <div className="table-controls-bar">
+          <button
+            onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().addRowAfter().run() }}
+            className="table-ctrl-btn"
+            title="Add row below"
+          >
+            <Plus className="h-3 w-3" />
+            <Rows3 className="h-3.5 w-3.5" />
+            <span>Row</span>
+          </button>
+          <button
+            onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().addColumnAfter().run() }}
+            className="table-ctrl-btn"
+            title="Add column right"
+          >
+            <Plus className="h-3 w-3" />
+            <Columns3 className="h-3.5 w-3.5" />
+            <span>Column</span>
+          </button>
+          <div className="table-ctrl-divider" />
+          <button
+            onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().deleteRow().run() }}
+            className="table-ctrl-btn table-ctrl-danger"
+            title="Delete current row"
+          >
+            <Minus className="h-3 w-3" />
+            <Rows3 className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().deleteColumn().run() }}
+            className="table-ctrl-btn table-ctrl-danger"
+            title="Delete current column"
+          >
+            <Minus className="h-3 w-3" />
+            <Columns3 className="h-3.5 w-3.5" />
+          </button>
+          <div className="table-ctrl-divider" />
+          <button
+            onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().deleteTable().run() }}
+            className="table-ctrl-btn table-ctrl-danger"
+            title="Delete table"
+          >
+            <span>Delete table</span>
+          </button>
+        </div>
+      )}
+
       {/* Static spacer — keeps scroll room without resize-dependent padding */}
       <div className="h-[30vh]" aria-hidden="true" />
       <BubbleToolbar editor={editor} />

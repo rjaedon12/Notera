@@ -13,7 +13,9 @@ declare module "@tiptap/core" {
   }
 }
 
-// The wrapper <details> element
+// The wrapper <details> element — uses a custom NodeView to fix toggle click handling.
+// ProseMirror intercepts click events on <summary>, preventing native <details> toggling.
+// The NodeView manually toggles the `open` attribute on click.
 export const ToggleBlock = Node.create<ToggleBlockOptions>({
   name: "toggleBlock",
   group: "block",
@@ -51,6 +53,58 @@ export const ToggleBlock = Node.create<ToggleBlockOptions>({
       }),
       0,
     ]
+  },
+
+  // Custom NodeView that properly handles the <details> toggle interaction.
+  // Without this, ProseMirror's event handling prevents the native <summary> click
+  // from toggling the <details> open/closed state.
+  addNodeView() {
+    return ({ node: initialNode, getPos, editor }) => {
+      let currentNode = initialNode
+
+      const dom = document.createElement("details")
+      dom.classList.add("toggle-block")
+      if (currentNode.attrs.open) {
+        dom.setAttribute("open", "")
+      }
+
+      // Intercept clicks on the <summary> and toggle the ProseMirror attribute
+      dom.addEventListener("click", (e) => {
+        const target = e.target as HTMLElement
+        // Only act on clicks directly on the summary element (the toggle trigger)
+        if (target.closest("summary") && target.closest("details") === dom) {
+          e.preventDefault()
+          const pos = typeof getPos === "function" ? getPos() : null
+          if (pos !== null && pos !== undefined) {
+            editor
+              .chain()
+              .command(({ tr }) => {
+                tr.setNodeMarkup(pos, undefined, {
+                  ...currentNode.attrs,
+                  open: !currentNode.attrs.open,
+                })
+                return true
+              })
+              .run()
+          }
+        }
+      })
+
+      return {
+        dom,
+        contentDOM: dom,
+        update(updatedNode) {
+          if (updatedNode.type.name !== currentNode.type.name) return false
+          currentNode = updatedNode
+          if (updatedNode.attrs.open) {
+            dom.setAttribute("open", "")
+          } else {
+            dom.removeAttribute("open")
+          }
+          return true
+        },
+      }
+    }
   },
 
   addCommands() {
