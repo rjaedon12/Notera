@@ -76,11 +76,10 @@ export function NoteEditor({ content, isFullWidth, onUpdate, editorRef }: NoteEd
         suggestion: {
           char: "/",
           allowSpaces: false,
-          items: ({ query }: { query: string }) => {
-            return getSlashCommandItems().filter((item) =>
-              item.title.toLowerCase().includes(query.toLowerCase())
-            )
-          },
+          // Always return all items — BlockMenu handles its own filtering via the `query` prop.
+          // If items() returns [] here, TipTap's suggestion plugin fires onExit and closes
+          // the menu before the user can scroll/select anything.
+          items: () => getSlashCommandItems(),
           render: () => {
             return {
               onStart: (props: { range: { from: number; to: number }; clientRect?: () => DOMRect | null; query?: string }) => {
