@@ -377,9 +377,299 @@ Your Majesty's Government has seized their land, burned their towns, stolen thei
   )
 }
 
+export async function seedMongolEmpireDBQ() {
+  console.log("🏇  Seeding Mongol Empire DBQ...")
+
+  const prompt = await prisma.dBQPrompt.upsert({
+    where: { id: "dbq-mongol-empire" },
+    update: {},
+    create: {
+      id: "dbq-mongol-empire",
+      title: "The Mongol Empire and Eurasian Exchange",
+      question:
+        "Evaluate the extent to which the Mongol Empire facilitated cultural and economic exchange across Eurasia during the 13th and 14th centuries.",
+      subject: "AP World History",
+      era: "13th–14th Centuries",
+    },
+  })
+
+  const existingDocs = await prisma.dBQDocument.count({
+    where: { promptId: prompt.id },
+  })
+
+  if (existingDocs > 0) {
+    console.log("   ↳ Documents already seeded, skipping.")
+    return
+  }
+
+  const documents = [
+    {
+      docNumber: 1,
+      title: "Document 1",
+      source:
+        "Marco Polo, Venetian merchant and explorer, The Travels of Marco Polo, c. 1300.",
+      content: `"The Great Khan uses paper money throughout his dominions... All these pieces of paper are issued with as much solemnity and authority as if they were of pure gold or silver... and indeed everybody takes them readily, for wheresoever a person may go throughout the Great Khan's dominions he shall find these pieces of paper current."`,
+      orderIndex: 0,
+    },
+    {
+      docNumber: 2,
+      title: "Document 2",
+      source:
+        "Ata-Malik Juvaini, Persian historian and administrator under the Mongols, The History of the World Conqueror, c. 1260.",
+      content: `"In the countries that have not yet been overrun by them, everyone trembles at the mention of their name... every ear tingles with the recollection of them... they came, they sapped, they burnt, they slew, they plundered, and they departed."`,
+      orderIndex: 1,
+    },
+    {
+      docNumber: 3,
+      title: "Document 3",
+      source:
+        "Abraham Cresques, Majorcan cartographer, Catalan Atlas, 1375. Commissioned by King Charles V of France.",
+      content: `(Note: This map, commissioned by King Charles V of France, depicts the known world including detailed illustrations of the Silk Road trade routes. Mansa Musa of Mali is shown holding a gold nugget, while camel caravans traverse Central Asia. The atlas reflects European knowledge of Eurasian trade networks significantly expanded by Mongol unification of overland routes.)`,
+      orderIndex: 2,
+    },
+    {
+      docNumber: 4,
+      title: "Document 4",
+      source:
+        "Ibn Battuta, Moroccan scholar and traveler, Rihla (The Travels), c. 1355.",
+      content: `"The road from Tana to Cathay is perfectly safe, whether by day or by night, according to what the merchants say who have used it... The Tatars [Mongols] have established such order that travelers may go from one end of the earth to the other in perfect safety."`,
+      orderIndex: 3,
+    },
+    {
+      docNumber: 5,
+      title: "Document 5",
+      source:
+        "William of Rubruck, Flemish Franciscan missionary, Account of the Mongols, 1255.",
+      content: `"Among them is to be found every kind of craftsman... They have physicians from China, Russia, and all parts. At Karakorum there are two quarters, one of the Saracens in which are the markets, and many traders flock thither on account of the court... the other is the quarter of the Cathayans, all of whom are artisans."`,
+      orderIndex: 4,
+    },
+    {
+      docNumber: 6,
+      title: "Document 6",
+      source:
+        "Rashid al-Din, Persian polymath and vizier of the Ilkhanate, Compendium of Chronicles (Jami' al-Tawarikh), c. 1307.",
+      content: `"From the land of the Franks they have brought... wine-making and the use of siege engines; from China, the science of medicine, astronomy, and printing; from India, mathematics; and from Persia, poetry, music, and the art of governance. Never before has the world seen such an exchange of knowledge between so many peoples."`,
+      orderIndex: 5,
+    },
+    {
+      docNumber: 7,
+      title: "Document 7",
+      source:
+        "Giovanni de' Marignolli, Papal legate to the court of the Great Khan, report to Pope Benedict XII, c. 1353.",
+      content: `"The empire of the Great Khan is the greatest that has ever been in the world... There are to be found in the Khan's realm men of every nation under heaven, and of every sect."`,
+      orderIndex: 6,
+    },
+  ]
+
+  for (const doc of documents) {
+    await prisma.dBQDocument.create({ data: { ...doc, promptId: prompt.id } })
+  }
+
+  console.log(
+    `   ↳ Created prompt "${prompt.title}" with ${documents.length} documents`
+  )
+}
+
+export async function seedUSImperialismDBQ() {
+  console.log("🦅  Seeding US Imperialism DBQ...")
+
+  const prompt = await prisma.dBQPrompt.upsert({
+    where: { id: "dbq-us-imperialism" },
+    update: {},
+    create: {
+      id: "dbq-us-imperialism",
+      title: "United States Imperialism, 1890–1913",
+      question:
+        "Evaluate the extent to which economic interests, rather than ideological motivations, drove United States imperialism in the period from 1890 to 1913.",
+      subject: "AP United States History",
+      era: "1890–1913",
+    },
+  })
+
+  const existingDocs = await prisma.dBQDocument.count({
+    where: { promptId: prompt.id },
+  })
+
+  if (existingDocs > 0) {
+    console.log("   ↳ Documents already seeded, skipping.")
+    return
+  }
+
+  const documents = [
+    {
+      docNumber: 1,
+      title: "Document 1",
+      source:
+        "Alfred Thayer Mahan, U.S. Navy Captain, The Influence of Sea Power Upon History, 1890.",
+      content: `"The due use and control of the sea is but one link in the chain of exchange by which wealth accumulates... the necessity of a navy springs from the existence of peaceful shipping, and disappears with it... the United States must now begin to look outward."`,
+      orderIndex: 0,
+    },
+    {
+      docNumber: 2,
+      title: "Document 2",
+      source:
+        "Albert J. Beveridge, U.S. Senator from Indiana, campaign speech, September 16, 1898.",
+      content: `"American factories are making more than the American people can use; American soil is producing more than they can consume. Fate has written our policy for us; the trade of the world must and shall be ours... We will establish trading posts throughout the world as distributing points for American products."`,
+      orderIndex: 1,
+    },
+    {
+      docNumber: 3,
+      title: "Document 3",
+      source:
+        "President William McKinley, interview regarding the Philippines, published in The Christian Advocate, January 22, 1903 (recalling events of 1898).",
+      content: `"I walked the floor of the White House night after night until midnight; and I am not ashamed to tell you, gentlemen, that I went down on my knees and prayed Almighty God for light and guidance more than one night. And one night late it came to me this way... that there was nothing left for us to do but to take them all, and to educate the Filipinos, and uplift and civilize and Christianize them."`,
+      orderIndex: 2,
+    },
+    {
+      docNumber: 4,
+      title: "Document 4",
+      source:
+        "Platform of the American Anti-Imperialist League, October 17, 1899.",
+      content: `"We hold that the policy known as imperialism is hostile to liberty and tends toward militarism, an evil from which it has been our glory to be free... We regret that it has become necessary in the land of Washington and Lincoln to reaffirm that all men, of whatever race or color, are entitled to life, liberty, and the pursuit of happiness."`,
+      orderIndex: 3,
+    },
+    {
+      docNumber: 5,
+      title: "Document 5",
+      source:
+        'Political cartoon, "Ten Thousand Miles from Tip to Tip," published in the Philadelphia Press, 1898.',
+      content: `(Note: The cartoon shows an American bald eagle with its wings spread across a globe, stretching from the Philippines in the west to Puerto Rico in the east — "ten thousand miles from tip to tip." The eagle's wingspan in 1798 is shown as a small inset covering only the original thirteen colonies, illustrating the dramatic growth of American territorial reach in exactly one century.)`,
+      orderIndex: 4,
+    },
+    {
+      docNumber: 6,
+      title: "Document 6",
+      source:
+        'Emilio Aguinaldo, President of the First Philippine Republic, "Case Against the United States," published in The North American Review, 1899.',
+      content: `"I have studied attentively the Constitution of the United States, and I find in it no authority for colonies, and I have no fear that the American people will seek to take the Philippines by force... my people desire liberty and are perfectly competent to support a stable government."`,
+      orderIndex: 5,
+    },
+    {
+      docNumber: 7,
+      title: "Document 7",
+      source:
+        'Theodore Roosevelt, "Corollary to the Monroe Doctrine," Annual Message to Congress, December 6, 1904.',
+      content: `"Chronic wrongdoing, or an impotence which results in a general loosening of the ties of civilized society, may in America, as elsewhere, ultimately require intervention by some civilized nation, and in the Western Hemisphere the adherence of the United States to the Monroe Doctrine may force the United States, however reluctantly... to the exercise of an international police power."`,
+      orderIndex: 6,
+    },
+  ]
+
+  for (const doc of documents) {
+    await prisma.dBQDocument.create({ data: { ...doc, promptId: prompt.id } })
+  }
+
+  console.log(
+    `   ↳ Created prompt "${prompt.title}" with ${documents.length} documents`
+  )
+}
+
+export async function seedFrenchRevolutionDBQ() {
+  console.log("⚜️  Seeding French Revolution DBQ...")
+
+  const prompt = await prisma.dBQPrompt.upsert({
+    where: { id: "dbq-french-revolution" },
+    update: {},
+    create: {
+      id: "dbq-french-revolution",
+      title: "The French Revolution and State-Individual Relations",
+      question:
+        "Evaluate the extent to which the French Revolution fundamentally transformed the relationship between the state and the individual in France during the period 1789 to 1799.",
+      subject: "AP European History",
+      era: "1789–1799",
+    },
+  })
+
+  const existingDocs = await prisma.dBQDocument.count({
+    where: { promptId: prompt.id },
+  })
+
+  if (existingDocs > 0) {
+    console.log("   ↳ Documents already seeded, skipping.")
+    return
+  }
+
+  const documents = [
+    {
+      docNumber: 1,
+      title: "Document 1",
+      source:
+        "Emmanuel-Joseph Sieyès, French clergyman and political theorist, What Is the Third Estate?, January 1789.",
+      content: `"What is the Third Estate? Everything. What has it been hitherto in the political order? Nothing. What does it desire to be? Something... The Third Estate embraces then all that which belongs to the nation; and all that which is not the Third Estate cannot be regarded as being of the nation."`,
+      orderIndex: 0,
+    },
+    {
+      docNumber: 2,
+      title: "Document 2",
+      source:
+        "National Assembly of France, Declaration of the Rights of Man and of the Citizen, August 26, 1789.",
+      content: `Article 1: Men are born and remain free and equal in rights. Social distinctions may be founded only upon the general good.
+
+Article 3: The principle of all sovereignty resides essentially in the nation. No body nor individual may exercise any authority which does not proceed directly from the nation.
+
+Article 6: Law is the expression of the general will. Every citizen has a right to participate personally, or through his representative, in its foundation.`,
+      orderIndex: 1,
+    },
+    {
+      docNumber: 3,
+      title: "Document 3",
+      source:
+        "Arthur Young, English agricultural reformer and travel writer, Travels in France, 1792 (describing events of 1789).",
+      content: `"The deficit would not have produced the Revolution but in concurrence with the price of bread... the people are so poor as to be destitute of the means of subsistence... everything conspired to render the people of Paris desperate... The whole business now seems over, and the revolution complete."`,
+      orderIndex: 2,
+    },
+    {
+      docNumber: 4,
+      title: "Document 4",
+      source:
+        "Jacques-Louis David, The Tennis Court Oath, 1791 (oil sketch). Musée National du Château de Versailles.",
+      content: `(Note: David's monumental painting depicts the dramatic moment on June 20, 1789, when members of the Third Estate, locked out of their meeting hall, gathered in a nearby indoor tennis court and swore not to disband until they had given France a constitution. The central figure, Jean-Sylvain Bailly, stands on a table reading the oath aloud, while delegates raise their hands in unity. Wind billows through curtains symbolizing the winds of change. A single dissenter, Martin-Dauch, sits with arms crossed.)`,
+      orderIndex: 3,
+    },
+    {
+      docNumber: 5,
+      title: "Document 5",
+      source:
+        "Maximilien Robespierre, speech to the National Convention, February 5, 1794.",
+      content: `"If the basis of popular government in peacetime is virtue, the basis of popular government during a revolution is both virtue and terror; virtue, without which terror is baneful; terror, without which virtue is powerless. Terror is nothing more than speedy, severe and inflexible justice; it is thus an emanation of virtue."`,
+      orderIndex: 4,
+    },
+    {
+      docNumber: 6,
+      title: "Document 6",
+      source:
+        "Olympe de Gouges, French playwright and political activist, Declaration of the Rights of Woman and of the Female Citizen, September 1791.",
+      content: `"Woman is born free and lives equal to man in her rights... The exercise of the natural rights of woman has only been limited by the perpetual tyranny that man opposes to them; these limits should be reformed by the laws of nature and reason... Woman has the right to mount the scaffold; she must equally have the right to mount the rostrum."`,
+      orderIndex: 5,
+    },
+    {
+      docNumber: 7,
+      title: "Document 7",
+      source:
+        "Napoleon Bonaparte, speech to the Council of State on the Civil Code, 1801.",
+      content: `"My true glory is not to have won forty battles... What nothing will destroy, what will live forever, is my Civil Code... We have finished the romance of the Revolution; we must now begin its history."`,
+      orderIndex: 6,
+    },
+  ]
+
+  for (const doc of documents) {
+    await prisma.dBQDocument.create({ data: { ...doc, promptId: prompt.id } })
+  }
+
+  console.log(
+    `   ↳ Created prompt "${prompt.title}" with ${documents.length} documents`
+  )
+}
+
 // Allow running standalone
 if (require.main === module) {
-  Promise.all([seedDBQ(), seedIndustrialRevolutionDBQ(), seedImperialismDBQ()])
+  Promise.all([
+    seedDBQ(),
+    seedIndustrialRevolutionDBQ(),
+    seedImperialismDBQ(),
+    seedMongolEmpireDBQ(),
+    seedUSImperialismDBQ(),
+    seedFrenchRevolutionDBQ(),
+  ])
     .then(() => prisma.$disconnect())
     .catch((e) => {
       console.error(e)
