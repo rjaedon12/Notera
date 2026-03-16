@@ -120,7 +120,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           }}
         >
           {isActive && (
-            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full" style={{ background: "var(--primary)" }} />
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full" style={{ background: "var(--accent)" }} />
           )}
           <span className={cn("shrink-0", isActive && !isCollapsed && "ml-1")}>{item.icon}</span>
           {!isCollapsed && <span>{item.label}</span>}

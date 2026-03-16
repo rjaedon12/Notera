@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ThemeToggleSimple } from "@/components/theme-toggle"
 import { NotificationBell } from "@/components/notification-bell"
+import { ThemePicker } from "@/components/ui/ThemePicker"
 import { 
   Search, 
   Menu,
@@ -88,7 +89,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-9 pl-10 pr-4 rounded-full text-sm transition-all
-                border focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-0
+                border focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-0
                 placeholder:text-[var(--muted-foreground)]"
               style={{
                 background: "var(--glass-fill)",
@@ -120,7 +121,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                     className="h-9 w-9 rounded-full"
                   />
                 ) : (
-                  <User className="h-5 w-5 text-[var(--primary)]" />
+                  <User className="h-5 w-5 text-[var(--accent)]" />
                 )}
               </button>
               <div
@@ -138,7 +139,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                   <p className="text-sm font-medium text-foreground">{session.user?.name || "User"}</p>
                   <p className="text-xs text-[var(--muted-foreground)]">{session.user?.email}</p>
                   {session.user?.role === "ADMIN" && (
-                    <span className="inline-block mt-1 px-2 py-0.5 text-xs rounded" style={{ background: "rgba(0,122,255,0.14)", color: "var(--primary)", border: "1px solid rgba(0,122,255,0.22)" }}>
+                    <span className="inline-block mt-1 px-2 py-0.5 text-xs rounded" style={{ background: "color-mix(in srgb, var(--accent) 14%, transparent)", color: "var(--accent)", border: "1px solid color-mix(in srgb, var(--accent) 22%, transparent)" }}>
                       Admin
                     </span>
                   )}
@@ -150,6 +151,10 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                   <Settings className="h-4 w-4" />
                   Settings
                 </Link>
+                <div className="px-3 py-2" style={{ borderTop: "1px solid var(--glass-border)" }}>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: "var(--muted-foreground)", opacity: 0.6 }}>Theme</p>
+                  <ThemePicker />
+                </div>
                 <button
                   onClick={() => signOut()}
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-[var(--glass-fill)] transition-colors text-[var(--destructive)]"
