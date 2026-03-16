@@ -287,10 +287,13 @@ async function main() {
   console.log(`   Admin login: admin@koda.com / ${adminPassword}`)
 
   // ── 6. Seed DBQ prompts ───────────────────────────────
-  const { seedDBQ, seedIndustrialRevolutionDBQ, seedImperialismDBQ } = await import("./seed-dbq")
+  const { seedDBQ, seedIndustrialRevolutionDBQ, seedImperialismDBQ, seedMongolEmpireDBQ, seedUSImperialismDBQ, seedFrenchRevolutionDBQ } = await import("./seed-dbq")
   await seedDBQ()
   await seedIndustrialRevolutionDBQ()
   await seedImperialismDBQ()
+  await seedMongolEmpireDBQ()
+  await seedUSImperialismDBQ()
+  await seedFrenchRevolutionDBQ()
 }
 
 main()
