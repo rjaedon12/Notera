@@ -23,24 +23,26 @@ import { CustomPlaceholder } from "./extensions/Placeholder"
 import { Callout } from "./extensions/Callout"
 import { ToggleBlock, ToggleSummary, ToggleContent } from "./extensions/ToggleList"
 import { BubbleToolbar } from "./BubbleToolbar"
-import { BlockMenu } from "./BlockMenu"
+import { BlockMenu, type BlockMenuHandle } from "./BlockMenu"
 import "./NoteEditor.css"
 
 const lowlight = createLowlight(common)
 
 interface NoteEditorProps {
   content: Record<string, unknown> | null
+  pageId?: string
   isFullWidth: boolean
   onUpdate: (content: Record<string, unknown>) => void
   editorRef?: React.MutableRefObject<ReturnType<typeof useEditor> | null>
 }
 
-export function NoteEditor({ content, isFullWidth, onUpdate, editorRef }: NoteEditorProps) {
+export function NoteEditor({ content, pageId, isFullWidth, onUpdate, editorRef }: NoteEditorProps) {
   const [slashMenuOpen, setSlashMenuOpen] = useState(false)
   const [slashRange, setSlashRange] = useState<{ from: number; to: number } | null>(null)
   const [cursorRect, setCursorRect] = useState<DOMRect | null>(null)
   const [slashQuery, setSlashQuery] = useState("")
   const hasInitialized = useRef(false)
+  const blockMenuRef = useRef<BlockMenuHandle>(null)
 
   const editor = useEditor({
     extensions: [
@@ -75,7 +77,7 @@ export function NoteEditor({ content, isFullWidth, onUpdate, editorRef }: NoteEd
       SlashCommands.configure({
         suggestion: {
           char: "/",
-          allowSpaces: false,
+          allowSpaces: true,
           // Always return all items — BlockMenu handles its own filtering via the `query` prop.
           // If items() returns [] here, TipTap's suggestion plugin fires onExit and closes
           // the menu before the user can scroll/select anything.
@@ -100,8 +102,24 @@ export function NoteEditor({ content, isFullWidth, onUpdate, editorRef }: NoteEd
                 setSlashQuery("")
               },
               onKeyDown: (props: { event: KeyboardEvent }) => {
-                if (props.event.key === "Escape") {
+                const { key } = props.event
+                if (key === "Escape") {
                   setSlashMenuOpen(false)
+                  setSlashRange(null)
+                  setCursorRect(null)
+                  setSlashQuery("")
+                  return true
+                }
+                if (key === "ArrowDown") {
+                  blockMenuRef.current?.moveDown()
+                  return true
+                }
+                if (key === "ArrowUp") {
+                  blockMenuRef.current?.moveUp()
+                  return true
+                }
+                if (key === "Enter" || key === "Tab") {
+                  blockMenuRef.current?.selectCurrent()
                   return true
                 }
                 return false
@@ -131,18 +149,14 @@ export function NoteEditor({ content, isFullWidth, onUpdate, editorRef }: NoteEd
     }
   }, [editor, editorRef])
 
-  // Set content when page changes (only on initial load or page switch)
+  // Set content when page changes (gated on pageId, not content reference)
+  const prevPageId = useRef<string | undefined>(undefined)
   useEffect(() => {
-    if (editor && content && !hasInitialized.current) {
+    if (editor && content && pageId !== prevPageId.current) {
       editor.commands.setContent(content)
-      hasInitialized.current = true
+      prevPageId.current = pageId
     }
-  }, [editor, content])
-
-  // Reset initialization flag when content identity changes (page switch)
-  useEffect(() => {
-    hasInitialized.current = false
-  }, [content])
+  }, [editor, content, pageId])
 
   const handleSlashCommand = useCallback(
     (item: SlashCommandItem) => {
@@ -157,10 +171,13 @@ export function NoteEditor({ content, isFullWidth, onUpdate, editorRef }: NoteEd
   if (!editor) return null
 
   return (
-    <div className={`${isFullWidth ? "" : "max-w-[708px]"} mx-auto px-6 pb-[30vh]`}>
+    <div className={`${isFullWidth ? "" : "max-w-[708px]"} mx-auto px-6`}>
       <EditorContent editor={editor} />
+      {/* Static spacer — keeps scroll room without resize-dependent padding */}
+      <div className="h-[30vh]" aria-hidden="true" />
       <BubbleToolbar editor={editor} />
       <BlockMenu
+        ref={blockMenuRef}
         editor={editor}
         isOpen={slashMenuOpen}
         cursorRect={cursorRect}

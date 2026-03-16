@@ -122,6 +122,7 @@ export default function NoteEditorPage() {
 
       <NoteEditor
         content={page.content}
+        pageId={pageId}
         isFullWidth={page.isFullWidth}
         onUpdate={handleContentUpdate}
         editorRef={editorRef}

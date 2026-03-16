@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect, useRef, useMemo } from "react"
+import { useState, useCallback, useEffect, useRef, useMemo, useImperativeHandle, forwardRef } from "react"
 import {
   useFloating,
   offset,
@@ -21,6 +21,12 @@ function BlockIcon({ icon }: { icon: string }) {
   return <span className="text-base leading-none">{icon}</span>
 }
 
+export interface BlockMenuHandle {
+  moveDown: () => void
+  moveUp: () => void
+  selectCurrent: () => void
+}
+
 interface BlockMenuProps {
   editor: ReturnType<typeof import("@tiptap/react").useEditor>
   isOpen: boolean
@@ -30,7 +36,8 @@ interface BlockMenuProps {
   command: (item: SlashCommandItem) => void
 }
 
-export function BlockMenu({ editor, isOpen, cursorRect, query, onClose, command }: BlockMenuProps) {
+export const BlockMenu = forwardRef<BlockMenuHandle, BlockMenuProps>(
+  function BlockMenu({ editor, isOpen, cursorRect, query, onClose, command }, ref) {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -91,31 +98,21 @@ export function BlockMenu({ editor, isOpen, cursorRect, query, onClose, command 
     [command, onClose]
   )
 
-  // Keyboard navigation
-  useEffect(() => {
-    if (!isOpen) return
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowDown") {
-        e.preventDefault()
-        setSelectedIndex((i) => (i + 1) % flatItems.length)
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault()
-        setSelectedIndex((i) => (i - 1 + flatItems.length) % flatItems.length)
-      } else if (e.key === "Enter") {
-        e.preventDefault()
-        if (flatItems[selectedIndex]) {
-          handleSelect(flatItems[selectedIndex])
-        }
-      } else if (e.key === "Escape") {
-        e.preventDefault()
-        onClose()
+  // Expose imperative methods so the parent (suggestion onKeyDown) can drive navigation
+  // without a document-level keydown listener that races with ProseMirror.
+  useImperativeHandle(ref, () => ({
+    moveDown() {
+      setSelectedIndex((i) => (i + 1) % flatItems.length)
+    },
+    moveUp() {
+      setSelectedIndex((i) => (i - 1 + flatItems.length) % flatItems.length)
+    },
+    selectCurrent() {
+      if (flatItems[selectedIndex]) {
+        handleSelect(flatItems[selectedIndex])
       }
-    }
-
-    document.addEventListener("keydown", handleKeyDown)
-    return () => document.removeEventListener("keydown", handleKeyDown)
-  }, [isOpen, flatItems, selectedIndex, handleSelect, onClose])
+    },
+  }), [flatItems, selectedIndex, handleSelect])
 
   // Scroll selected item into view
   useEffect(() => {
@@ -219,4 +216,4 @@ export function BlockMenu({ editor, isOpen, cursorRect, query, onClose, command 
       </div>
     </div>
   )
-}
+})

@@ -169,15 +169,22 @@ export function getSlashCommandItems(): SlashCommandItem[] {
     },
     {
       title: "Image",
-      description: "Upload or embed an image",
+      description: "Embed an image from URL",
       icon: "🖼️",
       category: "Media",
       command: ({ editor, range }) => {
         editor?.chain().focus().deleteRange(range).run()
-        const url = ""
-        if (url) {
-          editor?.chain().focus().setImage({ src: url }).run()
-        }
+        // Defer the prompt so the editor can finish cleaning up the slash text first
+        requestAnimationFrame(() => {
+          const url = window.prompt("Paste the image URL:")
+          if (url && url.trim()) {
+            const alt = window.prompt("Image description (optional):") || ""
+            editor?.chain().focus().setImage({ src: url.trim(), alt: alt.trim() }).run()
+          } else {
+            // Re-focus the editor even if cancelled
+            editor?.commands.focus()
+          }
+        })
       },
     },
   ]
