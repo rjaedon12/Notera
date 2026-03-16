@@ -61,13 +61,22 @@ function useTimeGreeting(name?: string | null) {
 function GreetingBanner({ name }: { name?: string | null }) {
   const { heading, subtext } = useTimeGreeting(name)
   return (
-    <div className="mb-8 animate-slide-up">
+    <div className="mb-8 animate-slide-up text-center">
       <h1 className="text-3xl font-bold tracking-tight text-foreground font-heading">
         {heading}
       </h1>
       <p className="mt-1 text-base" style={{ color: "var(--muted-foreground)" }}>
         {subtext}
       </p>
+      <div
+        className="mx-auto mt-3 rounded-full"
+        style={{
+          width: "2.5rem",
+          height: "3px",
+          background: "var(--primary)",
+          opacity: 0.85,
+        }}
+      />
     </div>
   )
 }

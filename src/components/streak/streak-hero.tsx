@@ -121,15 +121,20 @@ export function StreakHero() {
             <div 
               className={cn(
                 "w-8 h-8 rounded-full flex items-center justify-center transition-all backdrop-blur-sm",
-                status.isToday && !status.studied && "ring-2 ring-[var(--primary)] ring-offset-1"
               )}
               style={{
-                background: status.studied 
-                  ? "var(--primary)" 
-                  : status.isFuture 
-                    ? "var(--glass-fill)" 
-                    : "var(--muted)",
-                border: status.studied ? "none" : "1px solid var(--glass-border)",
+                background: status.studied
+                  ? "var(--primary)"
+                  : status.isToday
+                    ? "color-mix(in srgb, var(--primary) 22%, transparent)"
+                    : status.isFuture
+                      ? "var(--glass-fill)"
+                      : "var(--muted)",
+                border: status.studied
+                  ? "none"
+                  : status.isToday
+                    ? "2px solid var(--primary)"
+                    : "1px solid var(--glass-border)",
                 color: status.studied ? "#fff" : "var(--muted-foreground)",
               }}
             >
