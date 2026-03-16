@@ -88,8 +88,8 @@ export function Header() {
               </Link>
               <StreakIndicator />
               <div className="relative group ml-2">
-                <button className="h-8 w-8 rounded-full flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--accent) 15%, transparent)' }}>
-                  <User className="h-4 w-4" style={{ color: 'var(--accent)' }} />
+                <button className="h-8 w-8 rounded-full flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--accent-color) 15%, transparent)' }}>
+                  <User className="h-4 w-4" style={{ color: 'var(--accent-color)' }} />
                 </button>
                 <div className="absolute right-0 top-full mt-2 w-48 bg-background rounded-lg shadow-lg border border-border py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
                   <div className="px-4 py-2 border-b border-border">

@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
-import { User, Mail, Lock, Save, Check, AlertCircle } from "lucide-react"
+import { User, Mail, Lock, Save, Check, AlertCircle, Palette, Sun, Moon, Monitor } from "lucide-react"
 import toast from "react-hot-toast"
+import { ThemePicker } from "@/components/ui/ThemePicker"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function SettingsPage() {
   const { data: session, status, update: updateSession } = useSession()
@@ -192,6 +194,35 @@ export default function SettingsPage() {
                 )}
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        {/* Password Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Palette className="h-5 w-5" />
+              Appearance
+            </CardTitle>
+            <CardDescription>
+              Customize how Koda looks and feels
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label>Mode</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Switch between light and dark mode, or follow your system preference
+              </p>
+              <ThemeToggle />
+            </div>
+            <div className="space-y-2">
+              <Label>Color Theme</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Choose a color scheme that transforms the entire interface
+              </p>
+              <ThemePicker />
+            </div>
           </CardContent>
         </Card>
 

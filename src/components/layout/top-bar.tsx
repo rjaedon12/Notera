@@ -89,7 +89,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-9 pl-10 pr-4 rounded-full text-sm transition-all
-                border focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-0
+                border focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:ring-offset-0
                 placeholder:text-[var(--muted-foreground)]"
               style={{
                 background: "var(--glass-fill)",
@@ -121,7 +121,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                     className="h-9 w-9 rounded-full"
                   />
                 ) : (
-                  <User className="h-5 w-5 text-[var(--accent)]" />
+                  <User className="h-5 w-5 text-[var(--accent-color)]" />
                 )}
               </button>
               <div
@@ -139,7 +139,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                   <p className="text-sm font-medium text-foreground">{session.user?.name || "User"}</p>
                   <p className="text-xs text-[var(--muted-foreground)]">{session.user?.email}</p>
                   {session.user?.role === "ADMIN" && (
-                    <span className="inline-block mt-1 px-2 py-0.5 text-xs rounded" style={{ background: "color-mix(in srgb, var(--accent) 14%, transparent)", color: "var(--accent)", border: "1px solid color-mix(in srgb, var(--accent) 22%, transparent)" }}>
+                    <span className="inline-block mt-1 px-2 py-0.5 text-xs rounded" style={{ background: "color-mix(in srgb, var(--accent-color) 14%, transparent)", color: "var(--accent-color)", border: "1px solid color-mix(in srgb, var(--accent-color) 22%, transparent)" }}>
                       Admin
                     </span>
                   )}
