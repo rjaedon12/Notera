@@ -12,6 +12,15 @@ import { BookOpen, Users, Layers, ArrowRight, Clock, Star, TrendingUp } from "lu
 import { Suspense, useMemo } from "react"
 import { StreakHero } from "@/components/streak/streak-hero"
 import toast from "react-hot-toast"
+import {
+  LandingNavbar,
+  HeroSection,
+  FeatureSections,
+  StatsBand,
+  PopularSetsPreview,
+  CTASection,
+  LandingFooter,
+} from "@/components/landing"
 
 // ── Time-based greeting ──────────────────────────────────────────────────────
 const GREETINGS = {
@@ -141,12 +150,27 @@ function ContinueStudying() {
 }
 
 function HomeContent() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const searchParams = useSearchParams()
   const search = searchParams.get("search") || ""
   const { data: publicSets, isLoading } = usePublicSets(search)
   const { data: starredSetIds = [] } = useStarredSets()
   const toggleStar = useToggleSetStar()
+
+  // ── Landing page for unauthenticated users ──
+  if (status !== "loading" && !session?.user) {
+    return (
+      <>
+        <LandingNavbar />
+        <HeroSection />
+        <FeatureSections />
+        <StatsBand />
+        <PopularSetsPreview />
+        <CTASection />
+        <LandingFooter />
+      </>
+    )
+  }
 
   const handleToggleStar = (setId: string, e: React.MouseEvent) => {
     e.preventDefault()
@@ -188,68 +212,6 @@ function HomeContent() {
 
       {/* Continue Studying - shown for logged-in users */}
       {session?.user && <ContinueStudying />}
-
-      {/* Hero Section - shown for non-logged-in users */}
-      {!session?.user && (
-        <section className="text-center py-12 md:py-20">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 font-heading tracking-tight">
-            Learn Smarter with <span style={{ color: "var(--primary)" }}>Koda</span>
-          </h1>
-          <p className="text-lg max-w-2xl mx-auto mb-8" style={{ color: "var(--muted-foreground)" }}>
-            Create flashcards, study with multiple modes, and track your progress.
-            Master any subject faster with our adaptive learning system.
-          </p>
-          <div className="flex gap-4 justify-center">
-            <Link href="/signup">
-              <Button size="lg" className="gap-2">
-                Get Started Free
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="/login">
-              <Button variant="outline" size="lg">
-                Sign In
-              </Button>
-            </Link>
-          </div>
-        </section>
-      )}
-
-      {/* Features - only show for non-logged-in users */}
-      {!session?.user && (
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6 py-12">
-          <Card className="p-6">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-              style={{ background: "rgba(79,142,247,0.15)", border: "1px solid rgba(79,142,247,0.2)" }}>
-              <Layers className="h-6 w-6" style={{ color: "var(--primary)" }} />
-            </div>
-            <h3 className="font-semibold text-lg mb-2 font-heading">Multiple Study Modes</h3>
-            <p style={{ color: "var(--muted-foreground)" }}>
-              Flashcards, Learn, Test, Match, and Timed modes to suit your learning style.
-            </p>
-          </Card>
-          <Card className="p-6">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-              style={{ background: "rgba(66,217,160,0.12)", border: "1px solid rgba(66,217,160,0.2)" }}>
-              <BookOpen className="h-6 w-6" style={{ color: "#42d9a0" }} />
-            </div>
-            <h3 className="font-semibold text-lg mb-2 font-heading">Progress Tracking</h3>
-            <p style={{ color: "var(--muted-foreground)" }}>
-              Track your mastery level and focus on cards you need to practice most.
-            </p>
-          </Card>
-          <Card className="p-6">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-              style={{ background: "rgba(160,80,220,0.12)", border: "1px solid rgba(160,80,220,0.2)" }}>
-              <Users className="h-6 w-6" style={{ color: "#a050dc" }} />
-            </div>
-            <h3 className="font-semibold text-lg mb-2 font-heading">Share & Collaborate</h3>
-            <p style={{ color: "var(--muted-foreground)" }}>
-              Share your study sets with friends or discover public sets from others.
-            </p>
-          </Card>
-        </section>
-      )}
 
       {/* Featured Sets */}
       <section className="py-12">

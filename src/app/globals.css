@@ -437,6 +437,31 @@ h1, h2, h3, .font-heading {
   animation: sparkPulse 5s ease-in-out infinite;
 }
 
+/* ---- LANDING PAGE ---- */
+.landing-scroll-indicator {
+  width: 24px;
+  height: 40px;
+  border-radius: 12px;
+  border: 2px solid var(--glass-border);
+  position: relative;
+}
+.landing-scroll-indicator::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3px;
+  height: 8px;
+  border-radius: 3px;
+  background: var(--muted-foreground);
+  animation: scrollBounce 2s ease-in-out infinite;
+}
+@keyframes scrollBounce {
+  0%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  50% { opacity: 0.3; transform: translateX(-50%) translateY(10px); }
+}
+
 /* ---- NOTES — SLASH COMMAND MENU ---- */
 .note-slash-menu {
   background: var(--popover);

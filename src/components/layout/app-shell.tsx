@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
+import { usePathname } from "next/navigation"
 import { Sidebar } from "./sidebar"
 import { TopBar } from "./top-bar"
 import { AnnouncementBanner } from "@/components/announcement-banner"
@@ -10,8 +12,13 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const { data: session, status } = useSession()
+  const pathname = usePathname()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mounted, setMounted] = useState(false)
+
+  // Landing page = unauthenticated on "/"
+  const isLandingPage = pathname === "/" && status !== "loading" && !session?.user
 
   // Load sidebar state from localStorage
   useEffect(() => {
@@ -27,6 +34,15 @@ export function AppShell({ children }: AppShellProps) {
     const newState = !sidebarCollapsed
     setSidebarCollapsed(newState)
     localStorage.setItem("sidebarCollapsed", String(newState))
+  }
+
+  // Landing page — render without app chrome
+  if (isLandingPage) {
+    return (
+      <div className="min-h-screen bg-background relative overflow-x-hidden">
+        {children}
+      </div>
+    )
   }
 
   return (

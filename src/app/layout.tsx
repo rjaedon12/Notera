@@ -17,7 +17,7 @@ const body = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Koda - Learn Smarter",
+  title: "Koda | Study Smarter",
   description: "Create flashcards, study with multiple modes, and track your progress",
   icons: {
     icon: "/favicon.svg",
