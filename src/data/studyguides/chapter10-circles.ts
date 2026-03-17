@@ -130,8 +130,6 @@ export const chapter10Circles: StudyGuide = {
           order: 11,
           problem: {
             id: "10-4-p1-q",
-            question:
-              "In a circle, inscribed angle ∠P intercepts an arc of 96°. What is m∠P?",
             choices: [
               { id: "a", text: "48°" },
               { id: "b", text: "96°" },
@@ -153,8 +151,6 @@ export const chapter10Circles: StudyGuide = {
           order: 12,
           problem: {
             id: "10-4-p2-q",
-            question:
-              "QR is a diameter. S is on the circle and m∠RQS = 28°. Find m∠QSR.",
             choices: [
               { id: "a", text: "28°" },
               { id: "b", text: "62°" },
@@ -176,8 +172,6 @@ export const chapter10Circles: StudyGuide = {
           order: 13,
           problem: {
             id: "10-4-p3-q",
-            question:
-              "Quadrilateral ABCD is inscribed in a circle. m∠A = 72°, m∠B = 95°. Find m∠C.",
             choices: [
               { id: "a", text: "72°" },
               { id: "b", text: "108°" },
@@ -199,8 +193,6 @@ export const chapter10Circles: StudyGuide = {
           order: 14,
           problem: {
             id: "10-4-p4-q",
-            question:
-              "Two inscribed angles ∠X and ∠Y intercept the same arc of 140°. What is m∠X?",
             choices: [
               { id: "a", text: "70°" },
               { id: "b", text: "140°" },
@@ -335,8 +327,6 @@ export const chapter10Circles: StudyGuide = {
           order: 10,
           problem: {
             id: "10-5-p1-q",
-            question:
-              "A tangent-chord angle has an intercepted arc of 146°. What is the angle measure?",
             choices: [
               { id: "a", text: "73°" },
               { id: "b", text: "146°" },
@@ -358,8 +348,6 @@ export const chapter10Circles: StudyGuide = {
           order: 11,
           problem: {
             id: "10-5-p2-q",
-            question:
-              "Interior chord intersection. Arcs: 80° and 50°. Find the angle.",
             choices: [
               { id: "a", text: "65°" },
               { id: "b", text: "130°" },
@@ -381,8 +369,6 @@ export const chapter10Circles: StudyGuide = {
           order: 12,
           problem: {
             id: "10-5-p3-q",
-            question:
-              "External angle. Far arc = 200°, near arc = 80°. Find the angle.",
             choices: [
               { id: "a", text: "60°" },
               { id: "b", text: "140°" },
@@ -404,8 +390,6 @@ export const chapter10Circles: StudyGuide = {
           order: 13,
           problem: {
             id: "10-5-p4-q",
-            question:
-              "Secant-tangent from external point. Far arc = 230°, near arc = 130°. Find the angle.",
             choices: [
               { id: "a", text: "50°" },
               { id: "b", text: "100°" },
@@ -544,8 +528,6 @@ export const chapter10Circles: StudyGuide = {
           order: 10,
           problem: {
             id: "10-6-p1-q",
-            question:
-              "Chord segments: 5 and 8 on one chord; 10 and x on the other. Find x.",
             choices: [
               { id: "a", text: "4" },
               { id: "b", text: "6" },
@@ -567,8 +549,6 @@ export const chapter10Circles: StudyGuide = {
           order: 11,
           problem: {
             id: "10-6-p2-q",
-            question:
-              "Secant-secant: 6·14 = 7·x. Find x.",
             choices: [
               { id: "a", text: "10" },
               { id: "b", text: "12" },
@@ -590,8 +570,6 @@ export const chapter10Circles: StudyGuide = {
           order: 12,
           problem: {
             id: "10-6-p3-q",
-            question:
-              "Tangent = 9, secant external = 3. Find full secant length.",
             choices: [
               { id: "a", text: "27" },
               { id: "b", text: "24" },
@@ -613,8 +591,6 @@ export const chapter10Circles: StudyGuide = {
           order: 13,
           problem: {
             id: "10-6-p4-q",
-            question:
-              "x · 12 = 6 · 8. Find x.",
             choices: [
               { id: "a", text: "4" },
               { id: "b", text: "6" },
@@ -728,8 +704,6 @@ export const chapter10Circles: StudyGuide = {
           order: 7,
           problem: {
             id: "10-7-p1-q",
-            question:
-              "Equation of a circle with center (0, 0) and radius 7?",
             choices: [
               { id: "a", text: "x² + y² = 49" },
               { id: "b", text: "x² + y² = 7" },
@@ -751,8 +725,6 @@ export const chapter10Circles: StudyGuide = {
           order: 8,
           problem: {
             id: "10-7-p2-q",
-            question:
-              "(x − 5)² + (y + 3)² = 64. What is the radius?",
             choices: [
               { id: "a", text: "8" },
               { id: "b", text: "64" },
@@ -774,8 +746,6 @@ export const chapter10Circles: StudyGuide = {
           order: 9,
           problem: {
             id: "10-7-p3-q",
-            question:
-              "x² + y² + 8x − 2y + 8 = 0 → standard form. What is the center?",
             choices: [
               { id: "a", text: "(−4, 1)" },
               { id: "b", text: "(4, −1)" },
@@ -797,8 +767,6 @@ export const chapter10Circles: StudyGuide = {
           order: 10,
           problem: {
             id: "10-7-p4-q",
-            question:
-              "Center (−2, 6), passes through (1, 10). Find r².",
             choices: [
               { id: "a", text: "25" },
               { id: "b", text: "5" },
@@ -927,8 +895,6 @@ export const chapter10Circles: StudyGuide = {
           order: 9,
           problem: {
             id: "10-8-p1-q",
-            question:
-              "Arc length: θ = 45°, r = 12 cm. Choose the exact answer.",
             choices: [
               { id: "a", text: "3π cm" },
               { id: "b", text: "6π cm" },
@@ -950,8 +916,6 @@ export const chapter10Circles: StudyGuide = {
           order: 10,
           problem: {
             id: "10-8-p2-q",
-            question:
-              "Sector area: θ = 120°, r = 6 in. Choose the exact answer.",
             choices: [
               { id: "a", text: "12π in²" },
               { id: "b", text: "24π in²" },
@@ -973,8 +937,6 @@ export const chapter10Circles: StudyGuide = {
           order: 11,
           problem: {
             id: "10-8-p3-q",
-            question:
-              "Arc = 10π cm, r = 20 cm. Central angle = ?",
             choices: [
               { id: "a", text: "90°" },
               { id: "b", text: "45°" },
@@ -996,8 +958,6 @@ export const chapter10Circles: StudyGuide = {
           order: 12,
           problem: {
             id: "10-8-p4-q",
-            question:
-              "Sector area = 50π m², θ = 72°. Find the radius.",
             choices: [
               { id: "a", text: "√250 ≈ 15.8 m" },
               { id: "b", text: "10 m" },

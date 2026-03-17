@@ -1,5 +1,7 @@
 "use client"
 
+import { LatexRenderer } from "./LatexRenderer"
+
 interface DiagramViewerProps {
   component: React.ReactNode
   caption?: string
@@ -23,7 +25,7 @@ export function DiagramViewer({ component, caption }: DiagramViewerProps) {
           className="text-xs text-center max-w-md leading-relaxed"
           style={{ color: "var(--muted-foreground)" }}
         >
-          {caption}
+          <LatexRenderer content={caption} />
         </figcaption>
       )}
     </figure>

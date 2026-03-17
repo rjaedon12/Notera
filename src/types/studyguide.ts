@@ -45,7 +45,6 @@ export interface GuideSection {
 
 export interface GuideProblem {
   id: string;
-  question: string;
   choices: ProblemChoice[];
   correctAnswerId: string;
   solution: string; // full worked solution with LaTeX
