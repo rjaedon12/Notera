@@ -1,7 +1,6 @@
 export { LandingNavbar } from "./landing-navbar"
 export { HeroSection } from "./hero-section"
 export { FeatureSections } from "./feature-sections"
-export { StatsBand } from "./stats-band"
 export { PopularSetsPreview } from "./popular-sets-preview"
 export { CTASection } from "./cta-section"
 export { LandingFooter } from "./landing-footer"

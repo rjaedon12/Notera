@@ -19,6 +19,8 @@ export function AppShell({ children }: AppShellProps) {
 
   // Landing page = unauthenticated on "/"
   const isLandingPage = pathname === "/" && status !== "loading" && !session?.user
+  // Auth pages (login, signup, reset-password) — render without app chrome
+  const isAuthPage = pathname === "/login" || pathname === "/signup" || pathname.startsWith("/reset-password")
 
   // Load sidebar state from localStorage
   useEffect(() => {
@@ -36,10 +38,19 @@ export function AppShell({ children }: AppShellProps) {
     localStorage.setItem("sidebarCollapsed", String(newState))
   }
 
-  // Landing page — render without app chrome
+  // Landing page — render without app chrome, forced light
   if (isLandingPage) {
     return (
-      <div className="min-h-screen bg-background relative overflow-x-hidden">
+      <div className="landing-surface min-h-screen relative overflow-x-hidden light" data-landing="true">
+        {children}
+      </div>
+    )
+  }
+
+  // Auth pages — render without app chrome, forced light
+  if (isAuthPage) {
+    return (
+      <div className="landing-surface min-h-screen relative overflow-x-hidden light" data-landing="true">
         {children}
       </div>
     )

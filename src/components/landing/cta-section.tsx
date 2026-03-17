@@ -1,37 +1,31 @@
 "use client"
 
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { ArrowRight } from "lucide-react"
-import { motion, useInView } from "framer-motion"
-import { useRef } from "react"
 
 export function CTASection() {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: "-60px" })
-
   return (
-    <motion.section
-      ref={ref}
-      initial={{ opacity: 0, y: 40 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
-      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-      className="max-w-6xl mx-auto px-6 py-32"
-    >
+    <section className="max-w-5xl mx-auto px-6" style={{ paddingTop: "7rem", paddingBottom: "7rem" }}>
       <div className="text-center">
-        <h2 className="text-4xl sm:text-5xl font-heading font-bold tracking-tight mb-5" style={{ color: "var(--foreground)" }}>
-          Ready to study smarter?
+        <h2
+          className="font-heading font-bold leading-[1.1] mb-5"
+          style={{
+            color: "#1A1A1A",
+            fontSize: "clamp(1.75rem, 4vw, 2.75rem)",
+            letterSpacing: "-0.03em",
+          }}
+        >
+          Ready to start studying?
         </h2>
-        <p className="text-lg max-w-md mx-auto mb-10" style={{ color: "var(--muted-foreground)" }}>
-          Join thousands of students using Koda to ace their exams and master new subjects.
+        <p
+          className="text-[0.938rem] leading-relaxed max-w-md mx-auto mb-10"
+          style={{ color: "#6B6B6B" }}
+        >
+          Create an account in seconds. No credit card, no setup, no friction.
         </p>
-        <Link href="/signup">
-          <Button size="lg" className="rounded-full px-10 text-base h-12 gap-2">
-            Get started for free
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+        <Link href="/signup" className="landing-btn-primary">
+          Get started for free
         </Link>
       </div>
-    </motion.section>
+    </section>
   )
 }

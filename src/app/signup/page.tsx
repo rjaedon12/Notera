@@ -4,11 +4,7 @@ import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { BookOpen, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import toast from "react-hot-toast"
 
 export default function SignupPage() {
@@ -59,20 +55,80 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="w-12 h-12 rounded-xl bg-blue-500 flex items-center justify-center mx-auto mb-4">
-            <BookOpen className="h-6 w-6 text-white" />
+    <div className="min-h-screen flex">
+      {/* Left panel — warm cream with brand */}
+      <div
+        className="hidden lg:flex lg:w-[45%] flex-col justify-between p-12"
+        style={{ background: "#F5F3EE" }}
+      >
+        <div>
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="h-7 w-7 flex-shrink-0" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7">
+                <rect width="32" height="32" rx="7" fill="#1A1A1A"/>
+                <path d="M16 4 L19.5 12.5 L28 16 L19.5 19.5 L16 28 L12.5 19.5 L4 16 L12.5 12.5 Z" fill="#FAF9F6"/>
+              </svg>
+            </div>
+            <span className="font-heading font-bold text-[1.1rem]" style={{ color: "#1A1A1A", letterSpacing: "-0.03em" }}>
+              Koda
+            </span>
+          </Link>
+        </div>
+
+        <div>
+          <h1
+            className="font-heading font-bold leading-[1.1] mb-4"
+            style={{ color: "#1A1A1A", fontSize: "2.25rem", letterSpacing: "-0.035em" }}
+          >
+            Start learning
+            <br />
+            in seconds.
+          </h1>
+          <p className="text-[0.938rem] leading-relaxed max-w-sm" style={{ color: "#6B6B6B" }}>
+            Create an account to access flashcards, study modes, and progress tracking. Free, no credit card required.
+          </p>
+        </div>
+
+        <p className="text-xs" style={{ color: "#8A8A8A" }}>
+          &copy; {new Date().getFullYear()} Koda
+        </p>
+      </div>
+
+      {/* Right panel — form */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12" style={{ background: "#FAF9F6" }}>
+        <div className="w-full max-w-sm">
+          {/* Mobile logo */}
+          <div className="lg:hidden mb-10">
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="h-7 w-7 flex-shrink-0" aria-hidden="true">
+                <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7">
+                  <rect width="32" height="32" rx="7" fill="#1A1A1A"/>
+                  <path d="M16 4 L19.5 12.5 L28 16 L19.5 19.5 L16 28 L12.5 19.5 L4 16 L12.5 12.5 Z" fill="#FAF9F6"/>
+                </svg>
+              </div>
+              <span className="font-heading font-bold text-[1.1rem]" style={{ color: "#1A1A1A", letterSpacing: "-0.03em" }}>
+                Koda
+              </span>
+            </Link>
           </div>
-          <CardTitle className="text-2xl">Create an account</CardTitle>
-          <CardDescription>Start your learning journey today</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
+
+          <h2
+            className="font-heading font-bold text-2xl mb-2"
+            style={{ color: "#1A1A1A", letterSpacing: "-0.03em" }}
+          >
+            Create an account
+          </h2>
+          <p className="text-sm mb-8" style={{ color: "#6B6B6B" }}>
+            Start your learning journey today
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="name" className="block text-xs font-semibold uppercase mb-2" style={{ color: "#8A8A8A", letterSpacing: "0.08em" }}>
+                Name
+              </label>
+              <input
                 id="name"
                 type="text"
                 placeholder="Your name"
@@ -80,11 +136,22 @@ export default function SignupPage() {
                 onChange={(e) => setName(e.target.value)}
                 required
                 autoComplete="name"
+                className="w-full px-4 py-3 text-sm rounded-lg outline-none transition-all"
+                style={{
+                  background: "#FFFFFF",
+                  border: "1px solid rgba(0,0,0,0.08)",
+                  color: "#1A1A1A",
+                }}
+                onFocus={(e) => { e.target.style.borderColor = "rgba(0,0,0,0.2)" }}
+                onBlur={(e) => { e.target.style.borderColor = "rgba(0,0,0,0.08)" }}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
+
+            <div>
+              <label htmlFor="email" className="block text-xs font-semibold uppercase mb-2" style={{ color: "#8A8A8A", letterSpacing: "0.08em" }}>
+                Email
+              </label>
+              <input
                 id="email"
                 type="email"
                 placeholder="you@example.com"
@@ -92,37 +159,61 @@ export default function SignupPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
+                className="w-full px-4 py-3 text-sm rounded-lg outline-none transition-all"
+                style={{
+                  background: "#FFFFFF",
+                  border: "1px solid rgba(0,0,0,0.08)",
+                  color: "#1A1A1A",
+                }}
+                onFocus={(e) => { e.target.style.borderColor = "rgba(0,0,0,0.2)" }}
+                onBlur={(e) => { e.target.style.borderColor = "rgba(0,0,0,0.08)" }}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
+
+            <div>
+              <label htmlFor="password" className="block text-xs font-semibold uppercase mb-2" style={{ color: "#8A8A8A", letterSpacing: "0.08em" }}>
+                Password
+              </label>
+              <input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
                 autoComplete="new-password"
+                className="w-full px-4 py-3 text-sm rounded-lg outline-none transition-all"
+                style={{
+                  background: "#FFFFFF",
+                  border: "1px solid rgba(0,0,0,0.08)",
+                  color: "#1A1A1A",
+                }}
+                onFocus={(e) => { e.target.style.borderColor = "rgba(0,0,0,0.2)" }}
+                onBlur={(e) => { e.target.style.borderColor = "rgba(0,0,0,0.08)" }}
               />
-              <p className="text-xs text-muted-foreground">Must be at least 6 characters</p>
+              <p className="text-xs mt-1.5" style={{ color: "#8A8A8A" }}>Must be at least 6 characters</p>
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="landing-btn-primary w-full justify-center"
+              style={{ marginTop: "1.5rem" }}
+            >
+              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
               Create account
-            </Button>
-            <p className="text-sm text-muted-foreground text-center">
-              Already have an account?{" "}
-              <Link href="/login" className="text-blue-500 hover:underline">
-                Sign in
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
-      </Card>
+            </button>
+          </form>
+
+          <p className="text-sm text-center mt-8" style={{ color: "#6B6B6B" }}>
+            Already have an account?{" "}
+            <Link href="/login" className="font-medium" style={{ color: "#1A1A1A" }}>
+              Sign in
+            </Link>
+          </p>
+        </div>
+      </div>
     </div>
   )
 }

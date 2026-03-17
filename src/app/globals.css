@@ -438,28 +438,83 @@ h1, h2, h3, .font-heading {
 }
 
 /* ---- LANDING PAGE ---- */
-.landing-scroll-indicator {
-  width: 24px;
-  height: 40px;
-  border-radius: 12px;
-  border: 2px solid var(--glass-border);
-  position: relative;
+
+/* Warm-minimal landing page overrides — forced light */
+.landing-surface {
+  --landing-bg: #FAF9F6;
+  --landing-fg: #1A1A1A;
+  --landing-muted: #6B6B6B;
+  --landing-border: rgba(0, 0, 0, 0.08);
+  --landing-card-bg: #FFFFFF;
+  --landing-card-hover: #F5F5F2;
+  --landing-accent: #1A1A1A;
+
+  background: var(--landing-bg);
+  color: var(--landing-fg);
 }
-.landing-scroll-indicator::after {
-  content: '';
-  position: absolute;
-  top: 6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 3px;
-  height: 8px;
-  border-radius: 3px;
-  background: var(--muted-foreground);
-  animation: scrollBounce 2s ease-in-out infinite;
+
+/* Landing page button — dark solid pill */
+.landing-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 2rem;
+  background: #1A1A1A;
+  color: #FAF9F6;
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.938rem;
+  letter-spacing: -0.01em;
+  transition: background 0.2s ease, transform 0.15s ease;
+  border: none;
+  cursor: pointer;
 }
-@keyframes scrollBounce {
-  0%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); }
-  50% { opacity: 0.3; transform: translateX(-50%) translateY(10px); }
+.landing-btn-primary:hover {
+  background: #333333;
+}
+.landing-btn-primary:active {
+  transform: scale(0.97);
+}
+
+/* Landing page secondary link-button */
+.landing-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 2rem;
+  background: transparent;
+  color: var(--landing-muted);
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.938rem;
+  letter-spacing: -0.01em;
+  transition: color 0.2s ease;
+  border: none;
+  cursor: pointer;
+}
+.landing-btn-ghost:hover {
+  color: var(--landing-fg);
+}
+
+/* Landing nav link style */
+.landing-nav-link {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--landing-muted);
+  transition: color 0.2s ease;
+  text-decoration: none;
+}
+.landing-nav-link:hover {
+  color: var(--landing-fg);
+}
+
+/* Landing section divider — thin horizontal rule */
+.landing-divider {
+  border: none;
+  border-top: 1px solid var(--landing-border);
+  margin: 0;
 }
 
 /* ---- NOTES — SLASH COMMAND MENU ---- */

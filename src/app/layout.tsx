@@ -7,7 +7,7 @@ import { AppShell } from "@/components/layout/app-shell";
 const heading = Bricolage_Grotesque({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["600", "700"],
+  weight: ["300", "400", "600", "700"],
 });
 
 const body = DM_Sans({

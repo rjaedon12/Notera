@@ -16,7 +16,6 @@ import {
   LandingNavbar,
   HeroSection,
   FeatureSections,
-  StatsBand,
   PopularSetsPreview,
   CTASection,
   LandingFooter,
@@ -164,7 +163,6 @@ function HomeContent() {
         <LandingNavbar />
         <HeroSection />
         <FeatureSections />
-        <StatsBand />
         <PopularSetsPreview />
         <CTASection />
         <LandingFooter />
