@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BookOpen, Circle, ArrowRight, Sparkles, Target, CheckCircle2 } from "lucide-react"
+import { BookOpen, Circle, Atom, ArrowRight, Sparkles, Target, CheckCircle2 } from "lucide-react"
 import { studyGuides } from "@/data/studyguides/chapter10-circles"
 import { useGuideProgress } from "@/hooks/useStudyGuide"
 import { GuideProgressBar } from "@/components/studyguide/GuideProgressBar"
@@ -79,6 +79,8 @@ function GuideCard({ guideId }: { guideId: string }) {
     0
   )
 
+  const IconComponent = guide.icon === "Atom" ? Atom : Circle
+
   return (
     <Link href={`/studyguides/${guide.id}`}>
       <Card className="h-full cursor-pointer group">
@@ -89,7 +91,7 @@ function GuideCard({ guideId }: { guideId: string }) {
               className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
               style={{ background: "color-mix(in srgb, var(--accent-color) 12%, transparent)" }}
             >
-              <Circle className="h-5 w-5" style={{ color: "var(--accent-color)" }} />
+              <IconComponent className="h-5 w-5" style={{ color: "var(--accent-color)" }} />
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--accent-color)" }}>

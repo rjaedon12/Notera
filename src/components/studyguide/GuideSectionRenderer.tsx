@@ -22,10 +22,22 @@ import {
   SemicircleAngleDiagram,
   SecantSegmentsDiagram,
 } from "./diagrams/CircleDiagrams"
+import {
+  PositionTimeDiagram,
+  VelocityTimeDiagram,
+  FreeBodyDiagram,
+  ActionReactionDiagram,
+  WorkAngleDiagram,
+  ImpulseGraphDiagram,
+  CollisionTypesDiagram,
+  RotationalMotionDiagram,
+  TorqueDiagram,
+} from "./diagrams/PhysicsDiagrams"
 import { LatexRenderer } from "./LatexRenderer"
 
 // Map string names to actual diagram components
 const diagramMap: Record<string, React.ReactNode> = {
+  // Geometry — Circles
   InscribedAngleDiagram: <InscribedAngleDiagram className="w-full h-auto" />,
   InscribedQuadrilateralDiagram: <InscribedQuadrilateralDiagram className="w-full h-auto" />,
   TangentChordDiagram: <TangentChordDiagram className="w-full h-auto" />,
@@ -37,6 +49,16 @@ const diagramMap: Record<string, React.ReactNode> = {
   ArcLengthSectorDiagram: <ArcLengthSectorDiagram className="w-full h-auto" />,
   SemicircleAngleDiagram: <SemicircleAngleDiagram className="w-full h-auto" />,
   SecantSegmentsDiagram: <SecantSegmentsDiagram className="w-full h-auto" />,
+  // Physics — Mechanics
+  PositionTimeDiagram: <PositionTimeDiagram className="w-full h-auto" />,
+  VelocityTimeDiagram: <VelocityTimeDiagram className="w-full h-auto" />,
+  FreeBodyDiagram: <FreeBodyDiagram className="w-full h-auto" />,
+  ActionReactionDiagram: <ActionReactionDiagram className="w-full h-auto" />,
+  WorkAngleDiagram: <WorkAngleDiagram className="w-full h-auto" />,
+  ImpulseGraphDiagram: <ImpulseGraphDiagram className="w-full h-auto" />,
+  CollisionTypesDiagram: <CollisionTypesDiagram className="w-full h-auto" />,
+  RotationalMotionDiagram: <RotationalMotionDiagram className="w-full h-auto" />,
+  TorqueDiagram: <TorqueDiagram className="w-full h-auto" />,
 }
 
 interface GuideSectionRendererProps {
