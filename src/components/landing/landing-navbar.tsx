@@ -49,7 +49,7 @@ export function LandingNavbar() {
             Log in
           </Link>
           <Link href="/signup" className="landing-btn-primary" style={{ padding: "0.5rem 1.5rem", fontSize: "0.875rem" }}>
-            Get started
+            Sign up
           </Link>
         </div>
 
@@ -79,7 +79,7 @@ export function LandingNavbar() {
                 Log in
               </Link>
               <Link href="/signup" className="flex-1 landing-btn-primary text-center" style={{ padding: "0.625rem 1rem", fontSize: "0.875rem" }}>
-                Get started
+                Sign up
               </Link>
             </div>
           </div>

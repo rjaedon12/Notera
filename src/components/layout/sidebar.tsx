@@ -36,6 +36,7 @@ const navItems: NavItem[] = [
   { href: "/", label: "Home", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-5h-6v5H4a1 1 0 01-1-1z"/></svg></NavIcon> },
   { href: "/discover", label: "Discover", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><line x1="12" y1="3" x2="12" y2="5.5"/><line x1="12" y1="18.5" x2="12" y2="21"/><line x1="3" y1="12" x2="5.5" y2="12"/><line x1="18.5" y1="12" x2="21" y2="12"/><path d="M14.5 9.5l-5.5 2-2 5.5 5.5-2z" strokeWidth="1.4"/></svg></NavIcon> },
   { href: "/library", label: "Library", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19V6a1 1 0 011-1h5.5a2 2 0 012 2v12"/><path d="M20 19V6a1 1 0 00-1-1h-5.5a2 2 0 00-2 2v12"/><path d="M2 19h20"/><path d="M12 7v12"/></svg></NavIcon>, requiresAuth: true },
+  { href: "/forum", label: "Forum", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg></NavIcon>, requiresAuth: true },
   // Study tools
   { href: "/notes", label: "Notes", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3h14a1 1 0 011 1v16l-3-2-2 2-2-2-2 2-2-2-3 2V4a1 1 0 011-1z"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/></svg></NavIcon>, requiresAuth: true },
   { href: "/studyguides", label: "Study Guides", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></NavIcon>, requiresAuth: true },
@@ -132,7 +133,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   }
 
   // Split navItems into sections for better organization
-  const coreItems = filterItems(navItems.filter(i => ["/", "/discover", "/library"].includes(i.href)))
+  const coreItems = filterItems(navItems.filter(i => ["/", "/discover", "/library", "/forum"].includes(i.href)))
   const studyItems = filterItems(navItems.filter(i => ["/notes", "/studyguides", "/whiteboard", "/quizzes", "/sightreading", "/dbq", "/daily-review"].includes(i.href)))
   const progressItems = filterItems(navItems.filter(i => ["/analytics", "/achievements"].includes(i.href)))
 

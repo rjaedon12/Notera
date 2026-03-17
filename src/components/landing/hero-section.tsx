@@ -31,7 +31,7 @@ export function HeroSection() {
           }}
         >
           Flashcards, adaptive study modes, and progress tracking.
-          Free, fast, and built for how you actually learn.
+          Built for how you actually learn.
         </p>
 
         {/* Single CTA */}

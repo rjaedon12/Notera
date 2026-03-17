@@ -6,7 +6,7 @@ export function LandingFooter() {
   return (
     <footer style={{ borderTop: "1px solid rgba(0,0,0,0.06)" }}>
       <div className="max-w-5xl mx-auto px-6 py-14">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-10">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-10">
           {/* Brand */}
           <div className="col-span-2 sm:col-span-1">
             <div className="flex items-center gap-2 mb-4">
@@ -19,7 +19,7 @@ export function LandingFooter() {
               <span className="font-heading font-bold text-sm" style={{ color: "#1A1A1A" }}>Koda</span>
             </div>
             <p className="text-xs leading-relaxed" style={{ color: "#8A8A8A" }}>
-              Free flashcard app for students who want results.
+              Flashcard app for students who want results.
             </p>
           </div>
 
@@ -27,7 +27,7 @@ export function LandingFooter() {
           <div>
             <p className="text-xs font-semibold uppercase mb-4" style={{ color: "#8A8A8A", letterSpacing: "0.1em" }}>Product</p>
             <ul className="space-y-2.5">
-              <li><Link href="/signup" className="text-sm transition-colors" style={{ color: "#6B6B6B" }}>Get started</Link></li>
+              <li><Link href="/signup" className="text-sm transition-colors" style={{ color: "#6B6B6B" }}>Sign up</Link></li>
               <li><Link href="/discover" className="text-sm transition-colors" style={{ color: "#6B6B6B" }}>Discover sets</Link></li>
               <li><Link href="/login" className="text-sm transition-colors" style={{ color: "#6B6B6B" }}>Log in</Link></li>
             </ul>
@@ -37,19 +37,12 @@ export function LandingFooter() {
           <div>
             <p className="text-xs font-semibold uppercase mb-4" style={{ color: "#8A8A8A", letterSpacing: "0.1em" }}>Community</p>
             <ul className="space-y-2.5">
-              <li><a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-sm transition-colors" style={{ color: "#6B6B6B" }}>GitHub</a></li>
+              <li><Link href="/forum" className="text-sm transition-colors" style={{ color: "#6B6B6B" }}>Forum</Link></li>
               <li><a href="#features" className="text-sm transition-colors" style={{ color: "#6B6B6B" }}>Features</a></li>
             </ul>
           </div>
 
-          {/* Legal */}
-          <div>
-            <p className="text-xs font-semibold uppercase mb-4" style={{ color: "#8A8A8A", letterSpacing: "0.1em" }}>Legal</p>
-            <ul className="space-y-2.5">
-              <li><span className="text-sm" style={{ color: "#6B6B6B" }}>Privacy</span></li>
-              <li><span className="text-sm" style={{ color: "#6B6B6B" }}>Terms</span></li>
-            </ul>
-          </div>
+
         </div>
 
         {/* Bottom bar */}

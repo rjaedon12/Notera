@@ -86,7 +86,7 @@ export default function SignupPage() {
             in seconds.
           </h1>
           <p className="text-[0.938rem] leading-relaxed max-w-sm" style={{ color: "#6B6B6B" }}>
-            Create an account to access flashcards, study modes, and progress tracking. Free, no credit card required.
+            Create an account to access flashcards, study modes, and progress tracking.
           </p>
         </div>
 

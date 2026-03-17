@@ -20,10 +20,10 @@ export function CTASection() {
           className="text-[0.938rem] leading-relaxed max-w-md mx-auto mb-10"
           style={{ color: "#6B6B6B" }}
         >
-          Create an account in seconds. No credit card, no setup, no friction.
+          Create an account in seconds. No setup, no friction.
         </p>
         <Link href="/signup" className="landing-btn-primary">
-          Get started for free
+          Sign up
         </Link>
       </div>
     </section>
