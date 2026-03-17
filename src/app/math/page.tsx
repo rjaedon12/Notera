@@ -14,6 +14,7 @@ import {
   Box,
   AreaChart,
   Binary,
+  Sigma,
   ArrowRight,
 } from "lucide-react"
 
@@ -123,6 +124,15 @@ const concepts: ConceptCard[] = [
     difficulty: "high-school",
     color: "rgba(175,82,222,0.15)",
     borderColor: "rgba(175,82,222,0.25)",
+  },
+  {
+    title: "Computer Algebra",
+    description: "A full SymPy-powered CAS in your browser. Simplify, factor, integrate, solve, and more — with LaTeX output.",
+    href: "/math/computer-algebra",
+    icon: <Sigma className="h-6 w-6" />,
+    difficulty: "college",
+    color: "rgba(220,80,160,0.15)",
+    borderColor: "rgba(220,80,160,0.25)",
   },
 ]
 
