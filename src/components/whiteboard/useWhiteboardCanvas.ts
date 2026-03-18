@@ -129,6 +129,14 @@ export function useWhiteboardCanvas({
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
 
+  // Refs to keep latest values accessible in canvas event handlers (avoids stale closures)
+  const backgroundRef = useRef(background)
+  const customBgColorRef = useRef(customBgColor)
+  const isDarkRef = useRef(isDark)
+  useEffect(() => { backgroundRef.current = background }, [background])
+  useEffect(() => { customBgColorRef.current = customBgColor }, [customBgColor])
+  useEffect(() => { isDarkRef.current = isDark }, [isDark])
+
   const pushState = useCallback(() => {
     const c = canvasRef.current; if (!c) return
     undoStackRef.current.push(JSON.stringify(c.toJSON()))
@@ -183,7 +191,7 @@ export function useWhiteboardCanvas({
       canvas.on("selection:cleared", () => onObjectSelected(null))
       canvas.on("object:modified", () => { pushState(); onModified() })
       canvas.on("after:render", () => {
-        drawCanvasBackground(bgEl, background, customBgColor, canvas.viewportTransform || [1, 0, 0, 1, 0, 0], isDark)
+        drawCanvasBackground(bgEl, backgroundRef.current, customBgColorRef.current, canvas.viewportTransform || [1, 0, 0, 1, 0, 0], isDarkRef.current)
       })
       canvas.on("mouse:wheel", (opt: any) => {
         const e = opt.e as WheelEvent
@@ -221,6 +229,7 @@ export function useWhiteboardCanvas({
     init()
     return () => {
       mounted = false
+      if (laserIntervalRef.current) { clearInterval(laserIntervalRef.current); laserIntervalRef.current = null }
       canvasRef.current?.dispose(); canvasRef.current = null
       bgCanvasRef.current?.remove(); bgCanvasRef.current = null
       if (container) {
@@ -357,10 +366,10 @@ export function useWhiteboardCanvas({
       }
       const speed = Math.max(PAN_SPEED_MIN, currentSpeed)
       const vpt = c.viewportTransform!
-      if (keysDown.has("w") || keysDown.has("arrowup")) vpt[5] += speed
-      if (keysDown.has("s") || keysDown.has("arrowdown")) vpt[5] -= speed
-      if (keysDown.has("a") || keysDown.has("arrowleft")) vpt[4] += speed
-      if (keysDown.has("d") || keysDown.has("arrowright")) vpt[4] -= speed
+      if (keysDown.has("arrowup")) vpt[5] += speed
+      if (keysDown.has("arrowdown")) vpt[5] -= speed
+      if (keysDown.has("arrowleft")) vpt[4] += speed
+      if (keysDown.has("arrowright")) vpt[4] -= speed
       c.requestRenderAll()
       animId = requestAnimationFrame(tick)
     }
@@ -369,8 +378,8 @@ export function useWhiteboardCanvas({
       const tag = (e.target as HTMLElement)?.tagName
       if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.contentEditable === "true") return
       const key = e.key.toLowerCase()
-      if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key)) {
-        // Only pan with WASD when not actively editing text on canvas
+      if (["arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key)) {
+        // Arrow keys for panning (WASD removed to avoid conflict with tool shortcuts)
         const c = canvasRef.current
         if (c && c.getActiveObject()?.type === "i-text" && (c.getActiveObject() as any).isEditing) return
         e.preventDefault()
@@ -382,7 +391,7 @@ export function useWhiteboardCanvas({
     const onKeyUp = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase()
       keysDown.delete(key)
-      if (keysDown.size === 0 && animId) { cancelAnimationFrame(animId); animId = null }
+      // Don't cancel animation frame here — let the tick() decelerate smoothly
     }
 
     window.addEventListener("keydown", onKeyDown)
@@ -418,28 +427,35 @@ export function useWhiteboardCanvas({
   // === Actions ===
   const getCanvas = useCallback(() => canvasRef.current, [])
 
+  const getViewportCenter = useCallback(() => {
+    const c = canvasRef.current
+    if (!c) return { x: 400, y: 300 }
+    const vpt = c.viewportTransform || [1, 0, 0, 1, 0, 0]
+    return { x: (-vpt[4] + c.getWidth() / 2) / vpt[0], y: (-vpt[5] + c.getHeight() / 2) / vpt[3] }
+  }, [])
+
   const addText = useCallback((text: string, x: number, y: number, opts: Partial<StyleState>) => {
     const c = canvasRef.current; if (!c) return; pushState()
-    const f = getFabricSync()
-    const t = new f.IText(text, { left: x || c.getWidth() / 2, top: y || c.getHeight() / 2, fontSize: opts.fontSize || style.fontSize, fontFamily: opts.fontFamily || style.fontFamily, fill: opts.strokeColor || style.strokeColor, fontWeight: opts.fontBold ? "bold" : "normal", fontStyle: opts.fontItalic ? "italic" : "normal", underline: opts.fontUnderline || false, textAlign: opts.textAlign || "left", originX: "center", originY: "center", editable: true })
+    const f = getFabricSync(); const center = getViewportCenter()
+    const t = new f.IText(text, { left: x || center.x, top: y || center.y, fontSize: opts.fontSize || style.fontSize, fontFamily: opts.fontFamily || style.fontFamily, fill: opts.strokeColor || style.strokeColor, fontWeight: opts.fontBold ? "bold" : "normal", fontStyle: opts.fontItalic ? "italic" : "normal", underline: opts.fontUnderline || false, textAlign: opts.textAlign || "left", originX: "center", originY: "center", editable: true })
     c.add(t); c.setActiveObject(t)
     // Enter editing mode immediately so user can type
     t.enterEditing(); t.selectAll()
     c.renderAll(); onModified()
-  }, [pushState, style, onModified])
+  }, [pushState, style, onModified, getViewportCenter])
 
   const addSticky = useCallback((text: string, x: number, y: number, color: string) => {
     const c = canvasRef.current; if (!c) return; pushState()
-    const f = getFabricSync(); const sc = color || STICKY_COLORS[0]; const w2 = 200; const h2 = 200
+    const f = getFabricSync(); const sc = color || STICKY_COLORS[0]; const w2 = 200; const h2 = 200; const center = getViewportCenter()
     const rect = new f.Rect({ width: w2, height: h2, fill: sc, rx: 8, ry: 8, shadow: new f.Shadow({ color: "rgba(0,0,0,0.2)", blur: 8, offsetX: 2, offsetY: 2 }) })
     const txt = new f.IText(text || "Note", { fontSize: 16, fontFamily: "Inter, system-ui, sans-serif", fill: "#1a1a1a", width: w2 - 24, textAlign: "left", left: 12, top: 12 })
-    const grp = new f.Group([rect, txt], { left: x || c.getWidth() / 2 - 100, top: y || c.getHeight() / 2 - 100 })
+    const grp = new f.Group([rect, txt], { left: x || center.x - 100, top: y || center.y - 100 })
     c.add(grp); c.setActiveObject(grp); c.renderAll(); onModified()
-  }, [pushState, onModified])
+  }, [pushState, onModified, getViewportCenter])
 
   const addEquation = useCallback(async (latex: string, x: number, y: number) => {
     const c = canvasRef.current; if (!c) return; pushState()
-    const f = getFabricSync()
+    const f = getFabricSync(); const center = getViewportCenter()
     try {
       const katex = (await import("katex")).default
       // Render KaTeX to a temporary off-screen div to measure it
@@ -477,8 +493,8 @@ export function useWhiteboardCanvas({
           URL.revokeObjectURL(url)
 
           const fi = new f.Image(tc, {
-            left: x || c.getWidth() / 2 - img.width / 2,
-            top: y || c.getHeight() / 2 - img.height / 2,
+            left: x || center.x - img.width / 2,
+            top: y || center.y - img.height / 2,
             scaleX: 0.5, scaleY: 0.5,
           })
           // Store original latex for re-editing later
@@ -492,24 +508,24 @@ export function useWhiteboardCanvas({
     } catch {
       // Fallback: plain italic text
       const t = new f.IText(latex, {
-        left: x || c.getWidth() / 2, top: y || c.getHeight() / 2,
+        left: x || center.x, top: y || center.y,
         fontSize: style.fontSize, fontFamily: "'Times New Roman', serif",
         fontStyle: "italic", fill: style.strokeColor,
         originX: "center", originY: "center",
       })
       c.add(t); c.setActiveObject(t); c.renderAll(); onModified()
     }
-  }, [pushState, style, onModified])
+  }, [pushState, style, onModified, getViewportCenter])
 
   const addImage = useCallback((dataUrl: string) => {
     const c = canvasRef.current; if (!c) return; pushState()
-    const f = getFabricSync(); const img = new Image()
+    const f = getFabricSync(); const img = new Image(); const center = getViewportCenter()
     img.onload = () => {
-      const fi = new f.Image(img, { left: c.getWidth() / 2 - img.width / 4, top: c.getHeight() / 2 - img.height / 4, scaleX: 0.5, scaleY: 0.5 })
+      const fi = new f.Image(img, { left: center.x - img.width / 4, top: center.y - img.height / 4, scaleX: 0.5, scaleY: 0.5 })
       c.add(fi); c.setActiveObject(fi); c.renderAll(); onModified()
     }
     img.src = dataUrl
-  }, [pushState, onModified])
+  }, [pushState, onModified, getViewportCenter])
 
   const deleteSelected = useCallback(() => {
     const c = canvasRef.current; if (!c) return

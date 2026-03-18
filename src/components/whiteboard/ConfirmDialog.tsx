@@ -35,24 +35,24 @@ export function ConfirmDialog({
       }}
     >
       <div
-        className="w-full max-w-sm mx-4 rounded-xl bg-[#1e2133] border border-white/10 p-6 shadow-2xl"
+        className="w-full max-w-sm mx-4 rounded-xl bg-card border border-border p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-3 mb-4">
           {destructive && (
-            <div className="mt-0.5 p-2 rounded-full bg-red-500/10">
-              <AlertTriangle className="h-5 w-5 text-red-400" />
+            <div className="mt-0.5 p-2 rounded-full bg-destructive/10">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
             </div>
           )}
           <div>
-            <h3 className="text-lg font-semibold text-white">{title}</h3>
-            <p className="text-sm text-gray-400 mt-1">{message}</p>
+            <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+            <p className="text-sm text-muted-foreground mt-1">{message}</p>
           </div>
         </div>
         <div className="flex justify-end gap-2">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm rounded-lg text-gray-300 hover:bg-white/5 transition-colors"
+            className="px-4 py-2 text-sm rounded-lg text-muted-foreground hover:bg-muted transition-colors"
           >
             {cancelLabel}
           </button>
@@ -60,8 +60,8 @@ export function ConfirmDialog({
             onClick={onConfirm}
             className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
               destructive
-                ? "bg-red-600 text-white hover:bg-red-700"
-                : "bg-blue-600 text-white hover:bg-blue-700"
+                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                : "bg-primary text-primary-foreground hover:bg-primary/90"
             }`}
           >
             {confirmLabel}

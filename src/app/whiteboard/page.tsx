@@ -715,10 +715,9 @@ function WhiteboardCanvas({ boardId, onBack, shareMode }: WhiteboardCanvasProps)
 
   // Auto-save
   useEffect(() => {
-    const interval = setInterval(() => { if (board && hasChanges && !isViewOnly) handleSave() }, 30000)
+    const interval = setInterval(() => { if (hasChanges) handleSaveRef.current() }, 30000)
     return () => clearInterval(interval)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, hasChanges])
+  }, [hasChanges])
 
   // Zoom tracking
   useEffect(() => {
@@ -771,6 +770,10 @@ function WhiteboardCanvas({ boardId, onBack, shareMode }: WhiteboardCanvasProps)
     setLastSaved(new Date().toISOString()); toast.success("Board saved")
   }, [board, canvasActions, background, customBgColor, frames, activeFrameId, isViewOnly])
 
+  // Keep a ref to always-latest handleSave for use in auto-save interval
+  const handleSaveRef = useRef(handleSave)
+  useEffect(() => { handleSaveRef.current = handleSave }, [handleSave])
+
   // Rename
   const handleRenameCommit = useCallback(() => {
     if (!board || !renameValue.trim()) { setIsRenamingTitle(false); return }
@@ -793,14 +796,22 @@ function WhiteboardCanvas({ boardId, onBack, shareMode }: WhiteboardCanvasProps)
     const file = e.target.files?.[0]; if (!file) return
     try {
       const imported = await importBoardJSON(file)
-      if (imported.canvasJSON) { await canvasActions.loadCanvasJSON(imported.canvasJSON); setBackground(imported.background); setHasChanges(true); toast.success("Board imported!") }
+      if (imported.canvasJSON) {
+        await canvasActions.loadCanvasJSON(imported.canvasJSON)
+        setBackground(imported.background)
+        if (imported.customBgColor) setCustomBgColor(imported.customBgColor)
+        if (imported.frames) { setFrames(imported.frames); setActiveFrameId(imported.activeFrameId || imported.frames[0]?.id || "") }
+        setHasChanges(true); toast.success("Board imported!")
+      }
     } catch (err: any) { toast.error(err.message || "Failed to import") }
+    e.target.value = ""
   }
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return
     const reader = new FileReader()
     reader.onload = (ev) => canvasActions.addImage(ev.target?.result as string)
     reader.readAsDataURL(file)
+    e.target.value = ""
   }
   const togglePublic = () => {
     if (!board) return
@@ -817,8 +828,9 @@ function WhiteboardCanvas({ boardId, onBack, shareMode }: WhiteboardCanvasProps)
   }
   const deleteFrame = (frameId: string) => {
     if (frames.length <= 1) return
-    setFrames(frames.filter((f) => f.id !== frameId))
-    if (activeFrameId === frameId) setActiveFrameId(frames[0].id)
+    const newFrames = frames.filter((f) => f.id !== frameId)
+    setFrames(newFrames)
+    if (activeFrameId === frameId) setActiveFrameId(newFrames[0]?.id || "")
     setHasChanges(true)
   }
 
@@ -852,39 +864,35 @@ function WhiteboardCanvas({ boardId, onBack, shareMode }: WhiteboardCanvasProps)
     }
   }, [])
 
-  // Present Mode
-  if (presentMode) {
-    return (
-      <div className="fixed inset-0 z-[100] bg-black flex flex-col" style={{ touchAction: "none" }}>
-        <div className="absolute top-0 inset-x-0 flex items-center justify-between px-4 py-2 bg-black/60 backdrop-blur-sm z-10 opacity-0 hover:opacity-100 transition-opacity">
-          <span className="text-white font-medium text-sm">{board?.title}</span>
-          <div className="flex items-center gap-2">
-            {frames.length > 1 && (
-              <>
-                <button onClick={goPrevFrame} className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20"><ChevronLeft className="h-4 w-4" /></button>
-                <span className="text-xs text-gray-300">{currentFrameIdx + 1} / {frames.length}</span>
-                <button onClick={goNextFrame} className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20"><ChevronRight className="h-4 w-4" /></button>
-              </>
-            )}
-            <button onClick={() => setPresentMode(false)} className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20"><X className="h-4 w-4" /></button>
-          </div>
-        </div>
-        <div ref={containerRef} className="absolute inset-0" style={{ cursor: "default", willChange: "transform" }} />
-        {frames.length > 1 && (
-          <div className="absolute bottom-4 inset-x-0 flex justify-center gap-2 z-10">
-            {frames.map((f, i) => (
-              <button key={f.id} onClick={() => setActiveFrameId(f.id)} className={cn("w-2 h-2 rounded-full transition-colors", i === currentFrameIdx ? "bg-white" : "bg-white/30 hover:bg-white/60")} />
-            ))}
-          </div>
-        )}
-        <p className="absolute bottom-2 right-4 text-[10px] text-white/20 z-10">ESC to exit</p>
-      </div>
-    )
-  }
-
   // ========================= Main Canvas Editor Layout =========================
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background">
+      {/* Present Mode Overlay — renders on top without unmounting the canvas */}
+      {presentMode && (
+        <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col" style={{ touchAction: "none" }}>
+          <div className="absolute top-0 inset-x-0 flex items-center justify-between px-4 py-2 bg-black/60 backdrop-blur-sm z-10 opacity-0 hover:opacity-100 transition-opacity">
+            <span className="text-white font-medium text-sm">{board?.title}</span>
+            <div className="flex items-center gap-2">
+              {frames.length > 1 && (
+                <>
+                  <button onClick={goPrevFrame} className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20"><ChevronLeft className="h-4 w-4" /></button>
+                  <span className="text-xs text-gray-300">{currentFrameIdx + 1} / {frames.length}</span>
+                  <button onClick={goNextFrame} className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20"><ChevronRight className="h-4 w-4" /></button>
+                </>
+              )}
+              <button onClick={() => setPresentMode(false)} className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20"><X className="h-4 w-4" /></button>
+            </div>
+          </div>
+          {frames.length > 1 && (
+            <div className="absolute bottom-4 inset-x-0 flex justify-center gap-2 z-10">
+              {frames.map((f, i) => (
+                <button key={f.id} onClick={() => setActiveFrameId(f.id)} className={cn("w-2 h-2 rounded-full transition-colors", i === currentFrameIdx ? "bg-white" : "bg-white/30 hover:bg-white/60")} />
+              ))}
+            </div>
+          )}
+          <p className="absolute bottom-2 right-4 text-[10px] text-white/20 z-10">ESC to exit</p>
+        </div>
+      )}
       {/* Share mode banner */}
       {shareMode && (
         <div className={cn(

@@ -56,7 +56,7 @@ export function importBoardJSON(file: File): Promise<WBBoard> {
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target?.result as string) as WBBoard
-        if (!data.id || !data.title || !data.canvasJSON === undefined) {
+        if (!data.id || !data.title || data.canvasJSON === undefined) {
           reject(new Error("Invalid board file"))
           return
         }
