@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { motion } from "framer-motion"
 import {
   ArrowLeft,
@@ -13,7 +13,9 @@ import {
   Maximize,
   Grid3x3,
   Image as ImageIcon,
+  ImagePlus,
   FileDown,
+  Upload,
 } from "lucide-react"
 import Link from "next/link"
 import { PresenceAvatars } from "./PresenceAvatars"
@@ -32,6 +34,7 @@ interface TopBarProps {
   onExportPng: () => void
   onExportPdf: () => void
   onClear: () => void
+  onImageUpload?: (dataUrl: string, width: number, height: number) => void
   collaborators?: { connectionId: number; presence: { userName: string; userColor: string; cursor: { x: number; y: number } | null } | null; info?: { name?: string; image?: string; color?: string } }[]
 }
 
@@ -48,18 +51,45 @@ export function TopBar({
   onExportPng,
   onExportPdf,
   onClear,
+  onImageUpload,
   collaborators = [],
 }: TopBarProps) {
   const [showMenu, setShowMenu] = useState(false)
   const [showBgPicker, setShowBgPicker] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const zoomPercent = Math.round(camera.zoom * 100)
 
-  const backgrounds: { type: BackgroundType; label: string }[] = [
-    { type: "plain", label: "Plain" },
-    { type: "dots", label: "Dots" },
-    { type: "grid", label: "Grid" },
-    { type: "lined", label: "Lined" },
+  const backgrounds: { type: BackgroundType; label: string; icon: string }[] = [
+    { type: "plain", label: "None", icon: "○" },
+    { type: "dots", label: "Dots", icon: "⠿" },
+    { type: "grid", label: "Grid", icon: "▦" },
+    { type: "lined", label: "Lines", icon: "☰" },
   ]
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !onImageUpload) return
+    const reader = new FileReader()
+    reader.onload = (loadEv) => {
+      const dataUrl = loadEv.target?.result as string
+      const img = new Image()
+      img.onload = () => {
+        let w = img.width
+        let h = img.height
+        const maxDim = 400
+        if (w > maxDim || h > maxDim) {
+          const scale = maxDim / Math.max(w, h)
+          w = w * scale
+          h = h * scale
+        }
+        onImageUpload(dataUrl, w, h)
+      }
+      img.src = dataUrl
+    }
+    reader.readAsDataURL(file)
+    // Reset input so the same file can be uploaded again
+    e.target.value = ""
+  }
 
   return (
     <motion.div
@@ -111,8 +141,24 @@ export function TopBar({
         </button>
       </div>
 
-      {/* Right: Collab avatars + Share + Menu */}
+      {/* Right: Upload + Collab avatars + Share + Menu */}
       <div className="flex items-center gap-2">
+        {/* Image Upload button */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          className="hidden"
+        />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="p-2 rounded-lg text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+          title="Upload Image (I)"
+        >
+          <Upload size={18} />
+        </button>
+
         <PresenceAvatars collaborators={collaborators} />
 
         <button
@@ -138,8 +184,9 @@ export function TopBar({
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: -4 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="absolute right-0 top-full mt-2 w-52 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shadow-xl z-20"
+                className="absolute right-0 top-full mt-2 w-56 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shadow-xl z-20"
               >
+                {/* Background picker inline */}
                 <button
                   onClick={() => { setShowBgPicker(!showBgPicker); }}
                   className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
@@ -148,18 +195,20 @@ export function TopBar({
                   Background
                 </button>
                 {showBgPicker && (
-                  <div className="px-3 py-2 flex gap-1.5">
+                  <div className="px-3 py-2 grid grid-cols-4 gap-1.5">
                     {backgrounds.map((bg) => (
                       <button
                         key={bg.type}
                         onClick={() => { onBackgroundChange(bg.type); setShowBgPicker(false); setShowMenu(false) }}
-                        className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
+                        className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-colors ${
                           background === bg.type
-                            ? "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400"
+                            ? "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 ring-1 ring-blue-200 dark:ring-blue-500/30"
                             : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                         }`}
+                        title={bg.label}
                       >
-                        {bg.label}
+                        <span className="text-base leading-none">{bg.icon}</span>
+                        <span className="text-[10px] leading-none">{bg.label}</span>
                       </button>
                     ))}
                   </div>

@@ -11,6 +11,7 @@ export type ToolType =
   | "arrow"
   | "text"
   | "sticky"
+  | "image"
   | "pan"
 
 export type BackgroundType = "plain" | "dots" | "grid" | "lined"
@@ -48,6 +49,8 @@ export interface WhiteboardElement {
   content?: string
   // Sticky note color
   stickyColor?: string
+  // Image data URL or blob URL
+  imageSrc?: string
   // Computed SVG path data (cached for rendering)
   pathData?: string
   // Creation metadata
@@ -131,5 +134,6 @@ export const TOOLS_CONFIG: Record<ToolType, { label: string; shortcut: string }>
   arrow: { label: "Arrow", shortcut: "A" },
   text: { label: "Text", shortcut: "T" },
   sticky: { label: "Sticky Note", shortcut: "S" },
+  image: { label: "Image", shortcut: "I" },
   pan: { label: "Pan", shortcut: "Space" },
 }

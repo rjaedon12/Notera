@@ -10,7 +10,7 @@ import type {
   BackgroundType,
 } from "@/lib/whiteboard/types"
 import { MIN_ZOOM, MAX_ZOOM, DEFAULT_ZOOM } from "@/lib/whiteboard/types"
-import { getSvgPathFromPoints, getHighlighterPath, isPointNearStroke, isPointInShape } from "@/lib/whiteboard/stroke-engine"
+import { getSvgPathFromPoints, getHighlighterPath, isPointNearStroke, erasePointsFromStroke, isPointInShape } from "@/lib/whiteboard/stroke-engine"
 import { v4 as uuid } from "uuid"
 
 interface UseWhiteboardCanvasOptions {
@@ -42,6 +42,14 @@ export function useWhiteboardCanvas({
   const isPanning = useRef(false)
   const lastPanPoint = useRef<Point>({ x: 0, y: 0 })
   const shapeStart = useRef<Point>({ x: 0, y: 0 })
+
+  // Select/move drag state
+  const isDragging = useRef(false)
+  const dragStartCanvas = useRef<Point>({ x: 0, y: 0 })
+  const dragOriginalPos = useRef<{ x: number; y: number; points: Point[] }>({ x: 0, y: 0, points: [] })
+
+  // Image cache for rendering
+  const imageCache = useRef<Map<string, HTMLImageElement>>(new Map())
 
   // Sync elements ref for callbacks
   const elementsRef = useRef(elements)
@@ -96,6 +104,30 @@ export function useWhiteboardCanvas({
     [onElementsChange]
   )
 
+  // ─── Image upload helper ────────────────────────────────
+
+  const addImage = useCallback(
+    (dataUrl: string, x: number, y: number, width: number, height: number) => {
+      pushHistory()
+      const el: WhiteboardElement = {
+        id: uuid(),
+        type: "image",
+        points: [],
+        style: { ...style },
+        x,
+        y,
+        width,
+        height,
+        rotation: 0,
+        imageSrc: dataUrl,
+        createdBy: userId,
+        createdAt: Date.now(),
+      }
+      updateElements([...elementsRef.current, el])
+    },
+    [style, userId, pushHistory, updateElements]
+  )
+
   // ─── Pointer Handlers ──────────────────────────────────
 
   const handlePointerDown = useCallback(
@@ -119,33 +151,68 @@ export function useWhiteboardCanvas({
         let found = false
         for (let i = elementsRef.current.length - 1; i >= 0; i--) {
           const el = elementsRef.current[i]
+          let hit = false
           if (el.type === "pen" || el.type === "highlighter") {
-            if (isPointNearStroke(point, el.points, 12 / camera.zoom)) {
-              setSelectedElementId(el.id)
-              found = true
-              break
-            }
+            hit = isPointNearStroke(point, el.points, 12 / camera.zoom)
           } else {
-            if (isPointInShape(point, el.x, el.y, el.width, el.height, 8 / camera.zoom)) {
-              setSelectedElementId(el.id)
-              found = true
-              break
+            hit = isPointInShape(point, el.x, el.y, el.width, el.height, 8 / camera.zoom)
+          }
+          if (hit) {
+            setSelectedElementId(el.id)
+            found = true
+            // Begin drag
+            isDragging.current = true
+            dragStartCanvas.current = point
+            dragOriginalPos.current = {
+              x: el.x,
+              y: el.y,
+              points: el.points.map(p => ({ ...p })),
             }
+            pushHistory()
+            break
           }
         }
-        if (!found) setSelectedElementId(null)
+        if (!found) {
+          setSelectedElementId(null)
+          isDragging.current = false
+        }
         return
       }
 
       if (tool === "eraser") {
         pushHistory()
-        const filtered = elementsRef.current.filter((el) => {
+        // Precise eraser: split strokes, remove shapes only on direct hit
+        const eraserRadius = (style.size + 4) / camera.zoom
+        const newElements: WhiteboardElement[] = []
+        for (const el of elementsRef.current) {
           if (el.type === "pen" || el.type === "highlighter") {
-            return !isPointNearStroke(point, el.points, 12 / camera.zoom)
+            if (isPointNearStroke(point, el.points, eraserRadius)) {
+              // Split the stroke at the erased points
+              const segments = erasePointsFromStroke(point, el.points, eraserRadius)
+              for (const seg of segments) {
+                const pathData = el.type === "highlighter"
+                  ? getHighlighterPath(seg, el.style.size)
+                  : getSvgPathFromPoints(seg, { size: el.style.size })
+                newElements.push({
+                  ...el,
+                  id: uuid(),
+                  points: seg,
+                  pathData,
+                })
+              }
+            } else {
+              newElements.push(el)
+            }
+          } else {
+            // For shapes/text/sticky/images: only remove if directly hit
+            if (isPointInShape(point, el.x, el.y, el.width, el.height, 4 / camera.zoom)) {
+              // Skip - erased
+            } else {
+              newElements.push(el)
+            }
           }
-          return !isPointInShape(point, el.x, el.y, el.width, el.height, 8 / camera.zoom)
-        })
-        updateElements(filtered)
+        }
+        updateElements(newElements)
         setIsDrawing(true)
         return
       }
@@ -193,6 +260,38 @@ export function useWhiteboardCanvas({
         return
       }
 
+      if (tool === "image") {
+        // Trigger file upload dialog
+        const input = document.createElement("input")
+        input.type = "file"
+        input.accept = "image/*"
+        input.onchange = (ev) => {
+          const file = (ev.target as HTMLInputElement).files?.[0]
+          if (!file) return
+          const reader = new FileReader()
+          reader.onload = (loadEv) => {
+            const dataUrl = loadEv.target?.result as string
+            const img = new Image()
+            img.onload = () => {
+              // Scale to fit max 400px wide/tall
+              let w = img.width
+              let h = img.height
+              const maxDim = 400
+              if (w > maxDim || h > maxDim) {
+                const scale = maxDim / Math.max(w, h)
+                w = w * scale
+                h = h * scale
+              }
+              addImage(dataUrl, point.x - w / 2, point.y - h / 2, w, h)
+            }
+            img.src = dataUrl
+          }
+          reader.readAsDataURL(file)
+        }
+        input.click()
+        return
+      }
+
       // Drawing tools (pen, highlighter, shapes)
       pushHistory()
       setIsDrawing(true)
@@ -225,7 +324,7 @@ export function useWhiteboardCanvas({
         updateElements([...elementsRef.current, newEl])
       }
     },
-    [tool, camera.zoom, style, screenToCanvas, pushHistory, updateElements, userId]
+    [tool, camera.zoom, style, screenToCanvas, pushHistory, updateElements, userId, addImage]
   )
 
   const handlePointerMove = useCallback(
@@ -238,19 +337,79 @@ export function useWhiteboardCanvas({
         return
       }
 
+      // Select + drag to move
+      if (tool === "select" && isDragging.current && selectedElementId) {
+        const point = screenToCanvas(e.clientX, e.clientY)
+        const dx = point.x - dragStartCanvas.current.x
+        const dy = point.y - dragStartCanvas.current.y
+
+        const updated = elementsRef.current.map((el) => {
+          if (el.id !== selectedElementId) return el
+          if (el.type === "pen" || el.type === "highlighter") {
+            // Move all points
+            const movedPoints = dragOriginalPos.current.points.map(p => ({
+              ...p,
+              x: p.x + dx,
+              y: p.y + dy,
+            }))
+            const pathData = el.type === "highlighter"
+              ? getHighlighterPath(movedPoints, el.style.size)
+              : getSvgPathFromPoints(movedPoints, { size: el.style.size })
+            return {
+              ...el,
+              x: dragOriginalPos.current.x + dx,
+              y: dragOriginalPos.current.y + dy,
+              points: movedPoints,
+              pathData,
+            }
+          } else {
+            return {
+              ...el,
+              x: dragOriginalPos.current.x + dx,
+              y: dragOriginalPos.current.y + dy,
+            }
+          }
+        })
+        updateElements(updated)
+        return
+      }
+
       if (!isDrawing) return
 
       const point = screenToCanvas(e.clientX, e.clientY)
       const pressure = e.pressure || 0.5
 
       if (tool === "eraser") {
-        const filtered = elementsRef.current.filter((el) => {
+        // Precise eraser on move: split strokes, remove shapes on direct hit only
+        const eraserRadius = (style.size + 4) / camera.zoom
+        const newElements: WhiteboardElement[] = []
+        for (const el of elementsRef.current) {
           if (el.type === "pen" || el.type === "highlighter") {
-            return !isPointNearStroke(point, el.points, 12 / camera.zoom)
+            if (isPointNearStroke(point, el.points, eraserRadius)) {
+              const segments = erasePointsFromStroke(point, el.points, eraserRadius)
+              for (const seg of segments) {
+                const pathData = el.type === "highlighter"
+                  ? getHighlighterPath(seg, el.style.size)
+                  : getSvgPathFromPoints(seg, { size: el.style.size })
+                newElements.push({
+                  ...el,
+                  id: uuid(),
+                  points: seg,
+                  pathData,
+                })
+              }
+            } else {
+              newElements.push(el)
+            }
+          } else {
+            if (isPointInShape(point, el.x, el.y, el.width, el.height, 4 / camera.zoom)) {
+              // Skip - erased
+            } else {
+              newElements.push(el)
+            }
           }
-          return !isPointInShape(point, el.x, el.y, el.width, el.height, 8 / camera.zoom)
-        })
-        updateElements(filtered)
+        }
+        updateElements(newElements)
         return
       }
 
@@ -298,7 +457,7 @@ export function useWhiteboardCanvas({
         }
       }
     },
-    [isDrawing, tool, camera.zoom, style, screenToCanvas, updateElements, userId]
+    [isDrawing, tool, camera.zoom, style, screenToCanvas, updateElements, userId, selectedElementId]
   )
 
   const handlePointerUp = useCallback(
@@ -307,24 +466,25 @@ export function useWhiteboardCanvas({
       if (canvas) canvas.releasePointerCapture(e.pointerId)
 
       isPanning.current = false
+      isDragging.current = false
       setIsDrawing(false)
       currentStroke.current = []
     },
     []
   )
 
-  // ─── Wheel → Zoom ──────────────────────────────────────
+  // ─── Wheel → Zoom (supports trackpad pinch + scroll pan) ─
 
   const handleWheel = useCallback(
     (e: WheelEvent) => {
       e.preventDefault()
 
       if (e.ctrlKey || e.metaKey) {
-        // Pinch zoom
-        const delta = -e.deltaY * 0.005
+        // Pinch-to-zoom on trackpad (or Ctrl+scroll)
+        const delta = -e.deltaY * 0.01
         setCamera((prev) => {
           const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, prev.zoom * (1 + delta)))
-          // Zoom toward cursor
+          // Zoom toward cursor position
           const rect = canvasRef.current?.getBoundingClientRect()
           if (!rect) return { ...prev, zoom: newZoom }
           const cx = e.clientX - rect.left
@@ -337,7 +497,7 @@ export function useWhiteboardCanvas({
           }
         })
       } else {
-        // Pan
+        // Two-finger pan on trackpad
         setCamera((prev) => ({
           ...prev,
           x: prev.x - e.deltaX,
@@ -348,13 +508,84 @@ export function useWhiteboardCanvas({
     []
   )
 
-  // Attach wheel listener (need passive: false for preventDefault)
+  // ─── Touch gesture zoom (for mobile/tablet pinch) ───────
+
+  const lastTouchDistance = useRef<number | null>(null)
+  const lastTouchCenter = useRef<Point | null>(null)
+
+  const handleTouchStart = useCallback((e: TouchEvent) => {
+    if (e.touches.length === 2) {
+      e.preventDefault()
+      const t1 = e.touches[0]
+      const t2 = e.touches[1]
+      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY)
+      lastTouchDistance.current = dist
+      lastTouchCenter.current = {
+        x: (t1.clientX + t2.clientX) / 2,
+        y: (t1.clientY + t2.clientY) / 2,
+      }
+    }
+  }, [])
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (e.touches.length === 2 && lastTouchDistance.current !== null) {
+      e.preventDefault()
+      const t1 = e.touches[0]
+      const t2 = e.touches[1]
+      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY)
+      const center = {
+        x: (t1.clientX + t2.clientX) / 2,
+        y: (t1.clientY + t2.clientY) / 2,
+      }
+
+      const scaleFactor = dist / lastTouchDistance.current
+
+      setCamera((prev) => {
+        const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, prev.zoom * scaleFactor))
+        const rect = canvasRef.current?.getBoundingClientRect()
+        if (!rect) return { ...prev, zoom: newZoom }
+        const cx = center.x - rect.left
+        const cy = center.y - rect.top
+        const scale = newZoom / prev.zoom
+
+        // Also pan with the center movement
+        const panDx = lastTouchCenter.current ? center.x - lastTouchCenter.current.x : 0
+        const panDy = lastTouchCenter.current ? center.y - lastTouchCenter.current.y : 0
+
+        return {
+          x: cx - (cx - prev.x) * scale + panDx,
+          y: cy - (cy - prev.y) * scale + panDy,
+          zoom: newZoom,
+        }
+      })
+
+      lastTouchDistance.current = dist
+      lastTouchCenter.current = center
+    }
+  }, [])
+
+  const handleTouchEnd = useCallback((e: TouchEvent) => {
+    if (e.touches.length < 2) {
+      lastTouchDistance.current = null
+      lastTouchCenter.current = null
+    }
+  }, [])
+
+  // Attach wheel + touch listeners (need passive: false for preventDefault)
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     canvas.addEventListener("wheel", handleWheel, { passive: false })
-    return () => canvas.removeEventListener("wheel", handleWheel)
-  }, [handleWheel])
+    canvas.addEventListener("touchstart", handleTouchStart, { passive: false })
+    canvas.addEventListener("touchmove", handleTouchMove, { passive: false })
+    canvas.addEventListener("touchend", handleTouchEnd, { passive: false })
+    return () => {
+      canvas.removeEventListener("wheel", handleWheel)
+      canvas.removeEventListener("touchstart", handleTouchStart)
+      canvas.removeEventListener("touchmove", handleTouchMove)
+      canvas.removeEventListener("touchend", handleTouchEnd)
+    }
+  }, [handleWheel, handleTouchStart, handleTouchMove, handleTouchEnd])
 
   // ─── Keyboard Shortcuts ─────────────────────────────────
 
@@ -385,6 +616,11 @@ export function useWhiteboardCanvas({
           case "a": setTool("arrow"); break
           case "t": setTool("text"); break
           case "s": setTool("sticky"); break
+          case "i": setTool("image"); break
+          case "escape":
+            setSelectedElementId(null)
+            setEditingTextId(null)
+            break
           case "delete":
           case "backspace":
             if (selectedElementId) {
@@ -515,9 +751,39 @@ export function useWhiteboardCanvas({
           ctx.fillStyle = "#1a1a1a"
           ctx.font = "14px Inter, sans-serif"
           const lines = wrapText(ctx, el.content, w - 32)
-          lines.forEach((line, i) => {
+          lines.forEach((line: string, i: number) => {
             ctx.fillText(line, el.x + 16, el.y + 28 + i * 20)
           })
+        }
+
+        // Show placeholder when empty and not editing
+        if (!el.content && el.id !== editingTextId) {
+          ctx.fillStyle = "rgba(0,0,0,0.25)"
+          ctx.font = "14px Inter, sans-serif"
+          ctx.fillText("Click to type...", el.x + 16, el.y + 28)
+        }
+      } else if (el.type === "image" && el.imageSrc) {
+        // Draw image element
+        let img = imageCache.current.get(el.imageSrc)
+        if (!img) {
+          img = new Image()
+          img.src = el.imageSrc
+          imageCache.current.set(el.imageSrc, img)
+        }
+        if (img.complete && img.naturalWidth > 0) {
+          ctx.drawImage(img, el.x, el.y, el.width, el.height)
+        } else {
+          // Placeholder while loading
+          ctx.fillStyle = "rgba(0,0,0,0.05)"
+          ctx.fillRect(el.x, el.y, el.width, el.height)
+          ctx.strokeStyle = "rgba(0,0,0,0.15)"
+          ctx.lineWidth = 1
+          ctx.strokeRect(el.x, el.y, el.width, el.height)
+          ctx.fillStyle = "rgba(0,0,0,0.3)"
+          ctx.font = "14px Inter, sans-serif"
+          ctx.textAlign = "center"
+          ctx.fillText("Loading...", el.x + el.width / 2, el.y + el.height / 2)
+          ctx.textAlign = "start"
         }
       }
 
@@ -546,7 +812,7 @@ export function useWhiteboardCanvas({
     }
 
     ctx.restore()
-  }, [camera, bgColor, background, selectedElementId])
+  }, [camera, bgColor, background, selectedElementId, editingTextId])
 
   // Render loop
   useEffect(() => {
@@ -659,6 +925,7 @@ export function useWhiteboardCanvas({
     redo,
     addText,
     addSticky,
+    addImage,
     deleteSelected,
     clearAll,
     zoomIn,

@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   Type,
   StickyNote,
+  ImagePlus,
   Undo2,
   Redo2,
 } from "lucide-react"
@@ -42,13 +43,14 @@ const TOOL_ICONS: Record<ToolType, React.ReactNode> = {
   arrow: <ArrowUpRight size={20} />,
   text: <Type size={20} />,
   sticky: <StickyNote size={20} />,
+  image: <ImagePlus size={20} />,
   pan: null, // Pan is via space key, not in toolbar
 }
 
 const TOOLBAR_TOOLS: ToolType[] = [
   "select", "pen", "highlighter", "eraser",
   "rectangle", "circle", "line", "arrow",
-  "text", "sticky",
+  "text", "sticky", "image",
 ]
 
 export function Toolbar({

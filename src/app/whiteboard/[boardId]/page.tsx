@@ -53,6 +53,10 @@ function BoardCanvas() {
     resetZoom,
     canUndo,
     canRedo,
+    editingTextId,
+    setEditingTextId,
+    updateTextContent,
+    addImage,
   } = useWhiteboardCanvas({
     userId,
     onElementsChange: (newElements) => {
@@ -70,22 +74,36 @@ function BoardCanvas() {
   const broadcastElementsRef = useRef<((elements: WhiteboardElement[]) => void) | null>(null)
   const lastBroadcastTime = useRef(0)
 
+  // Track if we are currently drawing to avoid overwriting our own strokes
+  const isLocallyDrawing = useRef(false)
+
   broadcastElementsRef.current = useCallback(
     (newElements: WhiteboardElement[]) => {
       const now = Date.now()
-      if (now - lastBroadcastTime.current < 50) return
+      // Throttle broadcasts to prevent glitches but keep it responsive
+      if (now - lastBroadcastTime.current < 100) return
       lastBroadcastTime.current = now
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      broadcastEvent({ type: "elements-update", elements: newElements } as any)
+      isLocallyDrawing.current = true
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        broadcastEvent({ type: "elements-update", elements: newElements, senderId: userId } as any)
+      } catch {
+        // Silent broadcast failure
+      }
+      // Reset flag after a brief delay
+      setTimeout(() => { isLocallyDrawing.current = false }, 150)
     },
-    [broadcastEvent]
+    [broadcastEvent, userId]
   )
 
   // Listen for element updates from collaborators
-  useEventListener(({ event, connectionId }) => {
+  useEventListener(({ event }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const e = event as any
     if (e.type === "elements-update" && e.elements) {
+      // Don't apply our own broadcasts back, and don't overwrite while actively drawing
+      if (e.senderId === userId) return
+      if (isLocallyDrawing.current) return
       setElements(e.elements)
     }
   })
@@ -186,6 +204,17 @@ function BoardCanvas() {
     [boardId]
   )
 
+  // Image upload from top bar
+  const handleImageUpload = useCallback(
+    (dataUrl: string, width: number, height: number) => {
+      // Place in center of current viewport
+      const viewCenterX = -camera.x / camera.zoom + (window.innerWidth / 2) / camera.zoom
+      const viewCenterY = -camera.y / camera.zoom + (window.innerHeight / 2) / camera.zoom
+      addImage(dataUrl, viewCenterX - width / 2, viewCenterY - height / 2, width, height)
+    },
+    [camera, addImage]
+  )
+
   // Build collaborators for cursors
   const collaborators = others.map((other) => ({
     connectionId: other.connectionId,
@@ -216,6 +245,7 @@ function BoardCanvas() {
         onExportPng={handleExportPng}
         onExportPdf={handleExportPdf}
         onClear={clearAll}
+        onImageUpload={handleImageUpload}
         collaborators={collaborators as Parameters<typeof TopBar>[0]["collaborators"]}
       />
 
@@ -227,6 +257,10 @@ function BoardCanvas() {
         tool={tool}
         camera={camera}
         onCursorMove={handleCursorMove}
+        elements={elements}
+        editingTextId={editingTextId}
+        onTextChange={updateTextContent}
+        onTextBlur={() => setEditingTextId(null)}
       />
 
       <Cursors collaborators={collaborators as Parameters<typeof Cursors>[0]["collaborators"]} camera={camera} />

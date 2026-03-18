@@ -137,6 +137,37 @@ export function isPointNearStroke(
 }
 
 /**
+ * Precise eraser: removes only the points directly under the eraser crosshair
+ * and splits the stroke into segments. Returns an array of remaining point-segments.
+ */
+export function erasePointsFromStroke(
+  eraserPoint: Point,
+  strokePoints: Point[],
+  threshold: number = 10
+): Point[][] {
+  const segments: Point[][] = []
+  let current: Point[] = []
+
+  for (const sp of strokePoints) {
+    const dx = eraserPoint.x - sp.x
+    const dy = eraserPoint.y - sp.y
+    if (dx * dx + dy * dy < threshold * threshold) {
+      // This point is under the eraser — break the segment
+      if (current.length >= 2) {
+        segments.push(current)
+      }
+      current = []
+    } else {
+      current.push(sp)
+    }
+  }
+  if (current.length >= 2) {
+    segments.push(current)
+  }
+  return segments
+}
+
+/**
  * Check if a point is inside a shape bounding box.
  */
 export function isPointInShape(
