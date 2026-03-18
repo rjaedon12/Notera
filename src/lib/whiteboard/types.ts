@@ -29,6 +29,17 @@ export type BackgroundType =
   | "lined"
   | "isometric"
   | "crosshatch"
+  | "transparent"
+
+export type ShareMode = "view" | "edit"
+
+export interface ShareLink {
+  id: string
+  boardId: string
+  mode: ShareMode
+  createdAt: string
+  expiresAt?: string
+}
 
 export type DashStyle = "solid" | "dashed" | "dotted"
 
@@ -57,6 +68,7 @@ export interface WBBoard {
   updatedAt: string
   canvasJSON: string // fabric.js canvas serialized JSON
   thumbnail?: string // base64 PNG thumbnail for dashboard preview
+  shareLinks?: ShareLink[] // sharing links with view/edit modes
 }
 
 export interface WBFrame {
@@ -117,14 +129,15 @@ export const STICKY_COLORS = [
   "#fef08a", "#fbcfe8", "#bfdbfe", "#bbf7d0", "#e9d5ff", "#fed7aa",
 ]
 
-export const BACKGROUND_OPTIONS: { key: BackgroundType; label: string; description: string }[] = [
-  { key: "plain", label: "Plain", description: "White background" },
-  { key: "plain-dark", label: "Plain Dark", description: "Dark background" },
-  { key: "dots", label: "Dots", description: "Dot pattern" },
-  { key: "grid", label: "Grid", description: "Grid lines" },
-  { key: "lined", label: "Lined", description: "Ruled lines" },
-  { key: "isometric", label: "Isometric", description: "60° grid" },
-  { key: "crosshatch", label: "Crosshatch", description: "Cross pattern" },
+export const BACKGROUND_OPTIONS: { key: BackgroundType; label: string; description: string; icon: string }[] = [
+  { key: "plain", label: "Plain White", description: "Clean white canvas", icon: "□" },
+  { key: "plain-dark", label: "Plain Dark", description: "Dark canvas", icon: "■" },
+  { key: "dots", label: "Dots", description: "Dot grid pattern", icon: "⠿" },
+  { key: "grid", label: "Grid", description: "Square grid lines", icon: "#" },
+  { key: "lined", label: "Lined", description: "Ruled notebook lines", icon: "≡" },
+  { key: "isometric", label: "Isometric", description: "60° triangle grid", icon: "△" },
+  { key: "crosshatch", label: "Crosshatch", description: "Cross pattern", icon: "⊠" },
+  { key: "transparent", label: "Transparent", description: "No background (for export)", icon: "◇" },
 ]
 
 export const KEYBOARD_SHORTCUTS = [

@@ -8,7 +8,7 @@ import {
   MousePointer2, Pencil, Highlighter, Eraser, Pointer, Square, Circle,
   Triangle, Minus, ArrowRight, Diamond, Type, StickyNote, Image as ImageIcon,
   Link2, Sigma, Hand, ZoomIn, ZoomOut, Maximize2, Undo2, Redo2, Save,
-  Download, Upload, Plus, Trash2, Grid3X3,
+  Upload, Plus, Trash2,
   Copy, Group, Ungroup, Lock, Unlock, ChevronUp, ChevronDown, ChevronsUp,
   ChevronsDown, Keyboard, X, FileJson, FileImage,
   FileText, Presentation, Globe, GlobeLock, LayoutGrid,
@@ -16,12 +16,14 @@ import {
   AlignStartVertical, AlignEndVertical, AlignCenterVertical,
   AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter,
   Bold, Italic, Underline, Edit3,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, ChevronDown as ChevronDownIcon,
+  Share2, Eye, Pencil as PencilIcon, Link, Check, MoreHorizontal,
+  Shapes, Spline, PanelRightOpen, PanelRightClose, Palette,
 } from "lucide-react"
 import toast from "react-hot-toast"
 
 import type {
-  ToolType, BackgroundType, StyleState, WBBoard, WBFrame,
+  ToolType, BackgroundType, StyleState, WBBoard, WBFrame, ShareMode,
 } from "@/lib/whiteboard/types"
 import {
   DEFAULT_STYLE, COLORS, STICKY_COLORS, BACKGROUND_OPTIONS, KEYBOARD_SHORTCUTS,
@@ -29,6 +31,7 @@ import {
 import {
   saveBoard as saveBoardToStore, deleteBoard as deleteBoardFromStore,
   getUserBoards, createBoard as createBoardInStore, getBoardById,
+  createShareLink, getBoardShareLinks, removeShareLink, getShareLink,
 } from "@/lib/whiteboard/storage"
 import {
   exportCanvasPNG, exportCanvasSVG, exportCanvasPDF,
@@ -60,12 +63,320 @@ function EquationPreview({ latex }: { latex: string }) {
     return () => { cancelled = true }
   }, [latex])
 
-  if (error) return <span className="text-red-400 text-xs">{error}</span>
-  return <div ref={ref} className="text-white" />
+  if (error) return <span className="text-destructive text-xs">{error}</span>
+  return <div ref={ref} className="text-foreground" />
 }
 
 // ============================================================================
-// Main Whiteboard Page Component
+// Flyout Menu — click-to-open sub-menu for shapes and lines
+// ============================================================================
+
+interface FlyoutItem {
+  key: ToolType
+  icon: React.ReactNode
+  label: string
+  shortcut: string
+}
+
+function ToolFlyout({
+  items,
+  activeTool,
+  onSelect,
+  triggerIcon,
+  triggerLabel,
+}: {
+  items: FlyoutItem[]
+  activeTool: ToolType
+  onSelect: (tool: ToolType) => void
+  triggerIcon: React.ReactNode
+  triggerLabel: string
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const activeItem = items.find((i) => i.key === activeTool)
+  const isGroupActive = items.some((i) => i.key === activeTool)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    if (open) document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [open])
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className={cn(
+          "wb-tool-btn group relative",
+          isGroupActive ? "wb-tool-active" : ""
+        )}
+        title={triggerLabel}
+        aria-label={triggerLabel}
+      >
+        {activeItem ? activeItem.icon : triggerIcon}
+        <ChevronDownIcon className="h-2 w-2 absolute bottom-0.5 right-0.5 opacity-40" />
+      </button>
+      {open && (
+        <div className="absolute left-full top-0 ml-2 z-50 animate-in fade-in slide-in-from-left-1 duration-150">
+          <div className="bg-card/95 backdrop-blur-xl border border-border rounded-xl shadow-xl p-1.5 min-w-[160px]">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1 block select-none">{triggerLabel}</span>
+            {items.map((item) => (
+              <button
+                key={item.key}
+                onClick={() => { onSelect(item.key); setOpen(false) }}
+                className={cn(
+                  "flex items-center gap-2.5 w-full px-2.5 py-1.5 rounded-lg text-sm transition-all",
+                  activeTool === item.key
+                    ? "bg-primary/15 text-primary"
+                    : "text-foreground/70 hover:text-foreground hover:bg-muted"
+                )}
+              >
+                {item.icon}
+                <span className="whitespace-nowrap">{item.label}</span>
+                {item.shortcut && (
+                  <kbd className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono">
+                    {item.shortcut}
+                  </kbd>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================================================
+// Background Picker — visual swatch previews
+// ============================================================================
+
+function BackgroundPicker({
+  background,
+  customBgColor,
+  onSelectBg,
+  onCustomColor,
+}: {
+  background: BackgroundType
+  customBgColor: string
+  onSelectBg: (bg: BackgroundType) => void
+  onCustomColor: (color: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    if (open) document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [open])
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="wb-topbar-btn"
+        aria-label="Background"
+        title="Canvas background"
+      >
+        <Palette className="h-4 w-4" />
+      </button>
+      {open && (
+        <div className="absolute top-full right-0 mt-2 w-[288px] bg-card/95 backdrop-blur-xl border border-border rounded-xl shadow-xl z-50 p-3 animate-in fade-in slide-in-from-top-1 duration-150">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground px-1 select-none">Canvas Background</span>
+          <div className="grid grid-cols-4 gap-2 mt-2">
+            {BACKGROUND_OPTIONS.map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => { onSelectBg(opt.key); setOpen(false) }}
+                className={cn(
+                  "flex flex-col items-center gap-1 p-2 rounded-xl transition-all border",
+                  background === opt.key
+                    ? "border-primary bg-primary/10 ring-1 ring-primary/30"
+                    : "border-transparent hover:bg-muted"
+                )}
+                title={opt.description}
+              >
+                <BgPreviewSwatch type={opt.key} />
+                <span className="text-[10px] text-foreground/70 font-medium truncate w-full text-center">{opt.label}</span>
+              </button>
+            ))}
+          </div>
+          <div className="border-t border-border mt-3 pt-2 flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Custom:</span>
+            <input
+              type="color"
+              value={customBgColor}
+              onChange={(e) => onCustomColor(e.target.value)}
+              className="w-7 h-7 rounded-lg cursor-pointer border border-border bg-transparent"
+            />
+            <span className="text-[10px] text-muted-foreground font-mono">{customBgColor}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function BgPreviewSwatch({ type }: { type: BackgroundType }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const c = canvasRef.current; if (!c) return
+    const ctx = c.getContext("2d"); if (!ctx) return
+    const w = 48, h = 32
+    c.width = w; c.height = h
+    const isDark = document.documentElement.classList.contains("dark")
+
+    if (type === "transparent") {
+      const s = 4
+      for (let x = 0; x < w; x += s) for (let y = 0; y < h; y += s) {
+        ctx.fillStyle = ((x / s + y / s) % 2 === 0) ? "#e0e0e0" : "#ffffff"
+        ctx.fillRect(x, y, s, s)
+      }
+      return
+    }
+
+    ctx.fillStyle = isDark ? "#1a1a2e" : "#ffffff"
+    if (type === "plain-dark") ctx.fillStyle = "#1a1a2e"
+    if (type === "plain") ctx.fillStyle = isDark ? "#1a1a2e" : "#ffffff"
+    ctx.fillRect(0, 0, w, h)
+
+    const dotColor = isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.12)"
+    const lineColor = isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)"
+
+    if (type === "dots") {
+      ctx.fillStyle = dotColor
+      for (let x = 4; x < w; x += 8) for (let y = 4; y < h; y += 8) { ctx.beginPath(); ctx.arc(x, y, 0.8, 0, Math.PI * 2); ctx.fill() }
+    } else if (type === "grid") {
+      ctx.strokeStyle = lineColor; ctx.lineWidth = 0.5; ctx.beginPath()
+      for (let x = 0; x < w; x += 8) { ctx.moveTo(x, 0); ctx.lineTo(x, h) }
+      for (let y = 0; y < h; y += 8) { ctx.moveTo(0, y); ctx.lineTo(w, y) }
+      ctx.stroke()
+    } else if (type === "lined") {
+      ctx.strokeStyle = isDark ? "rgba(255,255,255,0.1)" : "rgba(59,130,246,0.15)"; ctx.lineWidth = 0.5; ctx.beginPath()
+      for (let y = 4; y < h; y += 6) { ctx.moveTo(0, y); ctx.lineTo(w, y) }
+      ctx.stroke()
+    } else if (type === "isometric") {
+      ctx.strokeStyle = lineColor; ctx.lineWidth = 0.3; ctx.beginPath()
+      for (let y = 0; y < h; y += 8) { ctx.moveTo(0, y); ctx.lineTo(w, y) }
+      for (let x = -h; x < w + h; x += 8) { ctx.moveTo(x, 0); ctx.lineTo(x + h * 0.577, h); ctx.moveTo(x, 0); ctx.lineTo(x - h * 0.577, h) }
+      ctx.stroke()
+    } else if (type === "crosshatch") {
+      ctx.strokeStyle = lineColor; ctx.lineWidth = 0.3; ctx.beginPath()
+      for (let x = 0; x < w; x += 6) { ctx.moveTo(x, 0); ctx.lineTo(x, h) }
+      for (let y = 0; y < h; y += 6) { ctx.moveTo(0, y); ctx.lineTo(w, y) }
+      for (let x = -h; x < w + h; x += 12) { ctx.moveTo(x, 0); ctx.lineTo(x + h, h); ctx.moveTo(x, 0); ctx.lineTo(x - h, h) }
+      ctx.stroke()
+    }
+  }, [type])
+
+  return <canvas ref={canvasRef} className="w-12 h-8 rounded-md border border-border" />
+}
+
+// ============================================================================
+// Share Dialog
+// ============================================================================
+
+function ShareDialog({ board, onClose }: { board: WBBoard; onClose: () => void }) {
+  const [links, setLinks] = useState(getBoardShareLinks(board.id))
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  const generateLink = (mode: ShareMode) => {
+    const link = createShareLink(board.id, mode)
+    setLinks(getBoardShareLinks(board.id))
+    copyToClipboard(link.id)
+    toast.success(`${mode === "view" ? "View-only" : "Edit"} link created`)
+  }
+
+  const copyToClipboard = (linkId: string) => {
+    const url = `${window.location.origin}/whiteboard?share=${linkId}`
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(linkId)
+      setTimeout(() => setCopiedId(null), 2000)
+    })
+  }
+
+  const handleRemove = (linkId: string) => {
+    removeShareLink(board.id, linkId)
+    setLinks(getBoardShareLinks(board.id))
+    toast.success("Share link removed")
+  }
+
+  return (
+    <ModalOverlay onClose={onClose}>
+      <div className="w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <Share2 className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-semibold text-foreground">Share Board</h3>
+          </div>
+          <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          Create share links so others can view or collaborate on &ldquo;{board.title}&rdquo;.
+        </p>
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          <button
+            onClick={() => generateLink("view")}
+            className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border hover:bg-muted transition-all group"
+          >
+            <Eye className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+            <span className="text-sm font-medium text-foreground">View Only</span>
+            <span className="text-[10px] text-muted-foreground">Others can see but not edit</span>
+          </button>
+          <button
+            onClick={() => generateLink("edit")}
+            className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border hover:bg-muted transition-all group"
+          >
+            <PencilIcon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+            <span className="text-sm font-medium text-foreground">Can Edit</span>
+            <span className="text-[10px] text-muted-foreground">Others can view and edit</span>
+          </button>
+        </div>
+        {links.length > 0 && (
+          <div className="space-y-2">
+            <span className="text-xs text-muted-foreground uppercase tracking-wider">Active Links</span>
+            {links.map((link) => (
+              <div key={link.id} className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/50 border border-border">
+                <div className={cn(
+                  "flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0",
+                  link.mode === "view" ? "bg-blue-500/10 text-blue-500" : "bg-green-500/10 text-green-500"
+                )}>
+                  {link.mode === "view" ? <Eye className="h-3 w-3" /> : <PencilIcon className="h-3 w-3" />}
+                  {link.mode === "view" ? "View" : "Edit"}
+                </div>
+                <span className="text-xs text-muted-foreground font-mono flex-1 truncate">...{link.id.slice(-8)}</span>
+                <button
+                  onClick={() => copyToClipboard(link.id)}
+                  className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  title="Copy link"
+                >
+                  {copiedId === link.id ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Link className="h-3.5 w-3.5" />}
+                </button>
+                <button
+                  onClick={() => handleRemove(link.id)}
+                  className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                  title="Remove link"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </ModalOverlay>
+  )
+}
+
+// ============================================================================
+// Main Entry Point
 // ============================================================================
 
 export default function WhiteboardPage() {
@@ -79,6 +390,35 @@ export default function WhiteboardPage() {
 function WhiteboardApp() {
   const defaultUser = { id: "local-user", username: "User", isAdmin: false }
   const user = defaultUser
+  const [shareView, setShareView] = useState<{ boardId: string; mode: "view" | "edit" } | null>(null)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const shareId = params.get("share")
+    if (shareId) {
+      const result = getShareLink(shareId)
+      if (result) {
+        setShareView({ boardId: result.board.id, mode: result.link.mode })
+      } else {
+        toast.error("Share link not found or expired")
+      }
+    }
+  }, [])
+
+  if (shareView) {
+    return (
+      <div className="h-[calc(100vh-4rem)] flex flex-col overflow-hidden">
+        <WhiteboardCanvas
+          boardId={shareView.boardId}
+          user={user}
+          isAdmin={false}
+          onBack={() => { window.history.pushState({}, "", "/whiteboard"); setShareView(null) }}
+          onLogout={() => {}}
+          shareMode={shareView.mode}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col overflow-hidden">
@@ -167,7 +507,7 @@ function WhiteboardMain({ user, isAdmin, onLogout }: WhiteboardMainProps) {
 }
 
 // ============================================================================
-// Board Dashboard (no templates — just blank boards)
+// Board Dashboard (themed)
 // ============================================================================
 
 interface BoardDashboardProps {
@@ -189,33 +529,22 @@ function BoardDashboard({ boards, onCreateBoard, onOpenBoard, onDeleteBoard, onD
   return (
     <div className="flex-1 overflow-auto">
       <div className="max-w-5xl mx-auto px-6 py-8">
-        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground font-heading">My Whiteboards</h1>
             <p className="text-muted-foreground mt-1">Create and manage your visual workspaces</p>
           </div>
-          <button
-            onClick={() => setShowNew(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            New Board
+          <button onClick={() => setShowNew(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:opacity-90 transition-all">
+            <Plus className="h-4 w-4" /> New Board
           </button>
         </div>
 
-        {/* Board Grid */}
         {boards.length === 0 ? (
           <div className="text-center py-20">
             <LayoutGrid className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
             <h3 className="text-lg font-medium text-foreground mb-2">No whiteboards yet</h3>
             <p className="text-muted-foreground mb-6">Create your first whiteboard to get started</p>
-            <button
-              onClick={() => setShowNew(true)}
-              className="px-6 py-3 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
-            >
-              Create Whiteboard
-            </button>
+            <button onClick={() => setShowNew(true)} className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:opacity-90 transition-all">Create Whiteboard</button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -229,9 +558,7 @@ function BoardDashboard({ boards, onCreateBoard, onOpenBoard, onDeleteBoard, onD
                   {board.thumbnail ? (
                     <img src={board.thumbnail} alt={board.title} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <LayoutGrid className="h-10 w-10 text-muted-foreground/20" />
-                    </div>
+                    <div className="w-full h-full flex items-center justify-center"><LayoutGrid className="h-10 w-10 text-muted-foreground/20" /></div>
                   )}
                   <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {board.isPublic ? (
@@ -239,31 +566,13 @@ function BoardDashboard({ boards, onCreateBoard, onOpenBoard, onDeleteBoard, onD
                     ) : (
                       <span className="p-1 rounded-md bg-black/40"><GlobeLock className="h-3.5 w-3.5 text-gray-400" /></span>
                     )}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onDuplicateBoard(board.id) }}
-                      className="p-1 rounded-md bg-black/40 text-gray-300 hover:text-white hover:bg-black/60 transition-colors"
-                      aria-label="Duplicate board"
-                      title="Duplicate"
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setConfirmDelete({ open: true, id: board.id, title: board.title })
-                      }}
-                      className="p-1 rounded-md bg-black/40 text-red-400 hover:text-red-300 hover:bg-black/60 transition-colors"
-                      aria-label="Delete board"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); onDuplicateBoard(board.id) }} className="p-1 rounded-md bg-black/40 text-gray-300 hover:text-white hover:bg-black/60 transition-colors" title="Duplicate"><Copy className="h-3.5 w-3.5" /></button>
+                    <button onClick={(e) => { e.stopPropagation(); setConfirmDelete({ open: true, id: board.id, title: board.title }) }} className="p-1 rounded-md bg-black/40 text-red-400 hover:text-red-300 hover:bg-black/60 transition-colors" aria-label="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
                 </div>
                 <div className="p-4">
                   <h3 className="font-semibold text-card-foreground truncate">{board.title}</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {new Date(board.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{new Date(board.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</p>
                 </div>
               </div>
             ))}
@@ -271,42 +580,23 @@ function BoardDashboard({ boards, onCreateBoard, onOpenBoard, onDeleteBoard, onD
         )}
       </div>
 
-      {/* New Board Modal — simple, no templates */}
       {showNew && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowNew(false)}>
-          <div className="w-full max-w-md mx-4 rounded-2xl bg-[#1e2133]/95 backdrop-blur-xl border border-white/[0.08] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-white mb-4">New Whiteboard</h3>
+        <ModalOverlay onClose={() => setShowNew(false)}>
+          <div className="w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">New Whiteboard</h3>
             <input
-              type="text"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
+              type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)}
               placeholder="Board title..."
-              className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/[0.08] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 mb-4"
+              className="w-full px-4 py-2.5 rounded-lg bg-muted border border-border text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 mb-4"
               autoFocus
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  onCreateBoard(newTitle || "Untitled Board")
-                  setNewTitle("")
-                  setShowNew(false)
-                }
-                if (e.key === "Escape") setShowNew(false)
-              }}
+              onKeyDown={(e) => { if (e.key === "Enter") { onCreateBoard(newTitle || "Untitled Board"); setNewTitle(""); setShowNew(false) }; if (e.key === "Escape") setShowNew(false) }}
             />
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowNew(false)} className="px-4 py-2 text-sm rounded-lg text-gray-400 hover:bg-white/5">Cancel</button>
-              <button
-                onClick={() => {
-                  onCreateBoard(newTitle || "Untitled Board")
-                  setNewTitle("")
-                  setShowNew(false)
-                }}
-                className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-              >
-                Create
-              </button>
+              <button onClick={() => setShowNew(false)} className="px-4 py-2 text-sm rounded-lg text-muted-foreground hover:bg-muted">Cancel</button>
+              <button onClick={() => { onCreateBoard(newTitle || "Untitled Board"); setNewTitle(""); setShowNew(false) }} className="px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:opacity-90">Create</button>
             </div>
           </div>
-        </div>
+        </ModalOverlay>
       )}
 
       <ConfirmDialog
@@ -323,7 +613,7 @@ function BoardDashboard({ boards, onCreateBoard, onOpenBoard, onDeleteBoard, onD
 }
 
 // ============================================================================
-// Whiteboard Canvas (Full Editor) — Clean toolbar redesign
+// Whiteboard Canvas — Redesigned: Themed, Decluttered, Flyout menus
 // ============================================================================
 
 interface WhiteboardCanvasProps {
@@ -332,19 +622,22 @@ interface WhiteboardCanvasProps {
   isAdmin: boolean
   onBack: () => void
   onLogout: () => void
+  shareMode?: ShareMode
 }
 
-function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
+function WhiteboardCanvas({ boardId, onBack, shareMode }: WhiteboardCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importInputRef = useRef<HTMLInputElement>(null)
+
+  const isViewOnly = shareMode === "view"
 
   // Board state
   const [board, setBoard] = useState<WBBoard | null>(null)
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null)
   const [tool, setTool] = useState<ToolType>("select")
   const [style, setStyle] = useState<StyleState>({ ...DEFAULT_STYLE })
-  const [background, setBackground] = useState<BackgroundType>("grid")
+  const [background, setBackground] = useState<BackgroundType>("plain")
   const [customBgColor, setCustomBgColor] = useState("#ffffff")
   const [isDark, setIsDark] = useState(false)
   const [selectedObj, setSelectedObj] = useState<any>(null)
@@ -353,13 +646,13 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
   const [zoom, setZoom] = useState(100)
 
   // UI panels
-  const [showBgPicker, setShowBgPicker] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
-  const [showExportMenu, setShowExportMenu] = useState(false)
   const [showFrames, setShowFrames] = useState(false)
   const [showTextDialog, setShowTextDialog] = useState(false)
   const [showStickyDialog, setShowStickyDialog] = useState(false)
   const [showEquationDialog, setShowEquationDialog] = useState(false)
+  const [showShareDialog, setShowShareDialog] = useState(false)
+  const [showMoreMenu, setShowMoreMenu] = useState(false)
   const [textInput, setTextInput] = useState("")
   const [stickyInput, setStickyInput] = useState("")
   const [stickyColor, setStickyColor] = useState(STICKY_COLORS[0])
@@ -369,8 +662,13 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
   const [isRenamingTitle, setIsRenamingTitle] = useState(false)
   const [renameValue, setRenameValue] = useState("")
   const [selectedCount, setSelectedCount] = useState(0)
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(true)
 
-  // Frames state
+  // Auto-hide minimap
+  const [minimapVisible, setMinimapVisible] = useState(false)
+  const minimapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Frames
   const [frames, setFrames] = useState<WBFrame[]>([])
   const [activeFrameId, setActiveFrameId] = useState("")
 
@@ -401,9 +699,7 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
       setCustomBgColor(b.customBgColor || "#ffffff")
       setFrames(b.frames || [])
       setActiveFrameId(b.activeFrameId || b.frames?.[0]?.id || "")
-      if (b.canvasJSON) {
-        setTimeout(() => canvasActions.loadCanvasJSON(b.canvasJSON), 500)
-      }
+      if (b.canvasJSON) setTimeout(() => canvasActions.loadCanvasJSON(b.canvasJSON), 500)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boardId])
@@ -412,33 +708,28 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
   useEffect(() => {
     const dark = document.documentElement.classList.contains("dark")
     setIsDark(dark)
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains("dark"))
-    })
+    const observer = new MutationObserver(() => setIsDark(document.documentElement.classList.contains("dark")))
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
     return () => observer.disconnect()
   }, [])
 
-  // Auto-save every 30s
+  // Auto-save
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (board && hasChanges) handleSave()
-    }, 30000)
+    const interval = setInterval(() => { if (board && hasChanges && !isViewOnly) handleSave() }, 30000)
     return () => clearInterval(interval)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [board, hasChanges])
 
   // Zoom tracking
   useEffect(() => {
-    const interval = setInterval(() => {
-      setZoom(Math.round(canvasActions.getZoom() * 100))
-    }, 500)
+    const interval = setInterval(() => setZoom(Math.round(canvasActions.getZoom() * 100)), 500)
     return () => clearInterval(interval)
   }, [canvasActions])
 
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if (isViewOnly) return
       const target = e.target as HTMLElement
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.contentEditable === "true") return
 
@@ -447,125 +738,74 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
         l: "laser", r: "rect", c: "circle", t: "text",
         s: "sticky", n: "line", a: "arrow", d: "diamond", q: "equation",
       }
-      if (!e.ctrlKey && !e.metaKey && toolMap[e.key.toLowerCase()]) {
-        setTool(toolMap[e.key.toLowerCase()])
-        return
-      }
-
-      if (e.key === "?" || (e.key === "/" && e.shiftKey)) {
-        setShowShortcuts(true)
-        return
-      }
-
-      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
-        e.preventDefault(); canvasActions.undo()
-      }
-      if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) {
-        e.preventDefault(); canvasActions.redo()
-      }
-      if (e.key === "Delete" || e.key === "Backspace") {
-        if (selectedObj) { e.preventDefault(); canvasActions.deleteSelected() }
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === "d") {
-        e.preventDefault(); canvasActions.duplicateSelected()
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === "a") {
-        e.preventDefault(); canvasActions.selectAll()
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === "g" && !e.shiftKey) {
-        e.preventDefault(); canvasActions.groupSelected()
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === "g" && e.shiftKey) {
-        e.preventDefault(); canvasActions.ungroupSelected()
-      }
+      if (!e.ctrlKey && !e.metaKey && toolMap[e.key.toLowerCase()]) { setTool(toolMap[e.key.toLowerCase()]); return }
+      if (e.key === "?" || (e.key === "/" && e.shiftKey)) { setShowShortcuts(true); return }
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) { e.preventDefault(); canvasActions.undo() }
+      if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) { e.preventDefault(); canvasActions.redo() }
+      if (e.key === "Delete" || e.key === "Backspace") { if (selectedObj) { e.preventDefault(); canvasActions.deleteSelected() } }
+      if ((e.ctrlKey || e.metaKey) && e.key === "d") { e.preventDefault(); canvasActions.duplicateSelected() }
+      if ((e.ctrlKey || e.metaKey) && e.key === "a") { e.preventDefault(); canvasActions.selectAll() }
+      if ((e.ctrlKey || e.metaKey) && e.key === "g" && !e.shiftKey) { e.preventDefault(); canvasActions.groupSelected() }
+      if ((e.ctrlKey || e.metaKey) && e.key === "g" && e.shiftKey) { e.preventDefault(); canvasActions.ungroupSelected() }
       if (e.key === "Escape") {
         if (presentMode) setPresentMode(false)
-        setShowBgPicker(false); setShowExportMenu(false)
-        setShowShortcuts(false); setShowTextDialog(false)
-        setShowStickyDialog(false); setShowEquationDialog(false)
-        setShowFrames(false)
+        setShowShortcuts(false); setShowTextDialog(false); setShowStickyDialog(false)
+        setShowEquationDialog(false); setShowFrames(false); setShowShareDialog(false); setShowMoreMenu(false)
       }
     }
     window.addEventListener("keydown", handler)
     return () => window.removeEventListener("keydown", handler)
-  }, [canvasActions, selectedObj, presentMode])
+  }, [canvasActions, selectedObj, presentMode, isViewOnly])
 
-  // Save board
+  // Save
   const handleSave = useCallback(() => {
-    if (!board) return
+    if (!board || isViewOnly) return
     const json = canvasActions.serializeCanvas()
     const thumb = canvasActions.getMinimapDataUrl()
     if (thumb) setThumbnailUrl(thumb)
     const updated: WBBoard = {
-      ...board,
-      canvasJSON: json,
-      background,
-      customBgColor,
-      frames,
-      activeFrameId,
-      updatedAt: new Date().toISOString(),
-      thumbnail: thumb || board.thumbnail,
+      ...board, canvasJSON: json, background, customBgColor, frames, activeFrameId,
+      updatedAt: new Date().toISOString(), thumbnail: thumb || board.thumbnail,
     }
-    saveBoardToStore(updated)
-    setBoard(updated)
-    setHasChanges(false)
-    setLastSaved(new Date().toISOString())
-    toast.success("Board saved")
-  }, [board, canvasActions, background, customBgColor, frames, activeFrameId])
+    saveBoardToStore(updated); setBoard(updated); setHasChanges(false)
+    setLastSaved(new Date().toISOString()); toast.success("Board saved")
+  }, [board, canvasActions, background, customBgColor, frames, activeFrameId, isViewOnly])
 
-  // Rename board
+  // Rename
   const handleRenameCommit = useCallback(() => {
     if (!board || !renameValue.trim()) { setIsRenamingTitle(false); return }
     const updated = { ...board, title: renameValue.trim() }
-    saveBoardToStore(updated)
-    setBoard(updated)
-    setIsRenamingTitle(false)
-    toast.success("Board renamed")
+    saveBoardToStore(updated); setBoard(updated); setIsRenamingTitle(false); toast.success("Board renamed")
   }, [board, renameValue])
 
-  // Update minimap
+  // Minimap update
   useEffect(() => {
-    const interval = setInterval(() => {
-      const url = canvasActions.getMinimapDataUrl()
-      if (url) setThumbnailUrl(url)
-    }, 2000)
+    const interval = setInterval(() => { const url = canvasActions.getMinimapDataUrl(); if (url) setThumbnailUrl(url) }, 2000)
     return () => clearInterval(interval)
   }, [canvasActions])
 
-  // Export handlers
-  const handleExportPNG = () => { const el = canvasActions.getCanvasEl(); if (el) exportCanvasPNG(el, board?.title || "whiteboard"); setShowExportMenu(false) }
-  const handleExportSVG = () => { const svg = canvasActions.getSVGString(); if (svg) exportCanvasSVG(svg, board?.title || "whiteboard"); setShowExportMenu(false) }
-  const handleExportPDF = async () => { const el = canvasActions.getCanvasEl(); if (el) await exportCanvasPDF(el, board?.title || "whiteboard"); setShowExportMenu(false) }
-  const handleExportJSON = () => { if (board) { const updated = { ...board, canvasJSON: canvasActions.serializeCanvas() }; exportBoardJSON(updated) }; setShowExportMenu(false) }
+  // Exports
+  const handleExportPNG = () => { const el = canvasActions.getCanvasEl(); if (el) exportCanvasPNG(el, board?.title || "whiteboard") }
+  const handleExportSVG = () => { const svg = canvasActions.getSVGString(); if (svg) exportCanvasSVG(svg, board?.title || "whiteboard") }
+  const handleExportPDF = async () => { const el = canvasActions.getCanvasEl(); if (el) await exportCanvasPDF(el, board?.title || "whiteboard") }
+  const handleExportJSON = () => { if (board) { const updated = { ...board, canvasJSON: canvasActions.serializeCanvas() }; exportBoardJSON(updated) } }
   const handleImportJSON = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0]; if (!file) return
     try {
       const imported = await importBoardJSON(file)
-      if (imported.canvasJSON) {
-        await canvasActions.loadCanvasJSON(imported.canvasJSON)
-        setBackground(imported.background)
-        setHasChanges(true)
-        toast.success("Board imported!")
-      }
+      if (imported.canvasJSON) { await canvasActions.loadCanvasJSON(imported.canvasJSON); setBackground(imported.background); setHasChanges(true); toast.success("Board imported!") }
     } catch (err: any) { toast.error(err.message || "Failed to import") }
   }
-
-  // Image upload
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0]; if (!file) return
     const reader = new FileReader()
-    reader.onload = (ev) => { canvasActions.addImage(ev.target?.result as string) }
+    reader.onload = (ev) => canvasActions.addImage(ev.target?.result as string)
     reader.readAsDataURL(file)
   }
-
-  // Toggle public/private
   const togglePublic = () => {
     if (!board) return
     const updated = { ...board, isPublic: !board.isPublic }
-    saveBoardToStore(updated)
-    setBoard(updated)
+    saveBoardToStore(updated); setBoard(updated)
     toast.success(updated.isPublic ? "Board is now public" : "Board is now private")
   }
 
@@ -573,10 +813,8 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
   const addFrame = () => {
     const id = crypto.randomUUID()
     const newFrame: WBFrame = { id, name: "Frame " + (frames.length + 1), viewportTransform: [1, 0, 0, 1, 0, 0], canvasJSON: "" }
-    setFrames([...frames, newFrame])
-    setHasChanges(true)
+    setFrames([...frames, newFrame]); setHasChanges(true)
   }
-
   const deleteFrame = (frameId: string) => {
     if (frames.length <= 1) return
     setFrames(frames.filter((f) => f.id !== frameId))
@@ -585,36 +823,34 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
   }
 
   const lastSavedText = lastSaved ? "Saved " + getTimeAgo(lastSaved) : "Not saved"
-
-  // Frame navigation for present mode
   const currentFrameIdx = frames.findIndex((f) => f.id === activeFrameId)
-  const goNextFrame = useCallback(() => {
-    if (frames.length === 0) return
-    const next = (currentFrameIdx + 1) % frames.length
-    setActiveFrameId(frames[next].id)
-  }, [frames, currentFrameIdx])
-  const goPrevFrame = useCallback(() => {
-    if (frames.length === 0) return
-    const prev = (currentFrameIdx - 1 + frames.length) % frames.length
-    setActiveFrameId(frames[prev].id)
-  }, [frames, currentFrameIdx])
+  const goNextFrame = useCallback(() => { if (frames.length === 0) return; setActiveFrameId(frames[(currentFrameIdx + 1) % frames.length].id) }, [frames, currentFrameIdx])
+  const goPrevFrame = useCallback(() => { if (frames.length === 0) return; setActiveFrameId(frames[(currentFrameIdx - 1 + frames.length) % frames.length].id) }, [frames, currentFrameIdx])
 
-  // All tools for the left sidebar
-  const allTools: { key: ToolType; icon: React.ReactNode; label: string; shortcut: string; group: string }[] = [
-    { key: "select", icon: <MousePointer2 className="h-4 w-4" />, label: "Select", shortcut: "V", group: "pointer" },
-    { key: "pan", icon: <Hand className="h-4 w-4" />, label: "Pan", shortcut: "Space", group: "pointer" },
-    { key: "pen", icon: <Pencil className="h-4 w-4" />, label: "Pen", shortcut: "P", group: "draw" },
-    { key: "highlighter", icon: <Highlighter className="h-4 w-4" />, label: "Highlighter", shortcut: "H", group: "draw" },
-    { key: "eraser", icon: <Eraser className="h-4 w-4" />, label: "Eraser", shortcut: "E", group: "draw" },
-    { key: "laser", icon: <Pointer className="h-4 w-4" />, label: "Laser Pointer", shortcut: "L", group: "draw" },
-    { key: "rect", icon: <Square className="h-4 w-4" />, label: "Rectangle", shortcut: "R", group: "shape" },
-    { key: "circle", icon: <Circle className="h-4 w-4" />, label: "Ellipse", shortcut: "C", group: "shape" },
-    { key: "triangle", icon: <Triangle className="h-4 w-4" />, label: "Triangle", shortcut: "", group: "shape" },
-    { key: "diamond", icon: <Diamond className="h-4 w-4" />, label: "Diamond", shortcut: "D", group: "shape" },
-    { key: "line", icon: <Minus className="h-4 w-4" />, label: "Line", shortcut: "N", group: "line" },
-    { key: "arrow", icon: <ArrowRight className="h-4 w-4" />, label: "Arrow", shortcut: "A", group: "line" },
-    { key: "connector", icon: <Link2 className="h-4 w-4" />, label: "Connector", shortcut: "", group: "line" },
+  // Shape & Line flyout items
+  const shapeTools: FlyoutItem[] = [
+    { key: "rect", icon: <Square className="h-4 w-4" />, label: "Rectangle", shortcut: "R" },
+    { key: "circle", icon: <Circle className="h-4 w-4" />, label: "Ellipse", shortcut: "C" },
+    { key: "triangle", icon: <Triangle className="h-4 w-4" />, label: "Triangle", shortcut: "" },
+    { key: "diamond", icon: <Diamond className="h-4 w-4" />, label: "Diamond", shortcut: "D" },
   ]
+  const lineTools: FlyoutItem[] = [
+    { key: "line", icon: <Minus className="h-4 w-4" />, label: "Line", shortcut: "N" },
+    { key: "arrow", icon: <ArrowRight className="h-4 w-4" />, label: "Arrow", shortcut: "A" },
+    { key: "connector", icon: <Link2 className="h-4 w-4" />, label: "Connector", shortcut: "" },
+  ]
+
+  // Auto-show/hide minimap
+  const handleCanvasMouseMove = useCallback((e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const nearBottomRight = (e.clientX > rect.right - 180) && (e.clientY > rect.bottom - 140)
+    if (nearBottomRight) {
+      setMinimapVisible(true)
+      if (minimapTimerRef.current) { clearTimeout(minimapTimerRef.current); minimapTimerRef.current = null }
+    } else if (!minimapTimerRef.current) {
+      minimapTimerRef.current = setTimeout(() => { setMinimapVisible(false); minimapTimerRef.current = null }, 1500)
+    }
+  }, [])
 
   // Present Mode
   if (presentMode) {
@@ -625,19 +861,19 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
           <div className="flex items-center gap-2">
             {frames.length > 1 && (
               <>
-                <button onClick={goPrevFrame} className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20" aria-label="Previous frame"><ChevronLeft className="h-4 w-4" /></button>
+                <button onClick={goPrevFrame} className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20"><ChevronLeft className="h-4 w-4" /></button>
                 <span className="text-xs text-gray-300">{currentFrameIdx + 1} / {frames.length}</span>
-                <button onClick={goNextFrame} className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20" aria-label="Next frame"><ChevronRight className="h-4 w-4" /></button>
+                <button onClick={goNextFrame} className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20"><ChevronRight className="h-4 w-4" /></button>
               </>
             )}
-            <button onClick={() => setPresentMode(false)} className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20" aria-label="Exit presentation"><X className="h-4 w-4" /></button>
+            <button onClick={() => setPresentMode(false)} className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20"><X className="h-4 w-4" /></button>
           </div>
         </div>
         <div ref={containerRef} className="absolute inset-0" style={{ cursor: "default", willChange: "transform" }} />
         {frames.length > 1 && (
           <div className="absolute bottom-4 inset-x-0 flex justify-center gap-2 z-10">
             {frames.map((f, i) => (
-              <button key={f.id} onClick={() => setActiveFrameId(f.id)} className={cn("w-2 h-2 rounded-full transition-colors", i === currentFrameIdx ? "bg-white" : "bg-white/30 hover:bg-white/60")} aria-label={"Go to frame " + (i + 1)} />
+              <button key={f.id} onClick={() => setActiveFrameId(f.id)} className={cn("w-2 h-2 rounded-full transition-colors", i === currentFrameIdx ? "bg-white" : "bg-white/30 hover:bg-white/60")} />
             ))}
           </div>
         )}
@@ -646,257 +882,162 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
     )
   }
 
-  // Main Canvas Editor Layout
+  // ========================= Main Canvas Editor Layout =========================
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#0f1117]">
-      {/* Top Bar */}
-      <div className="flex items-center gap-2 px-3 py-1.5 shrink-0 bg-[#1a1d2e]/80 backdrop-blur-xl border-b border-white/[0.06]">
-        <button onClick={onBack} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Back to boards">
-          <ChevronLeft className="h-4 w-4" />
-        </button>
+    <div className="flex-1 flex flex-col overflow-hidden bg-background">
+      {/* Share mode banner */}
+      {shareMode && (
+        <div className={cn(
+          "flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium border-b",
+          shareMode === "view" ? "bg-blue-500/8 text-blue-600 dark:text-blue-400 border-blue-500/20" : "bg-green-500/8 text-green-600 dark:text-green-400 border-green-500/20"
+        )}>
+          {shareMode === "view" ? <Eye className="h-3.5 w-3.5" /> : <PencilIcon className="h-3.5 w-3.5" />}
+          {shareMode === "view" ? "View-only mode — You can look but not edit" : "Shared edit mode — Changes will be saved"}
+          <button onClick={onBack} className="ml-3 text-xs underline opacity-70 hover:opacity-100">Leave</button>
+        </div>
+      )}
+
+      {/* ── Top Bar ── */}
+      <div className="flex items-center gap-2 px-3 py-1.5 shrink-0 bg-card/80 backdrop-blur-xl border-b border-border">
+        <button onClick={onBack} className="wb-topbar-btn"><ChevronLeft className="h-4 w-4" /></button>
 
         {isRenamingTitle ? (
           <input
-            className="text-sm font-medium text-white bg-white/10 rounded px-2 py-0.5 border border-blue-500/50 focus:outline-none max-w-[200px]"
-            value={renameValue}
-            autoFocus
-            onChange={(e) => setRenameValue(e.target.value)}
+            className="text-sm font-medium text-foreground bg-muted rounded px-2 py-0.5 border border-primary/50 focus:outline-none max-w-[200px]"
+            value={renameValue} autoFocus onChange={(e) => setRenameValue(e.target.value)}
             onBlur={handleRenameCommit}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleRenameCommit()
-              if (e.key === "Escape") setIsRenamingTitle(false)
-            }}
+            onKeyDown={(e) => { if (e.key === "Enter") handleRenameCommit(); if (e.key === "Escape") setIsRenamingTitle(false) }}
           />
         ) : (
           <button
-            className="flex items-center gap-1 text-sm font-medium text-white truncate max-w-[200px] hover:text-blue-300 transition-colors group"
-            onDoubleClick={() => { setRenameValue(board?.title || ""); setIsRenamingTitle(true) }}
+            className="flex items-center gap-1 text-sm font-medium text-foreground truncate max-w-[200px] hover:text-primary transition-colors group"
+            onDoubleClick={() => { if (!isViewOnly) { setRenameValue(board?.title || ""); setIsRenamingTitle(true) } }}
             title="Double-click to rename"
           >
             <span className="truncate">{board?.title || "Untitled"}</span>
-            <Edit3 className="h-3 w-3 opacity-0 group-hover:opacity-50 shrink-0" />
+            {!isViewOnly && <Edit3 className="h-3 w-3 opacity-0 group-hover:opacity-50 shrink-0" />}
           </button>
         )}
-        <span className="text-xs text-gray-500 ml-1">{lastSavedText}</span>
+        <span className="text-xs text-muted-foreground ml-1">{lastSavedText}</span>
 
         <div className="flex-1" />
 
         {/* Center: Undo/Redo + Zoom */}
-        <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/[0.04]">
-          <button onClick={canvasActions.undo} disabled={!canvasActions.canUndo} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30 transition-colors" aria-label="Undo" title="Undo"><Undo2 className="h-3.5 w-3.5" /></button>
-          <button onClick={canvasActions.redo} disabled={!canvasActions.canRedo} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30 transition-colors" aria-label="Redo" title="Redo"><Redo2 className="h-3.5 w-3.5" /></button>
-          <div className="h-4 w-px bg-white/[0.08] mx-1" />
-          <button onClick={() => canvasActions.zoomTo(canvasActions.getZoom() * 0.8)} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Zoom out"><ZoomOut className="h-3.5 w-3.5" /></button>
-          <span className="text-xs text-gray-400 w-10 text-center tabular-nums select-none">{zoom}%</span>
-          <button onClick={() => canvasActions.zoomTo(canvasActions.getZoom() * 1.25)} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Zoom in"><ZoomIn className="h-3.5 w-3.5" /></button>
-          <button onClick={canvasActions.zoomToFit} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Zoom to fit" title="Fit to view"><Maximize2 className="h-3.5 w-3.5" /></button>
+        <div className="flex items-center gap-1 px-2 py-1 rounded-xl bg-muted/50 border border-border/50">
+          {!isViewOnly && (
+            <>
+              <button onClick={canvasActions.undo} disabled={!canvasActions.canUndo} className="wb-topbar-btn disabled:opacity-30" title="Undo"><Undo2 className="h-3.5 w-3.5" /></button>
+              <button onClick={canvasActions.redo} disabled={!canvasActions.canRedo} className="wb-topbar-btn disabled:opacity-30" title="Redo"><Redo2 className="h-3.5 w-3.5" /></button>
+              <div className="h-4 w-px bg-border mx-0.5" />
+            </>
+          )}
+          <button onClick={() => canvasActions.zoomTo(canvasActions.getZoom() * 0.8)} className="wb-topbar-btn"><ZoomOut className="h-3.5 w-3.5" /></button>
+          <span className="text-xs text-muted-foreground w-10 text-center tabular-nums select-none">{zoom}%</span>
+          <button onClick={() => canvasActions.zoomTo(canvasActions.getZoom() * 1.25)} className="wb-topbar-btn"><ZoomIn className="h-3.5 w-3.5" /></button>
+          <button onClick={canvasActions.zoomToFit} className="wb-topbar-btn" title="Fit to view"><Maximize2 className="h-3.5 w-3.5" /></button>
         </div>
 
         <div className="flex-1" />
 
-        {/* Right: actions */}
+        {/* Right actions */}
         <div className="flex items-center gap-1">
-          <button onClick={togglePublic} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label={board?.isPublic ? "Make private" : "Make public"} title={board?.isPublic ? "Public" : "Private"}>
-            {board?.isPublic ? <Globe className="h-4 w-4 text-green-400" /> : <GlobeLock className="h-4 w-4" />}
-          </button>
-          <button onClick={() => setPresentMode(true)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Present" title="Present mode"><Presentation className="h-4 w-4" /></button>
-
-          {/* Background Picker */}
+          {!isViewOnly && (
+            <>
+              <button onClick={togglePublic} className="wb-topbar-btn" title={board?.isPublic ? "Public" : "Private"}>
+                {board?.isPublic ? <Globe className="h-4 w-4 text-green-500" /> : <GlobeLock className="h-4 w-4" />}
+              </button>
+              <button onClick={() => setShowShareDialog(true)} className="wb-topbar-btn" title="Share board"><Share2 className="h-4 w-4" /></button>
+            </>
+          )}
+          <button onClick={() => setPresentMode(true)} className="wb-topbar-btn" title="Present mode"><Presentation className="h-4 w-4" /></button>
+          <BackgroundPicker
+            background={background} customBgColor={customBgColor}
+            onSelectBg={(bg) => { setBackground(bg); setHasChanges(true) }}
+            onCustomColor={(color) => { setCustomBgColor(color); setHasChanges(true) }}
+          />
+          {/* More menu */}
           <div className="relative">
-            <button onClick={() => { setShowBgPicker(!showBgPicker); setShowExportMenu(false) }} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Background" title="Background style"><Grid3X3 className="h-4 w-4" /></button>
-            {showBgPicker && (
-              <div className="absolute top-full right-0 mt-1 w-56 bg-[#1a1d2e]/95 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-2xl z-50 p-2">
-                {BACKGROUND_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.key}
-                    className={cn("w-full text-left px-3 py-2 text-sm rounded-lg transition-colors", background === opt.key ? "bg-blue-600/20 text-blue-400" : "text-gray-300 hover:bg-white/5")}
-                    onClick={() => { setBackground(opt.key); setShowBgPicker(false); setHasChanges(true) }}
-                  >
-                    <span className="font-medium">{opt.label}</span>
-                    <span className="text-xs text-gray-500 ml-2">{opt.description}</span>
-                  </button>
-                ))}
-                <div className="border-t border-white/[0.08] mt-2 pt-2 px-3">
-                  <label className="text-xs text-gray-400">Custom color</label>
-                  <input type="color" value={customBgColor} onChange={(e) => { setCustomBgColor(e.target.value); setHasChanges(true) }} className="w-full h-8 mt-1 rounded cursor-pointer" />
-                </div>
-              </div>
+            <button onClick={() => setShowMoreMenu(!showMoreMenu)} className="wb-topbar-btn" title="More options"><MoreHorizontal className="h-4 w-4" /></button>
+            {showMoreMenu && (
+              <MoreMenu
+                onClose={() => setShowMoreMenu(false)}
+                onExportPNG={() => { handleExportPNG(); setShowMoreMenu(false) }}
+                onExportSVG={() => { handleExportSVG(); setShowMoreMenu(false) }}
+                onExportPDF={() => { handleExportPDF(); setShowMoreMenu(false) }}
+                onExportJSON={() => { handleExportJSON(); setShowMoreMenu(false) }}
+                onImportJSON={() => { importInputRef.current?.click(); setShowMoreMenu(false) }}
+                onShortcuts={() => { setShowShortcuts(true); setShowMoreMenu(false) }}
+                onDelete={!isViewOnly ? () => { setConfirmDelete(true); setShowMoreMenu(false) } : undefined}
+                onFrames={() => { setShowFrames(!showFrames); setShowMoreMenu(false) }}
+                showFrames={showFrames}
+              />
             )}
           </div>
-
-          {/* Export */}
-          <div className="relative">
-            <button onClick={() => { setShowExportMenu(!showExportMenu); setShowBgPicker(false) }} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Export" title="Export / Import"><Download className="h-4 w-4" /></button>
-            {showExportMenu && (
-              <div className="absolute top-full right-0 mt-1 w-44 bg-[#1a1d2e]/95 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-2xl z-50 p-1">
-                <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportPNG}><FileImage className="h-4 w-4" /> Export PNG</button>
-                <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportSVG}><FileImage className="h-4 w-4" /> Export SVG</button>
-                <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportPDF}><FileText className="h-4 w-4" /> Export PDF</button>
-                <div className="border-t border-white/[0.08] my-1" />
-                <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportJSON}><FileJson className="h-4 w-4" /> Save as JSON</button>
-                <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={() => { importInputRef.current?.click(); setShowExportMenu(false) }}><Upload className="h-4 w-4" /> Load JSON</button>
-              </div>
-            )}
-          </div>
-
-          <button onClick={() => setShowShortcuts(true)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Shortcuts" title="Keyboard shortcuts"><Keyboard className="h-4 w-4" /></button>
-
-          <button
-            onClick={handleSave}
-            className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ml-1", hasChanges ? "bg-blue-600 text-white hover:bg-blue-700" : "text-gray-400 bg-white/5")}
-          >
-            <Save className="h-3.5 w-3.5" />
-            Save
-          </button>
-
-          <button onClick={() => setConfirmDelete(true)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors" aria-label="Delete board" title="Delete this board"><Trash2 className="h-4 w-4" /></button>
+          {!isViewOnly && (
+            <button
+              onClick={handleSave}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ml-1",
+                hasChanges ? "bg-primary text-primary-foreground hover:opacity-90 shadow-sm" : "text-muted-foreground bg-muted/50"
+              )}
+            ><Save className="h-3.5 w-3.5" /> Save</button>
+          )}
         </div>
       </div>
 
-      {/* Main Canvas Area */}
+      {/* ── Main Canvas Area ── */}
       <div className="flex-1 flex overflow-hidden relative">
         {/* Left Sidebar: Tool Palette */}
-        <div className="w-12 bg-[#1a1d2e]/60 backdrop-blur-xl border-r border-white/[0.06] flex flex-col items-center py-2 gap-0.5 shrink-0 overflow-y-auto">
-          {/* Pointer tools */}
-          {allTools.filter(t => t.group === "pointer").map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTool(t.key)}
-              className={cn(
-                "w-9 h-9 flex items-center justify-center rounded-lg transition-all",
-                tool === t.key ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "text-gray-400 hover:text-white hover:bg-white/5"
-              )}
-              title={`${t.label}${t.shortcut ? ` (${t.shortcut})` : ""}`}
-              aria-label={t.label}
-            >
-              {t.icon}
-            </button>
-          ))}
+        {!isViewOnly && (
+          <div className="w-12 bg-card/60 backdrop-blur-xl border-r border-border flex flex-col items-center py-2 gap-0.5 shrink-0 overflow-y-auto">
+            <span className="wb-tool-label">Select</span>
+            <button onClick={() => setTool("select")} className={cn("wb-tool-btn", tool === "select" && "wb-tool-active")} title="Select (V)"><MousePointer2 className="h-4 w-4" /></button>
+            <button onClick={() => setTool("pan")} className={cn("wb-tool-btn", tool === "pan" && "wb-tool-active")} title="Pan (Space)"><Hand className="h-4 w-4" /></button>
 
-          <div className="w-6 h-px bg-white/[0.08] my-1" />
+            <div className="wb-tool-divider" />
 
-          {/* Draw tools */}
-          {allTools.filter(t => t.group === "draw").map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTool(t.key)}
-              className={cn(
-                "w-9 h-9 flex items-center justify-center rounded-lg transition-all",
-                tool === t.key ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "text-gray-400 hover:text-white hover:bg-white/5"
-              )}
-              title={`${t.label}${t.shortcut ? ` (${t.shortcut})` : ""}`}
-              aria-label={t.label}
-            >
-              {t.icon}
-            </button>
-          ))}
+            <span className="wb-tool-label">Draw</span>
+            <button onClick={() => setTool("pen")} className={cn("wb-tool-btn", tool === "pen" && "wb-tool-active")} title="Pen (P)"><Pencil className="h-4 w-4" /></button>
+            <button onClick={() => setTool("highlighter")} className={cn("wb-tool-btn", tool === "highlighter" && "wb-tool-active")} title="Highlighter (H)"><Highlighter className="h-4 w-4" /></button>
+            <button onClick={() => setTool("eraser")} className={cn("wb-tool-btn", tool === "eraser" && "wb-tool-active")} title="Eraser (E)"><Eraser className="h-4 w-4" /></button>
+            <button onClick={() => setTool("laser")} className={cn("wb-tool-btn", tool === "laser" && "wb-tool-active")} title="Laser (L)"><Pointer className="h-4 w-4" /></button>
 
-          <div className="w-6 h-px bg-white/[0.08] my-1" />
+            <div className="wb-tool-divider" />
 
-          {/* Shape tools */}
-          {allTools.filter(t => t.group === "shape").map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTool(t.key)}
-              className={cn(
-                "w-9 h-9 flex items-center justify-center rounded-lg transition-all",
-                tool === t.key ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "text-gray-400 hover:text-white hover:bg-white/5"
-              )}
-              title={`${t.label}${t.shortcut ? ` (${t.shortcut})` : ""}`}
-              aria-label={t.label}
-            >
-              {t.icon}
-            </button>
-          ))}
+            <span className="wb-tool-label">Shape</span>
+            <ToolFlyout items={shapeTools} activeTool={tool} onSelect={setTool} triggerIcon={<Shapes className="h-4 w-4" />} triggerLabel="Shapes" />
+            <ToolFlyout items={lineTools} activeTool={tool} onSelect={setTool} triggerIcon={<Spline className="h-4 w-4" />} triggerLabel="Lines" />
 
-          <div className="w-6 h-px bg-white/[0.08] my-1" />
+            <div className="wb-tool-divider" />
 
-          {/* Line tools */}
-          {allTools.filter(t => t.group === "line").map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTool(t.key)}
-              className={cn(
-                "w-9 h-9 flex items-center justify-center rounded-lg transition-all",
-                tool === t.key ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "text-gray-400 hover:text-white hover:bg-white/5"
-              )}
-              title={`${t.label}${t.shortcut ? ` (${t.shortcut})` : ""}`}
-              aria-label={t.label}
-            >
-              {t.icon}
-            </button>
-          ))}
+            <span className="wb-tool-label">Insert</span>
+            <button onClick={() => setShowTextDialog(true)} className="wb-tool-btn" title="Text (T)"><Type className="h-4 w-4" /></button>
+            <button onClick={() => setShowStickyDialog(true)} className="wb-tool-btn" title="Sticky Note (S)"><StickyNote className="h-4 w-4" /></button>
+            <button onClick={() => setShowEquationDialog(true)} className="wb-tool-btn" title="Equation (Q)"><Sigma className="h-4 w-4" /></button>
+            <button onClick={() => fileInputRef.current?.click()} className="wb-tool-btn" title="Image"><ImageIcon className="h-4 w-4" /></button>
 
-          <div className="w-6 h-px bg-white/[0.08] my-1" />
-
-          {/* Insert tools */}
-          <button
-            onClick={() => setShowTextDialog(true)}
-            className="w-9 h-9 flex items-center justify-center rounded-lg transition-all text-gray-400 hover:text-white hover:bg-white/5"
-            title="Text (T)"
-            aria-label="Add text"
-          >
-            <Type className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => setShowStickyDialog(true)}
-            className="w-9 h-9 flex items-center justify-center rounded-lg transition-all text-gray-400 hover:text-white hover:bg-white/5"
-            title="Sticky Note (S)"
-            aria-label="Add sticky note"
-          >
-            <StickyNote className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => setShowEquationDialog(true)}
-            className="w-9 h-9 flex items-center justify-center rounded-lg transition-all text-gray-400 hover:text-white hover:bg-white/5"
-            title="Equation (Q)"
-            aria-label="Add equation"
-          >
-            <Sigma className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="w-9 h-9 flex items-center justify-center rounded-lg transition-all text-gray-400 hover:text-white hover:bg-white/5"
-            title="Image"
-            aria-label="Add image"
-          >
-            <ImageIcon className="h-4 w-4" />
-          </button>
-
-          <div className="flex-1" />
-
-          {/* Frames toggle at bottom */}
-          <button
-            onClick={() => setShowFrames(!showFrames)}
-            className={cn(
-              "w-9 h-9 flex items-center justify-center rounded-lg transition-all",
-              showFrames ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
-            )}
-            title="Frames"
-            aria-label="Toggle frames"
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </button>
-        </div>
+            <div className="flex-1" />
+          </div>
+        )}
 
         {/* Frames sidebar */}
         {showFrames && (
-          <div className="w-48 bg-[#1a1d2e]/90 backdrop-blur-xl border-r border-white/[0.06] flex flex-col shrink-0">
-            <div className="p-3 border-b border-white/[0.06] flex items-center justify-between">
-              <span className="text-sm font-medium text-white">Frames</span>
-              <button onClick={addFrame} className="p-1 rounded text-gray-400 hover:text-white hover:bg-white/5" aria-label="Add frame"><Plus className="h-4 w-4" /></button>
+          <div className="w-48 bg-card/90 backdrop-blur-xl border-r border-border flex flex-col shrink-0">
+            <div className="p-3 border-b border-border flex items-center justify-between">
+              <span className="text-sm font-medium text-foreground">Frames</span>
+              <button onClick={addFrame} className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"><Plus className="h-4 w-4" /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
-              {frames.length === 0 && <p className="text-xs text-gray-500 text-center py-4">No frames yet</p>}
+              {frames.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No frames yet</p>}
               {frames.map((frame) => (
                 <div
                   key={frame.id}
-                  className={cn("flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm cursor-pointer", activeFrameId === frame.id ? "bg-blue-600/20 text-blue-400" : "text-gray-300 hover:bg-white/5")}
+                  className={cn("flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm cursor-pointer", activeFrameId === frame.id ? "bg-primary/10 text-primary" : "text-foreground/70 hover:bg-muted")}
                   onClick={() => setActiveFrameId(frame.id)}
                 >
                   <span className="flex-1 truncate">{frame.name}</span>
                   {frames.length > 1 && (
-                    <button onClick={(e) => { e.stopPropagation(); deleteFrame(frame.id) }} className="p-0.5 text-gray-500 hover:text-red-400" aria-label="Delete frame"><X className="h-3 w-3" /></button>
+                    <button onClick={(e) => { e.stopPropagation(); deleteFrame(frame.id) }} className="p-0.5 text-muted-foreground hover:text-destructive"><X className="h-3 w-3" /></button>
                   )}
                 </div>
               ))}
@@ -910,6 +1051,7 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
             ref={containerRef}
             className="absolute inset-0"
             style={{ cursor: tool === "pan" ? "grab" : tool === "select" ? "default" : "crosshair", willChange: "transform" }}
+            onMouseMove={handleCanvasMouseMove}
             onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "copy" }}
             onDrop={(e) => {
               e.preventDefault()
@@ -924,129 +1066,139 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
           />
 
           {/* Color/Stroke bar (when drawing tools active) */}
-          {["pen", "highlighter", "rect", "circle", "triangle", "line", "arrow", "diamond", "connector"].includes(tool) && !selectedObj && (
+          {!isViewOnly && ["pen", "highlighter", "rect", "circle", "triangle", "line", "arrow", "diamond", "connector"].includes(tool) && !selectedObj && (
             <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30">
-              <div className="bg-[#1a1d2e]/90 backdrop-blur-xl border border-white/[0.08] rounded-2xl shadow-2xl p-2.5 flex items-center gap-2">
+              <div className="bg-card/90 backdrop-blur-xl border border-border rounded-2xl shadow-xl p-2.5 flex items-center gap-2">
                 {COLORS.map((c) => (
                   <button
                     key={c}
                     onClick={() => setStyle((s) => ({ ...s, strokeColor: c }))}
-                    className={cn("w-7 h-7 rounded-full border-2 transition-transform hover:scale-110", style.strokeColor === c ? "border-white scale-110 ring-2 ring-blue-500/40" : "border-transparent")}
+                    className={cn("w-6 h-6 rounded-full border-2 transition-transform hover:scale-110", style.strokeColor === c ? "border-primary scale-110 ring-2 ring-primary/30" : "border-transparent")}
                     style={{ backgroundColor: c }}
-                    aria-label={"Color " + c}
                   />
                 ))}
-                <div className="h-6 w-px bg-white/[0.08] mx-1" />
-                <input type="color" value={style.strokeColor} onChange={(e) => setStyle((s) => ({ ...s, strokeColor: e.target.value }))} className="w-7 h-7 rounded-full cursor-pointer border-0 bg-transparent" aria-label="Custom color" />
-                <div className="h-6 w-px bg-white/[0.08] mx-1" />
-                <div className="flex items-center gap-2">
-                  <input type="range" min={1} max={20} value={style.strokeWidth} onChange={(e) => setStyle((s) => ({ ...s, strokeWidth: Number(e.target.value) }))} className="w-20 accent-blue-500" aria-label="Stroke width" />
-                  <span className="text-xs text-gray-400 w-5 tabular-nums text-center">{style.strokeWidth}</span>
-                </div>
+                <div className="h-5 w-px bg-border mx-0.5" />
+                <input type="color" value={style.strokeColor} onChange={(e) => setStyle((s) => ({ ...s, strokeColor: e.target.value }))} className="w-6 h-6 rounded-full cursor-pointer border-0 bg-transparent" />
+                <div className="h-5 w-px bg-border mx-0.5" />
+                <input type="range" min={1} max={20} value={style.strokeWidth} onChange={(e) => setStyle((s) => ({ ...s, strokeWidth: Number(e.target.value) }))} className="w-20 accent-[var(--primary)]" />
+                <span className="text-xs text-muted-foreground w-5 tabular-nums text-center">{style.strokeWidth}</span>
               </div>
             </div>
           )}
 
-          {/* Context Style Panel (when object selected) */}
-          {selectedObj && tool === "select" && (
-            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30">
-              <div className="bg-[#1a1d2e]/90 backdrop-blur-xl border border-white/[0.08] rounded-2xl shadow-2xl p-3 flex flex-wrap items-center gap-3 max-w-[calc(100vw-8rem)]">
-                {/* Colors */}
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] text-gray-500 uppercase tracking-wider">Stroke</span>
-                    <input type="color" value={style.strokeColor} onChange={(e) => setStyle((s) => ({ ...s, strokeColor: e.target.value }))} className="w-6 h-6 rounded cursor-pointer border-0" />
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] text-gray-500 uppercase tracking-wider">Fill</span>
-                    <input type="color" value={style.fillColor === "transparent" ? "#ffffff" : style.fillColor} onChange={(e) => setStyle((s) => ({ ...s, fillColor: e.target.value }))} className="w-6 h-6 rounded cursor-pointer border-0" />
-                    <button onClick={() => setStyle((s) => ({ ...s, fillColor: "transparent" }))} className={cn("text-xs px-1.5 py-0.5 rounded border transition-colors", style.fillColor === "transparent" ? "border-blue-400 text-blue-400" : "border-white/10 text-gray-400 hover:text-white")} title="No fill">{"\u2205"}</button>
-                  </div>
-                </div>
-                <div className="h-6 w-px bg-white/[0.08]" />
-
-                {/* Stroke width + dash */}
-                <div className="flex items-center gap-2">
-                  <input type="range" min={1} max={20} value={style.strokeWidth} onChange={(e) => setStyle((s) => ({ ...s, strokeWidth: Number(e.target.value) }))} className="w-16 accent-blue-500" />
-                  <span className="text-xs text-gray-400 w-4 tabular-nums">{style.strokeWidth}</span>
-                  <select
-                    value={style.dashStyle}
-                    onChange={(e) => setStyle((s) => ({ ...s, dashStyle: e.target.value as any }))}
-                    className="text-xs bg-white/5 border border-white/[0.08] text-gray-300 rounded px-1.5 py-0.5 cursor-pointer"
-                    title="Dash style"
-                  >
-                    <option value="solid">Solid</option>
-                    <option value="dashed">Dashed</option>
-                    <option value="dotted">Dotted</option>
-                  </select>
-                </div>
-                <div className="h-6 w-px bg-white/[0.08]" />
-
-                {/* Opacity */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-gray-500">Opacity</span>
-                  <input type="range" min={0} max={1} step={0.05} value={style.fillOpacity} onChange={(e) => setStyle((s) => ({ ...s, fillOpacity: Number(e.target.value) }))} className="w-14 accent-blue-500" />
-                  <span className="text-xs text-gray-400 w-6 tabular-nums">{Math.round(style.fillOpacity * 100)}%</span>
-                </div>
-                <div className="h-6 w-px bg-white/[0.08]" />
-
-                {/* Font formatting */}
-                <div className="flex items-center gap-0.5">
-                  <button onClick={() => setStyle((s) => ({ ...s, fontBold: !s.fontBold }))} className={cn("p-1.5 rounded-md transition-colors", style.fontBold ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-white/5")} title="Bold"><Bold className="h-3.5 w-3.5" /></button>
-                  <button onClick={() => setStyle((s) => ({ ...s, fontItalic: !s.fontItalic }))} className={cn("p-1.5 rounded-md transition-colors", style.fontItalic ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-white/5")} title="Italic"><Italic className="h-3.5 w-3.5" /></button>
-                  <button onClick={() => setStyle((s) => ({ ...s, fontUnderline: !s.fontUnderline }))} className={cn("p-1.5 rounded-md transition-colors", style.fontUnderline ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-white/5")} title="Underline"><Underline className="h-3.5 w-3.5" /></button>
-                </div>
-                <div className="h-6 w-px bg-white/[0.08]" />
-
-                {/* Layer order */}
-                <div className="flex items-center gap-0.5">
-                  <button onClick={canvasActions.bringForward} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Bring forward"><ChevronUp className="h-3.5 w-3.5" /></button>
-                  <button onClick={canvasActions.sendBackward} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Send backward"><ChevronDown className="h-3.5 w-3.5" /></button>
-                  <button onClick={canvasActions.bringToFront} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Bring to front"><ChevronsUp className="h-3.5 w-3.5" /></button>
-                  <button onClick={canvasActions.sendToBack} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Send to back"><ChevronsDown className="h-3.5 w-3.5" /></button>
-                </div>
-
-                {/* Alignment (2+ objects) */}
-                {selectedCount >= 2 && (
-                  <>
-                    <div className="h-6 w-px bg-white/[0.08]" />
-                    <div className="flex items-center gap-0.5">
-                      <button onClick={() => canvasActions.alignObjects("left")} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Align left"><AlignLeft className="h-3.5 w-3.5" /></button>
-                      <button onClick={() => canvasActions.alignObjects("centerH")} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Align center"><AlignCenter className="h-3.5 w-3.5" /></button>
-                      <button onClick={() => canvasActions.alignObjects("right")} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Align right"><AlignRight className="h-3.5 w-3.5" /></button>
-                      <button onClick={() => canvasActions.alignObjects("top")} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Align top"><AlignStartVertical className="h-3.5 w-3.5" /></button>
-                      <button onClick={() => canvasActions.alignObjects("centerV")} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Align middle"><AlignCenterVertical className="h-3.5 w-3.5" /></button>
-                      <button onClick={() => canvasActions.alignObjects("bottom")} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Align bottom"><AlignEndVertical className="h-3.5 w-3.5" /></button>
-                      {selectedCount >= 3 && (
-                        <>
-                          <button onClick={() => canvasActions.distributeObjects("horizontal")} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Distribute H"><AlignHorizontalDistributeCenter className="h-3.5 w-3.5" /></button>
-                          <button onClick={() => canvasActions.distributeObjects("vertical")} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Distribute V"><AlignVerticalDistributeCenter className="h-3.5 w-3.5" /></button>
-                        </>
-                      )}
+          {/* Context Style Panel — collapsible right panel */}
+          {selectedObj && tool === "select" && !isViewOnly && (
+            <div className="absolute top-2 right-2 z-30">
+              <button onClick={() => setRightPanelCollapsed(!rightPanelCollapsed)} className="wb-topbar-btn mb-1" title={rightPanelCollapsed ? "Show style panel" : "Hide style panel"}>
+                {rightPanelCollapsed ? <PanelRightOpen className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
+              </button>
+              {!rightPanelCollapsed && (
+                <div className="bg-card/95 backdrop-blur-xl border border-border rounded-xl shadow-xl p-3 w-60 space-y-3 max-h-[calc(100vh-10rem)] overflow-y-auto animate-in fade-in slide-in-from-right-1 duration-150">
+                  {/* Colors */}
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Colors</span>
+                    <div className="flex items-center gap-3 mt-1">
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-muted-foreground">Stroke</span>
+                        <input type="color" value={style.strokeColor} onChange={(e) => setStyle((s) => ({ ...s, strokeColor: e.target.value }))} className="w-6 h-6 rounded cursor-pointer border border-border" />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-muted-foreground">Fill</span>
+                        <input type="color" value={style.fillColor === "transparent" ? "#ffffff" : style.fillColor} onChange={(e) => setStyle((s) => ({ ...s, fillColor: e.target.value }))} className="w-6 h-6 rounded cursor-pointer border border-border" />
+                        <button onClick={() => setStyle((s) => ({ ...s, fillColor: "transparent" }))} className={cn("text-xs px-1 py-0.5 rounded border", style.fillColor === "transparent" ? "border-primary text-primary" : "border-border text-muted-foreground")} title="No fill">{"\u2205"}</button>
+                      </div>
                     </div>
-                  </>
-                )}
-                <div className="h-6 w-px bg-white/[0.08]" />
-
-                {/* Lock/Group/Dupe/Delete */}
-                <div className="flex items-center gap-0.5">
-                  <button onClick={() => canvasActions.lockObject(true)} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Lock"><Lock className="h-3.5 w-3.5" /></button>
-                  <button onClick={() => canvasActions.lockObject(false)} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Unlock"><Unlock className="h-3.5 w-3.5" /></button>
-                  <button onClick={canvasActions.groupSelected} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Group"><Group className="h-3.5 w-3.5" /></button>
-                  <button onClick={canvasActions.ungroupSelected} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Ungroup"><Ungroup className="h-3.5 w-3.5" /></button>
-                  <button onClick={canvasActions.duplicateSelected} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Duplicate"><Copy className="h-3.5 w-3.5" /></button>
-                  <button onClick={canvasActions.deleteSelected} className="p-1.5 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                  </div>
+                  {/* Stroke */}
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Stroke</span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input type="range" min={1} max={20} value={style.strokeWidth} onChange={(e) => setStyle((s) => ({ ...s, strokeWidth: Number(e.target.value) }))} className="flex-1 accent-[var(--primary)]" />
+                      <span className="text-xs text-muted-foreground w-4 tabular-nums">{style.strokeWidth}</span>
+                      <select value={style.dashStyle} onChange={(e) => setStyle((s) => ({ ...s, dashStyle: e.target.value as any }))} className="text-xs bg-muted border border-border text-foreground rounded px-1.5 py-0.5 cursor-pointer">
+                        <option value="solid">Solid</option>
+                        <option value="dashed">Dashed</option>
+                        <option value="dotted">Dotted</option>
+                      </select>
+                    </div>
+                  </div>
+                  {/* Opacity */}
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Opacity</span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input type="range" min={0} max={1} step={0.05} value={style.fillOpacity} onChange={(e) => setStyle((s) => ({ ...s, fillOpacity: Number(e.target.value) }))} className="flex-1 accent-[var(--primary)]" />
+                      <span className="text-xs text-muted-foreground w-8 tabular-nums">{Math.round(style.fillOpacity * 100)}%</span>
+                    </div>
+                  </div>
+                  {/* Text */}
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Text</span>
+                    <div className="flex items-center gap-0.5 mt-1">
+                      <button onClick={() => setStyle((s) => ({ ...s, fontBold: !s.fontBold }))} className={cn("p-1.5 rounded-md transition-colors", style.fontBold ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted")} title="Bold"><Bold className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => setStyle((s) => ({ ...s, fontItalic: !s.fontItalic }))} className={cn("p-1.5 rounded-md transition-colors", style.fontItalic ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted")} title="Italic"><Italic className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => setStyle((s) => ({ ...s, fontUnderline: !s.fontUnderline }))} className={cn("p-1.5 rounded-md transition-colors", style.fontUnderline ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted")} title="Underline"><Underline className="h-3.5 w-3.5" /></button>
+                    </div>
+                  </div>
+                  {/* Layer */}
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Layer</span>
+                    <div className="flex items-center gap-0.5 mt-1">
+                      <button onClick={canvasActions.bringForward} className="wb-topbar-btn" title="Bring forward"><ChevronUp className="h-3.5 w-3.5" /></button>
+                      <button onClick={canvasActions.sendBackward} className="wb-topbar-btn" title="Send backward"><ChevronDown className="h-3.5 w-3.5" /></button>
+                      <button onClick={canvasActions.bringToFront} className="wb-topbar-btn" title="Bring to front"><ChevronsUp className="h-3.5 w-3.5" /></button>
+                      <button onClick={canvasActions.sendToBack} className="wb-topbar-btn" title="Send to back"><ChevronsDown className="h-3.5 w-3.5" /></button>
+                    </div>
+                  </div>
+                  {/* Alignment (2+ objects) */}
+                  {selectedCount >= 2 && (
+                    <div>
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Align</span>
+                      <div className="flex items-center gap-0.5 mt-1 flex-wrap">
+                        <button onClick={() => canvasActions.alignObjects("left")} className="wb-topbar-btn" title="Align left"><AlignLeft className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => canvasActions.alignObjects("centerH")} className="wb-topbar-btn" title="Center H"><AlignCenter className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => canvasActions.alignObjects("right")} className="wb-topbar-btn" title="Align right"><AlignRight className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => canvasActions.alignObjects("top")} className="wb-topbar-btn" title="Align top"><AlignStartVertical className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => canvasActions.alignObjects("centerV")} className="wb-topbar-btn" title="Center V"><AlignCenterVertical className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => canvasActions.alignObjects("bottom")} className="wb-topbar-btn" title="Align bottom"><AlignEndVertical className="h-3.5 w-3.5" /></button>
+                        {selectedCount >= 3 && (
+                          <>
+                            <button onClick={() => canvasActions.distributeObjects("horizontal")} className="wb-topbar-btn" title="Distribute H"><AlignHorizontalDistributeCenter className="h-3.5 w-3.5" /></button>
+                            <button onClick={() => canvasActions.distributeObjects("vertical")} className="wb-topbar-btn" title="Distribute V"><AlignVerticalDistributeCenter className="h-3.5 w-3.5" /></button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {/* Actions */}
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Actions</span>
+                    <div className="flex items-center gap-0.5 mt-1 flex-wrap">
+                      <button onClick={() => canvasActions.lockObject(true)} className="wb-topbar-btn" title="Lock"><Lock className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => canvasActions.lockObject(false)} className="wb-topbar-btn" title="Unlock"><Unlock className="h-3.5 w-3.5" /></button>
+                      <button onClick={canvasActions.groupSelected} className="wb-topbar-btn" title="Group"><Group className="h-3.5 w-3.5" /></button>
+                      <button onClick={canvasActions.ungroupSelected} className="wb-topbar-btn" title="Ungroup"><Ungroup className="h-3.5 w-3.5" /></button>
+                      <button onClick={canvasActions.duplicateSelected} className="wb-topbar-btn" title="Duplicate"><Copy className="h-3.5 w-3.5" /></button>
+                      <button onClick={canvasActions.deleteSelected} className="p-1.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
-          {/* Live Minimap */}
-          <div className="absolute bottom-4 right-4 w-36 h-24 bg-[#1a1d2e]/80 backdrop-blur-xl border border-white/[0.06] rounded-lg overflow-hidden z-20 opacity-40 hover:opacity-100 transition-opacity cursor-pointer" title="Minimap" onClick={canvasActions.zoomToFit}>
+          {/* Auto-hide Minimap */}
+          <div
+            className={cn(
+              "absolute bottom-4 right-4 w-36 h-24 bg-card/80 backdrop-blur-xl border border-border rounded-xl overflow-hidden z-20 cursor-pointer transition-all duration-300",
+              minimapVisible ? "opacity-80 translate-y-0 hover:opacity-100" : "opacity-0 translate-y-2 pointer-events-none"
+            )}
+            title="Click to fit view"
+            onClick={canvasActions.zoomToFit}
+          >
             {thumbnailUrl ? (
               <img src={thumbnailUrl} alt="minimap" className="w-full h-full object-contain" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-600 uppercase tracking-wider">minimap</div>
+              <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground uppercase tracking-wider">minimap</div>
             )}
           </div>
         </div>
@@ -1056,20 +1208,23 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
       <input ref={importInputRef} type="file" accept=".json" className="hidden" onChange={handleImportJSON} />
 
+      {/* Share Dialog */}
+      {showShareDialog && board && <ShareDialog board={board} onClose={() => setShowShareDialog(false)} />}
+
       {/* Dialogs */}
       {showTextDialog && (
         <ModalOverlay onClose={() => setShowTextDialog(false)}>
           <div className="w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Add Text</h3>
-            <textarea value={textInput} onChange={(e) => setTextInput(e.target.value)} className="w-full p-3 rounded-lg bg-white/5 border border-white/[0.08] text-white resize-none mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50" rows={3} placeholder="Type text here..." autoFocus />
+            <h3 className="text-lg font-semibold text-foreground mb-4">Add Text</h3>
+            <textarea value={textInput} onChange={(e) => setTextInput(e.target.value)} className="w-full p-3 rounded-lg bg-muted border border-border text-foreground resize-none mb-3 focus:outline-none focus:ring-2 focus:ring-primary/50" rows={3} placeholder="Type text here..." autoFocus />
             <div className="flex items-center gap-2 mb-4">
-              <label className="text-sm text-gray-400">Size:</label>
-              <input type="range" min={12} max={72} value={style.fontSize} onChange={(e) => setStyle((s) => ({ ...s, fontSize: Number(e.target.value) }))} className="flex-1 accent-blue-500" />
-              <span className="text-sm text-gray-400 w-8 tabular-nums">{style.fontSize}</span>
+              <label className="text-sm text-muted-foreground">Size:</label>
+              <input type="range" min={12} max={72} value={style.fontSize} onChange={(e) => setStyle((s) => ({ ...s, fontSize: Number(e.target.value) }))} className="flex-1 accent-[var(--primary)]" />
+              <span className="text-sm text-muted-foreground w-8 tabular-nums">{style.fontSize}</span>
             </div>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowTextDialog(false)} className="px-4 py-2 text-sm rounded-lg text-gray-400 hover:bg-white/5">Cancel</button>
-              <button onClick={() => { if (textInput.trim()) { canvasActions.addText(textInput, 0, 0, style); setTool("select") }; setTextInput(""); setShowTextDialog(false) }} className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700">Add</button>
+              <button onClick={() => setShowTextDialog(false)} className="px-4 py-2 text-sm rounded-lg text-muted-foreground hover:bg-muted">Cancel</button>
+              <button onClick={() => { if (textInput.trim()) { canvasActions.addText(textInput, 0, 0, style); setTool("select") }; setTextInput(""); setShowTextDialog(false) }} className="px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:opacity-90">Add</button>
             </div>
           </div>
         </ModalOverlay>
@@ -1078,19 +1233,19 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
       {showStickyDialog && (
         <ModalOverlay onClose={() => setShowStickyDialog(false)}>
           <div className="w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Add Sticky Note</h3>
-            <textarea value={stickyInput} onChange={(e) => setStickyInput(e.target.value)} className="w-full p-3 rounded-lg bg-white/5 border border-white/[0.08] text-white resize-none mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50" rows={3} placeholder="Note content..." autoFocus />
+            <h3 className="text-lg font-semibold text-foreground mb-4">Add Sticky Note</h3>
+            <textarea value={stickyInput} onChange={(e) => setStickyInput(e.target.value)} className="w-full p-3 rounded-lg bg-muted border border-border text-foreground resize-none mb-3 focus:outline-none focus:ring-2 focus:ring-primary/50" rows={3} placeholder="Note content..." autoFocus />
             <div className="mb-4">
-              <label className="text-sm text-gray-400 block mb-2">Color:</label>
+              <label className="text-sm text-muted-foreground block mb-2">Color:</label>
               <div className="flex gap-2">
                 {STICKY_COLORS.map((c) => (
-                  <button key={c} onClick={() => setStickyColor(c)} className={cn("w-8 h-8 rounded-lg border-2 transition-transform", stickyColor === c ? "border-blue-400 scale-110" : "border-transparent")} style={{ backgroundColor: c }} aria-label={"Sticky color " + c} />
+                  <button key={c} onClick={() => setStickyColor(c)} className={cn("w-8 h-8 rounded-lg border-2 transition-transform", stickyColor === c ? "border-primary scale-110" : "border-transparent")} style={{ backgroundColor: c }} />
                 ))}
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowStickyDialog(false)} className="px-4 py-2 text-sm rounded-lg text-gray-400 hover:bg-white/5">Cancel</button>
-              <button onClick={() => { canvasActions.addSticky(stickyInput || "New note", 0, 0, stickyColor); setStickyInput(""); setShowStickyDialog(false) }} className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700">Add</button>
+              <button onClick={() => setShowStickyDialog(false)} className="px-4 py-2 text-sm rounded-lg text-muted-foreground hover:bg-muted">Cancel</button>
+              <button onClick={() => { canvasActions.addSticky(stickyInput || "New note", 0, 0, stickyColor); setStickyInput(""); setShowStickyDialog(false) }} className="px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:opacity-90">Add</button>
             </div>
           </div>
         </ModalOverlay>
@@ -1099,22 +1254,20 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
       {showEquationDialog && (
         <ModalOverlay onClose={() => setShowEquationDialog(false)}>
           <div className="w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-white mb-2">Add Equation</h3>
-            <p className="text-xs text-gray-400 mb-4">{"Enter LaTeX notation (e.g. E = mc^2, \\frac{a}{b}, \\sqrt{x})"}</p>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Add Equation</h3>
+            <p className="text-xs text-muted-foreground mb-4">{"Enter LaTeX notation (e.g. E = mc^2, \\frac{a}{b}, \\sqrt{x})"}</p>
             <input
               type="text" value={equationInput} onChange={(e) => setEquationInput(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/[0.08] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 mb-2 font-mono"
+              className="w-full px-4 py-2.5 rounded-lg bg-muted border border-border text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 mb-2 font-mono"
               placeholder="e.g. E = mc^2" autoFocus
               onKeyDown={(e) => { if (e.key === "Enter") { if (equationInput.trim()) canvasActions.addEquation(equationInput, 0, 0); setEquationInput(""); setShowEquationDialog(false) } }}
             />
             {equationInput.trim() && (
-              <div className="mb-4 p-3 rounded-lg bg-white/5 border border-white/[0.08] text-center overflow-x-auto">
-                <EquationPreview latex={equationInput} />
-              </div>
+              <div className="mb-4 p-3 rounded-lg bg-muted border border-border text-center overflow-x-auto"><EquationPreview latex={equationInput} /></div>
             )}
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowEquationDialog(false)} className="px-4 py-2 text-sm rounded-lg text-gray-400 hover:bg-white/5">Cancel</button>
-              <button onClick={() => { if (equationInput.trim()) canvasActions.addEquation(equationInput, 0, 0); setEquationInput(""); setShowEquationDialog(false) }} className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700">Add</button>
+              <button onClick={() => setShowEquationDialog(false)} className="px-4 py-2 text-sm rounded-lg text-muted-foreground hover:bg-muted">Cancel</button>
+              <button onClick={() => { if (equationInput.trim()) canvasActions.addEquation(equationInput, 0, 0); setEquationInput(""); setShowEquationDialog(false) }} className="px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:opacity-90">Add</button>
             </div>
           </div>
         </ModalOverlay>
@@ -1124,8 +1277,8 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
         <ModalOverlay onClose={() => setShowShortcuts(false)}>
           <div className="w-full max-w-lg p-6 max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Keyboard Shortcuts</h3>
-              <button onClick={() => setShowShortcuts(false)} className="p-1 text-gray-400 hover:text-white"><X className="h-5 w-5" /></button>
+              <h3 className="text-lg font-semibold text-foreground">Keyboard Shortcuts</h3>
+              <button onClick={() => setShowShortcuts(false)} className="p-1 text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
             </div>
             <div className="space-y-1">
               {[...KEYBOARD_SHORTCUTS,
@@ -1134,9 +1287,9 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
                 { key: "S / Down Arrow", action: "Pan down" },
                 { key: "D / Right Arrow", action: "Pan right" },
               ].map((s) => (
-                <div key={s.key} className="flex items-center justify-between py-1.5 border-b border-white/5">
-                  <span className="text-sm text-gray-300">{s.action}</span>
-                  <kbd className="px-2 py-0.5 rounded bg-white/5 text-xs text-gray-400 font-mono">{s.key}</kbd>
+                <div key={s.key} className="flex items-center justify-between py-1.5 border-b border-border/50">
+                  <span className="text-sm text-foreground/80">{s.action}</span>
+                  <kbd className="px-2 py-0.5 rounded bg-muted text-xs text-muted-foreground font-mono">{s.key}</kbd>
                 </div>
               ))}
             </div>
@@ -1145,11 +1298,9 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
       )}
 
       <ConfirmDialog
-        open={confirmDelete}
-        title="Delete Board"
+        open={confirmDelete} title="Delete Board"
         message="Are you sure you want to delete this board? This cannot be undone."
-        confirmLabel="Delete"
-        destructive
+        confirmLabel="Delete" destructive
         onConfirm={() => { if (board) deleteBoardFromStore(board.id); setConfirmDelete(false); onBack() }}
         onCancel={() => setConfirmDelete(false)}
       />
@@ -1158,13 +1309,55 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
 }
 
 // ============================================================================
-// Small Helper Components
+// More Menu (overflow for Export, Shortcuts, Frames, Delete)
+// ============================================================================
+
+function MoreMenu({
+  onClose, onExportPNG, onExportSVG, onExportPDF, onExportJSON, onImportJSON,
+  onShortcuts, onDelete, onFrames, showFrames,
+}: {
+  onClose: () => void; onExportPNG: () => void; onExportSVG: () => void
+  onExportPDF: () => void; onExportJSON: () => void; onImportJSON: () => void
+  onShortcuts: () => void; onDelete?: () => void; onFrames: () => void; showFrames: boolean
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose() }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [onClose])
+
+  return (
+    <div ref={ref} className="absolute top-full right-0 mt-2 w-48 bg-card/95 backdrop-blur-xl border border-border rounded-xl shadow-xl z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+      <div className="p-1">
+        <button className="wb-menu-item" onClick={onFrames}><LayoutGrid className="h-4 w-4" />{showFrames ? "Hide Frames" : "Show Frames"}</button>
+        <button className="wb-menu-item" onClick={onShortcuts}><Keyboard className="h-4 w-4" />Shortcuts</button>
+        <div className="h-px bg-border my-1" />
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground px-3 py-1 block select-none">Export</span>
+        <button className="wb-menu-item" onClick={onExportPNG}><FileImage className="h-4 w-4" />PNG</button>
+        <button className="wb-menu-item" onClick={onExportSVG}><FileImage className="h-4 w-4" />SVG</button>
+        <button className="wb-menu-item" onClick={onExportPDF}><FileText className="h-4 w-4" />PDF</button>
+        <button className="wb-menu-item" onClick={onExportJSON}><FileJson className="h-4 w-4" />Save JSON</button>
+        <button className="wb-menu-item" onClick={onImportJSON}><Upload className="h-4 w-4" />Load JSON</button>
+        {onDelete && (
+          <>
+            <div className="h-px bg-border my-1" />
+            <button className="wb-menu-item text-destructive hover:!bg-destructive/10" onClick={onDelete}><Trash2 className="h-4 w-4" />Delete Board</button>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ============================================================================
+// Shared Components
 // ============================================================================
 
 function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="mx-4 rounded-2xl bg-[#1a1d2e]/95 backdrop-blur-xl border border-white/[0.08] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-150" onClick={onClose}>
+      <div className="mx-4 rounded-2xl bg-card/95 backdrop-blur-xl border border-border shadow-2xl animate-in zoom-in-95 duration-150" onClick={(e) => e.stopPropagation()}>
         {children}
       </div>
     </div>

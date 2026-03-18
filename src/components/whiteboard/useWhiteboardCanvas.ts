@@ -43,10 +43,11 @@ function drawCanvasBackground(
   let bgColor = isDark ? "#1a1a2e" : "#ffffff"
   if (bg === "plain-dark") bgColor = "#1a1a2e"
   if (bg === "plain") bgColor = isDark ? "#1a1a2e" : "#ffffff"
+  if (bg === "transparent") { ctx.clearRect(0, 0, w, h); bgColor = "transparent" }
   if (customColor && customColor !== "#ffffff" && customColor !== "transparent") bgColor = customColor
   ctx.fillStyle = bgColor
   ctx.fillRect(0, 0, w, h)
-  if (bg === "plain" || bg === "plain-dark") return
+  if (bg === "plain" || bg === "plain-dark" || bg === "transparent") return
   const zoom = vpt[0] || 1, panX = vpt[4] || 0, panY = vpt[5] || 0
   const dotColor = isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)"
   const lineColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"
@@ -186,20 +187,23 @@ export function useWhiteboardCanvas({
       })
       canvas.on("mouse:wheel", (opt: any) => {
         const e = opt.e as WheelEvent
-        // Trackpad pan: if no ctrl key, treat as pan
+        // Trackpad pan: if no ctrl key, treat as pan with smooth interpolation
         if (!e.ctrlKey && !e.metaKey) {
           const vpt = canvas.viewportTransform!
-          vpt[4] -= e.deltaX
-          vpt[5] -= e.deltaY
+          // Apply damped panning for smoother feel
+          const damping = 0.8
+          vpt[4] -= e.deltaX * damping
+          vpt[5] -= e.deltaY * damping
           canvas.requestRenderAll()
           e.preventDefault()
           e.stopPropagation()
           return
         }
-        // Ctrl + wheel = zoom (pinch-to-zoom on trackpad)
+        // Ctrl + wheel = zoom (pinch-to-zoom on trackpad) with smooth stepping
         const delta = e.deltaY
         let zoom = canvas.getZoom()
-        zoom *= 0.999 ** delta; zoom = Math.min(Math.max(zoom, 0.1), 30)
+        const zoomFactor = 0.998 ** delta
+        zoom *= zoomFactor; zoom = Math.min(Math.max(zoom, 0.1), 30)
         canvas.zoomToPoint(new fabric.Point(e.offsetX, e.offsetY), zoom)
         e.preventDefault(); e.stopPropagation()
       })
@@ -332,18 +336,31 @@ export function useWhiteboardCanvas({
 
   // WASD / Arrow key panning
   useEffect(() => {
-    const PAN_SPEED = 20
+    const PAN_SPEED_MIN = 4
+    const PAN_SPEED_MAX = 22
+    const PAN_ACCEL_RATE = 0.12
+    const PAN_DECEL_RATE = 0.15
     const keysDown = new Set<string>()
     let animId: number | null = null
+    let currentSpeed = 0
 
     const tick = () => {
       const c = canvasRef.current
-      if (!c || keysDown.size === 0) { animId = null; return }
+      if (!c) { animId = null; currentSpeed = 0; return }
+      if (keysDown.size > 0) {
+        // Accelerate smoothly
+        currentSpeed = currentSpeed + (PAN_SPEED_MAX - currentSpeed) * PAN_ACCEL_RATE
+      } else {
+        // Decelerate smoothly
+        currentSpeed *= (1 - PAN_DECEL_RATE)
+        if (currentSpeed < 0.5) { currentSpeed = 0; animId = null; return }
+      }
+      const speed = Math.max(PAN_SPEED_MIN, currentSpeed)
       const vpt = c.viewportTransform!
-      if (keysDown.has("w") || keysDown.has("arrowup")) vpt[5] += PAN_SPEED
-      if (keysDown.has("s") || keysDown.has("arrowdown")) vpt[5] -= PAN_SPEED
-      if (keysDown.has("a") || keysDown.has("arrowleft")) vpt[4] += PAN_SPEED
-      if (keysDown.has("d") || keysDown.has("arrowright")) vpt[4] -= PAN_SPEED
+      if (keysDown.has("w") || keysDown.has("arrowup")) vpt[5] += speed
+      if (keysDown.has("s") || keysDown.has("arrowdown")) vpt[5] -= speed
+      if (keysDown.has("a") || keysDown.has("arrowleft")) vpt[4] += speed
+      if (keysDown.has("d") || keysDown.has("arrowright")) vpt[4] -= speed
       c.requestRenderAll()
       animId = requestAnimationFrame(tick)
     }

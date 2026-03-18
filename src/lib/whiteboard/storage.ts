@@ -182,7 +182,7 @@ export function createBoard(ownerId: string, title: string): WBBoard {
     flagged: false,
     frames: [{ id: frameId, name: "Frame 1", viewportTransform: [1, 0, 0, 1, 0, 0], canvasJSON: "" }],
     activeFrameId: frameId,
-    background: "grid",
+    background: "plain",
     customBgColor: "#ffffff",
     createdAt: now,
     updatedAt: now,
@@ -334,4 +334,48 @@ export function getStats(): { totalUsers: number; totalBoards: number; publicBoa
     publicBoards: boards.filter((b) => b.isPublic).length,
     bannedUsers: users.filter((u) => u.banned).length,
   }
+}
+
+// ---- Share Link Management ----
+import type { ShareLink, ShareMode } from "./types"
+
+export function createShareLink(boardId: string, mode: ShareMode): ShareLink {
+  const store = loadStore()
+  const board = store.boards[boardId]
+  if (!board) throw new Error("Board not found")
+  const link: ShareLink = {
+    id: crypto.randomUUID(),
+    boardId,
+    mode,
+    createdAt: new Date().toISOString(),
+  }
+  if (!board.shareLinks) board.shareLinks = []
+  // Remove existing link with same mode
+  board.shareLinks = board.shareLinks.filter((l) => l.mode !== mode)
+  board.shareLinks.push(link)
+  saveStore(store)
+  return link
+}
+
+export function getShareLink(linkId: string): { board: WBBoard; link: ShareLink } | null {
+  const store = loadStore()
+  for (const board of Object.values(store.boards)) {
+    const link = board.shareLinks?.find((l) => l.id === linkId)
+    if (link) return { board, link }
+  }
+  return null
+}
+
+export function removeShareLink(boardId: string, linkId: string): void {
+  const store = loadStore()
+  const board = store.boards[boardId]
+  if (!board) return
+  board.shareLinks = (board.shareLinks || []).filter((l) => l.id !== linkId)
+  saveStore(store)
+}
+
+export function getBoardShareLinks(boardId: string): ShareLink[] {
+  const store = loadStore()
+  const board = store.boards[boardId]
+  return board?.shareLinks || []
 }
