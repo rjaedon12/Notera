@@ -158,7 +158,7 @@ export async function duplicateBoard(boardId: string): Promise<string> {
   const newBoard = await prisma.whiteboardBoard.create({
     data: {
       title: `${source.title} (Copy)`,
-      elements: source.elements,
+      elements: source.elements as unknown as import("@prisma/client").Prisma.InputJsonValue,
       background: source.background,
       bgColor: source.bgColor,
       thumbnail: source.thumbnail,
