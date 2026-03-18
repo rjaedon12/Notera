@@ -3,6 +3,7 @@ export interface StudySet {
   title: string
   description: string | null
   isPublic: boolean
+  isFeatured?: boolean
   tags?: string[]
   createdAt: string
   updatedAt: string

@@ -152,7 +152,8 @@ function HomeContent() {
   const { data: session, status } = useSession()
   const searchParams = useSearchParams()
   const search = searchParams.get("search") || ""
-  const { data: publicSets, isLoading } = usePublicSets(search, { featured: !search, limit: search ? 50 : 9 })
+  // Always fetch recent public sets (no featured filter) — limited to 6 for home page
+  const { data: publicSets, isLoading } = usePublicSets(search, { limit: search ? 50 : 6 })
   const { data: starredSetIds = [] } = useStarredSets()
   const toggleStar = useToggleSetStar()
 
@@ -191,12 +192,14 @@ function HomeContent() {
     )
   }
 
-  // Sort starred sets to the top
+  // Sort: featured first, then starred, then by recency
   const sortedSets = publicSets
     ? [...publicSets].sort((a, b) => {
+        const aFeatured = a.isFeatured ? 2 : 0
+        const bFeatured = b.isFeatured ? 2 : 0
         const aStarred = starredSetIds.includes(a.id) ? 1 : 0
         const bStarred = starredSetIds.includes(b.id) ? 1 : 0
-        return bStarred - aStarred
+        return (bFeatured + bStarred) - (aFeatured + aStarred)
       })
     : []
 
@@ -215,8 +218,8 @@ function HomeContent() {
       <section className="py-12">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-foreground flex items-center gap-2 font-heading">
-            <Star className="h-6 w-6" style={{ color: "var(--primary)" }} />
-            {search ? `Search results for "${search}"` : "Featured Study Sets"}
+            <TrendingUp className="h-6 w-6" style={{ color: "var(--primary)" }} />
+            {search ? `Search results for "${search}"` : "Recent Study Sets"}
           </h2>
           {!search && (
             <Link href="/discover" className="text-sm font-medium hover:underline flex items-center gap-1" style={{ color: "var(--primary)" }}>
@@ -235,9 +238,18 @@ function HomeContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {sortedSets.map((set) => {
               const isStarred = starredSetIds.includes(set.id)
+              const isFeatured = set.isFeatured
               return (
                 <Link key={set.id} href={`/sets/${set.id}`}>
-                  <Card className={`h-full cursor-pointer ${isStarred ? "ring-2 ring-[var(--primary)]/30" : ""}`}>
+                  <Card className={`h-full cursor-pointer relative overflow-hidden ${isFeatured ? "ring-2 ring-amber-400/50 shadow-lg shadow-amber-400/10" : isStarred ? "ring-2 ring-[var(--primary)]/30" : ""}`}>
+                    {isFeatured && (
+                      <div className="absolute top-0 right-0 z-10">
+                        <div className="bg-gradient-to-l from-amber-500 to-amber-400 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-bl-lg flex items-center gap-1 shadow-md">
+                          <Star className="h-3 w-3 fill-white" />
+                          Featured
+                        </div>
+                      </div>
+                    )}
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
                         <h3 className="font-semibold text-lg mb-1 line-clamp-1 flex-1 font-heading">{set.title}</h3>

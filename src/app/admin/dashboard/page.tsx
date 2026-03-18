@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
 
-type PanelType = "stats" | "users" | "sets" | "quizzes" | "resources" | "banned" | "announcements"
+type PanelType = "stats" | "users" | "sets" | "quizzes" | "resources" | "dbq" | "banned" | "announcements"
 
 interface AdminUser {
   id: string
@@ -50,6 +50,15 @@ interface AdminResource {
   type: string
   createdAt: string
   user: { id: string; name: string | null; email: string }
+}
+
+interface AdminDBQPrompt {
+  id: string
+  title: string
+  subject: string
+  era: string
+  createdAt: string
+  _count: { documents: number; essays: number }
 }
 
 interface AdminAnnouncement {
@@ -137,6 +146,17 @@ export default function AdminDashboard() {
       return res.json()
     },
     enabled: authenticated && activePanel === "resources",
+  })
+
+  // Fetch DBQ prompts
+  const { data: dbqPrompts = [] } = useQuery<AdminDBQPrompt[]>({
+    queryKey: ["admin-dash", "dbq"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/dbq")
+      if (!res.ok) throw new Error("Failed")
+      return res.json()
+    },
+    enabled: authenticated && activePanel === "dbq",
   })
 
   // Fetch announcements
@@ -301,6 +321,23 @@ export default function AdminDashboard() {
     onError: () => toast.error("Failed to delete resource"),
   })
 
+  // Delete DBQ prompt mutation
+  const deleteDBQMutation = useMutation({
+    mutationFn: async (promptId: string) => {
+      const res = await fetch("/api/admin/dbq", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ promptId }),
+      })
+      if (!res.ok) throw new Error("Failed")
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-dash", "dbq"] })
+      toast.success("DBQ deleted")
+    },
+    onError: () => toast.error("Failed to delete DBQ"),
+  })
+
   if (status === "loading" || !authenticated) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
@@ -315,6 +352,7 @@ export default function AdminDashboard() {
     { key: "sets", label: "Sets", icon: <BookOpen className="h-4 w-4" /> },
     { key: "quizzes", label: "Quizzes", icon: <Brain className="h-4 w-4" /> },
     { key: "resources", label: "Resources", icon: <FileText className="h-4 w-4" /> },
+    { key: "dbq", label: "DBQs", icon: <BookOpen className="h-4 w-4" /> },
     { key: "banned", label: "Banned Users", icon: <UserX className="h-4 w-4" /> },
     { key: "announcements", label: "Announcements", icon: <Megaphone className="h-4 w-4" /> },
   ]
@@ -591,6 +629,54 @@ export default function AdminDashboard() {
               </table>
               {resources.length === 0 && (
                 <p className="p-8 text-center" style={{ color: "var(--muted-foreground)" }}>No resources found</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* DBQ Panel */}
+        {activePanel === "dbq" && (
+          <div>
+            <h2 className="text-xl font-bold text-foreground mb-4 font-heading">DBQ Prompts</h2>
+            <div className="rounded-xl border overflow-hidden" style={{ borderColor: "var(--glass-border)" }}>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ background: "var(--glass-fill)" }}>
+                    <th className="text-left px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>Title</th>
+                    <th className="text-left px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>Subject</th>
+                    <th className="text-left px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>Era</th>
+                    <th className="text-left px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>Docs</th>
+                    <th className="text-left px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>Essays</th>
+                    <th className="text-left px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>Created</th>
+                    <th className="text-right px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dbqPrompts.map((prompt) => (
+                    <tr key={prompt.id} className="border-t" style={{ borderColor: "var(--glass-border)" }}>
+                      <td className="px-4 py-3 text-foreground font-medium max-w-[220px] truncate">{prompt.title}</td>
+                      <td className="px-4 py-3">
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-blue-500/15 text-blue-400">
+                          {prompt.subject}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3" style={{ color: "var(--muted-foreground)" }}>{prompt.era}</td>
+                      <td className="px-4 py-3" style={{ color: "var(--muted-foreground)" }}>{prompt._count.documents}</td>
+                      <td className="px-4 py-3" style={{ color: "var(--muted-foreground)" }}>{prompt._count.essays}</td>
+                      <td className="px-4 py-3" style={{ color: "var(--muted-foreground)" }}>{new Date(prompt.createdAt).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-right">
+                        <button onClick={() => {
+                          if (confirm(`Delete "${prompt.title}" and all its documents and essays?`)) deleteDBQMutation.mutate(prompt.id)
+                        }} className="inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg transition-colors hover:bg-red-500/10 text-red-400">
+                          <Trash2 className="h-3 w-3" /> Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {dbqPrompts.length === 0 && (
+                <p className="p-8 text-center" style={{ color: "var(--muted-foreground)" }}>No DBQ prompts found</p>
               )}
             </div>
           </div>

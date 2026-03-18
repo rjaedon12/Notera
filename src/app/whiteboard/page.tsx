@@ -11,12 +11,12 @@ import {
   Download, Upload, Plus, Trash2, Grid3X3,
   Copy, Group, Ungroup, Lock, Unlock, ChevronUp, ChevronDown, ChevronsUp,
   ChevronsDown, Keyboard, X, FileJson, FileImage,
-  FileText, Presentation, Globe, GlobeLock, LayoutGrid, Menu,
+  FileText, Presentation, Globe, GlobeLock, LayoutGrid,
   AlignLeft, AlignCenter, AlignRight,
   AlignStartVertical, AlignEndVertical, AlignCenterVertical,
   AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter,
-  Bold, Italic, Underline, Edit3, ChevronLeft, ChevronRight,
-  Shapes, PenTool, PlusCircle, ChevronDown as ChevronDownIcon,
+  Bold, Italic, Underline, Edit3,
+  ChevronLeft, ChevronRight,
 } from "lucide-react"
 import toast from "react-hot-toast"
 
@@ -65,87 +65,6 @@ function EquationPreview({ latex }: { latex: string }) {
 }
 
 // ============================================================================
-// Toolbar Popover - Shared component for grouped tool menus
-// ============================================================================
-
-function ToolPopover({
-  open,
-  onClose,
-  trigger,
-  children,
-}: {
-  open: boolean
-  onClose: () => void
-  trigger: React.ReactNode
-  children: React.ReactNode
-}) {
-  const popoverRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        onClose()
-      }
-    }
-    document.addEventListener("mousedown", handler)
-    return () => document.removeEventListener("mousedown", handler)
-  }, [open, onClose])
-
-  return (
-    <div className="relative" ref={popoverRef}>
-      {trigger}
-      {open && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50">
-          <div className="bg-[#1a1d2e]/90 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-2xl p-2 min-w-[120px]">
-            {children}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ============================================================================
-// Board Templates (extracted from inline JSON for cleaner code)
-// ============================================================================
-
-const BOARD_TEMPLATES: { label: string; emoji: string; title: string; canvasJSON: string }[] = [
-  { label: "Blank", emoji: "\u2b1c", title: "Untitled Board", canvasJSON: "" },
-  { label: "Cornell Notes", emoji: "\ud83d\udcdd", title: "Cornell Notes", canvasJSON: JSON.stringify({ version: "6.0.0", objects: [
-    { type: "Rect", left: 40, top: 40, width: 180, height: 520, fill: "transparent", stroke: "#3b82f6", strokeWidth: 2 },
-    { type: "Rect", left: 40, top: 520, width: 740, height: 80, fill: "transparent", stroke: "#3b82f6", strokeWidth: 2 },
-    { type: "Rect", left: 220, top: 40, width: 560, height: 480, fill: "transparent", stroke: "#3b82f6", strokeWidth: 2 },
-    { type: "IText", text: "Cues / Keywords", left: 130, top: 20, fontSize: 13, fill: "#3b82f6", fontWeight: "bold", originX: "center" },
-    { type: "IText", text: "Notes", left: 500, top: 20, fontSize: 13, fill: "#3b82f6", fontWeight: "bold", originX: "center" },
-    { type: "IText", text: "Summary", left: 400, top: 504, fontSize: 13, fill: "#3b82f6", fontWeight: "bold", originX: "center" },
-  ]}) },
-  { label: "Mind Map", emoji: "\ud83e\udde0", title: "Mind Map", canvasJSON: JSON.stringify({ version: "6.0.0", objects: [
-    { type: "Ellipse", left: 340, top: 220, rx: 90, ry: 45, fill: "#3b82f620", stroke: "#3b82f6", strokeWidth: 2, originX: "center", originY: "center" },
-    { type: "IText", text: "Main Topic", left: 340, top: 220, fontSize: 18, fill: "#3b82f6", fontWeight: "bold", originX: "center", originY: "center" },
-  ]}) },
-  { label: "Kanban", emoji: "\ud83d\udccb", title: "Kanban Board", canvasJSON: JSON.stringify({ version: "6.0.0", objects: [
-    { type: "Rect", left: 20, top: 20, width: 200, height: 460, fill: "#3b82f610", stroke: "#3b82f640", strokeWidth: 1, rx: 8, ry: 8 },
-    { type: "Rect", left: 240, top: 20, width: 200, height: 460, fill: "#f59e0b10", stroke: "#f59e0b40", strokeWidth: 1, rx: 8, ry: 8 },
-    { type: "Rect", left: 460, top: 20, width: 200, height: 460, fill: "#22c55e10", stroke: "#22c55e40", strokeWidth: 1, rx: 8, ry: 8 },
-    { type: "IText", text: "To Do", left: 120, top: 38, fontSize: 15, fill: "#3b82f6", fontWeight: "bold", originX: "center" },
-    { type: "IText", text: "In Progress", left: 340, top: 38, fontSize: 15, fill: "#f59e0b", fontWeight: "bold", originX: "center" },
-    { type: "IText", text: "Done", left: 560, top: 38, fontSize: 15, fill: "#22c55e", fontWeight: "bold", originX: "center" },
-  ]}) },
-  { label: "Timeline", emoji: "\ud83d\udcc5", title: "Timeline", canvasJSON: JSON.stringify({ version: "6.0.0", objects: [
-    { type: "Line", x1: 40, y1: 240, x2: 760, y2: 240, stroke: "#3b82f6", strokeWidth: 3 },
-    { type: "Ellipse", left: 160, top: 240, rx: 10, ry: 10, fill: "#3b82f6", originX: "center", originY: "center" },
-    { type: "Ellipse", left: 340, top: 240, rx: 10, ry: 10, fill: "#3b82f6", originX: "center", originY: "center" },
-    { type: "Ellipse", left: 520, top: 240, rx: 10, ry: 10, fill: "#3b82f6", originX: "center", originY: "center" },
-    { type: "Ellipse", left: 700, top: 240, rx: 10, ry: 10, fill: "#3b82f6", originX: "center", originY: "center" },
-    { type: "IText", text: "Event 1", left: 160, top: 210, fontSize: 13, fill: "#ffffff", originX: "center", originY: "bottom" },
-    { type: "IText", text: "Event 2", left: 340, top: 270, fontSize: 13, fill: "#ffffff", originX: "center", originY: "top" },
-    { type: "IText", text: "Event 3", left: 520, top: 210, fontSize: 13, fill: "#ffffff", originX: "center", originY: "bottom" },
-    { type: "IText", text: "Event 4", left: 700, top: 270, fontSize: 13, fill: "#ffffff", originX: "center", originY: "top" },
-  ]}) },
-]
-
-// ============================================================================
 // Main Whiteboard Page Component
 // ============================================================================
 
@@ -187,12 +106,8 @@ function WhiteboardMain({ user, isAdmin, onLogout }: WhiteboardMainProps) {
     setBoards(getUserBoards(user.id))
   }, [user.id, refreshKey])
 
-  const handleCreateBoard = (title: string, templateJSON?: string) => {
+  const handleCreateBoard = (title: string) => {
     const board = createBoardInStore(user.id, title)
-    if (templateJSON) {
-      const updated = { ...board, canvasJSON: templateJSON }
-      saveBoardToStore(updated)
-    }
     setActiveBoardId(board.id)
     setRefreshKey((k) => k + 1)
   }
@@ -252,14 +167,14 @@ function WhiteboardMain({ user, isAdmin, onLogout }: WhiteboardMainProps) {
 }
 
 // ============================================================================
-// Board Dashboard
+// Board Dashboard (no templates — just blank boards)
 // ============================================================================
 
 interface BoardDashboardProps {
   boards: WBBoard[]
   user: { id: string; username: string; isAdmin: boolean }
   isAdmin: boolean
-  onCreateBoard: (title: string, templateJSON?: string) => void
+  onCreateBoard: (title: string) => void
   onOpenBoard: (id: string) => void
   onDeleteBoard: (id: string) => void
   onDuplicateBoard: (id: string) => void
@@ -269,7 +184,6 @@ interface BoardDashboardProps {
 function BoardDashboard({ boards, onCreateBoard, onOpenBoard, onDeleteBoard, onDuplicateBoard }: BoardDashboardProps) {
   const [newTitle, setNewTitle] = useState("")
   const [showNew, setShowNew] = useState(false)
-  const [selectedTemplate, setSelectedTemplate] = useState(0)
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: string; title: string }>({ open: false, id: "", title: "" })
 
   return (
@@ -357,30 +271,11 @@ function BoardDashboard({ boards, onCreateBoard, onOpenBoard, onDeleteBoard, onD
         )}
       </div>
 
-      {/* New Board Modal */}
+      {/* New Board Modal — simple, no templates */}
       {showNew && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowNew(false)}>
-          <div className="w-full max-w-lg mx-4 rounded-2xl bg-[#1e2133]/95 backdrop-blur-xl border border-white/[0.08] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md mx-4 rounded-2xl bg-[#1e2133]/95 backdrop-blur-xl border border-white/[0.08] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-white mb-4">New Whiteboard</h3>
-            <p className="text-xs text-gray-400 mb-2">Start from a template</p>
-            <div className="grid grid-cols-5 gap-2 mb-4">
-              {BOARD_TEMPLATES.map((tpl, i) => (
-                <button
-                  key={i}
-                  onClick={() => {
-                    setSelectedTemplate(i)
-                    if (!newTitle || BOARD_TEMPLATES.some((t) => t.title === newTitle)) setNewTitle(tpl.title)
-                  }}
-                  className={cn(
-                    "flex flex-col items-center gap-1 p-2 rounded-xl border text-center transition-colors",
-                    selectedTemplate === i ? "border-blue-500 bg-blue-600/10" : "border-white/[0.08] hover:bg-white/5"
-                  )}
-                >
-                  <span className="text-2xl">{tpl.emoji}</span>
-                  <span className="text-[11px] text-gray-300 leading-tight">{tpl.label}</span>
-                </button>
-              ))}
-            </div>
             <input
               type="text"
               value={newTitle}
@@ -390,9 +285,8 @@ function BoardDashboard({ boards, onCreateBoard, onOpenBoard, onDeleteBoard, onD
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  onCreateBoard(newTitle || BOARD_TEMPLATES[selectedTemplate].title, BOARD_TEMPLATES[selectedTemplate].canvasJSON)
+                  onCreateBoard(newTitle || "Untitled Board")
                   setNewTitle("")
-                  setSelectedTemplate(0)
                   setShowNew(false)
                 }
                 if (e.key === "Escape") setShowNew(false)
@@ -402,12 +296,8 @@ function BoardDashboard({ boards, onCreateBoard, onOpenBoard, onDeleteBoard, onD
               <button onClick={() => setShowNew(false)} className="px-4 py-2 text-sm rounded-lg text-gray-400 hover:bg-white/5">Cancel</button>
               <button
                 onClick={() => {
-                  onCreateBoard(
-                    newTitle || BOARD_TEMPLATES[selectedTemplate].title,
-                    BOARD_TEMPLATES[selectedTemplate].canvasJSON
-                  )
+                  onCreateBoard(newTitle || "Untitled Board")
                   setNewTitle("")
-                  setSelectedTemplate(0)
                   setShowNew(false)
                 }}
                 className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
@@ -433,7 +323,7 @@ function BoardDashboard({ boards, onCreateBoard, onOpenBoard, onDeleteBoard, onD
 }
 
 // ============================================================================
-// Whiteboard Canvas (Full Editor) - Zoom-Style Redesign
+// Whiteboard Canvas (Full Editor) — Clean toolbar redesign
 // ============================================================================
 
 interface WhiteboardCanvasProps {
@@ -479,11 +369,6 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
   const [isRenamingTitle, setIsRenamingTitle] = useState(false)
   const [renameValue, setRenameValue] = useState("")
   const [selectedCount, setSelectedCount] = useState(0)
-
-  // Popover states for grouped tools
-  const [showDrawPopover, setShowDrawPopover] = useState(false)
-  const [showShapesPopover, setShowShapesPopover] = useState(false)
-  const [showInsertPopover, setShowInsertPopover] = useState(false)
 
   // Frames state
   const [frames, setFrames] = useState<WBFrame[]>([])
@@ -598,8 +483,7 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
         setShowBgPicker(false); setShowExportMenu(false)
         setShowShortcuts(false); setShowTextDialog(false)
         setShowStickyDialog(false); setShowEquationDialog(false)
-        setShowFrames(false); setShowDrawPopover(false)
-        setShowShapesPopover(false); setShowInsertPopover(false)
+        setShowFrames(false)
       }
     }
     window.addEventListener("keydown", handler)
@@ -715,34 +599,22 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
     setActiveFrameId(frames[prev].id)
   }, [frames, currentFrameIdx])
 
-  // Grouped tool definitions
-  const drawTools: { key: ToolType; icon: React.ReactNode; label: string; shortcut: string }[] = [
-    { key: "pen", icon: <Pencil className="h-4 w-4" />, label: "Pen", shortcut: "P" },
-    { key: "highlighter", icon: <Highlighter className="h-4 w-4" />, label: "Highlighter", shortcut: "H" },
-    { key: "eraser", icon: <Eraser className="h-4 w-4" />, label: "Eraser", shortcut: "E" },
-    { key: "laser", icon: <Pointer className="h-4 w-4" />, label: "Laser", shortcut: "L" },
+  // All tools for the left sidebar
+  const allTools: { key: ToolType; icon: React.ReactNode; label: string; shortcut: string; group: string }[] = [
+    { key: "select", icon: <MousePointer2 className="h-4 w-4" />, label: "Select", shortcut: "V", group: "pointer" },
+    { key: "pan", icon: <Hand className="h-4 w-4" />, label: "Pan", shortcut: "Space", group: "pointer" },
+    { key: "pen", icon: <Pencil className="h-4 w-4" />, label: "Pen", shortcut: "P", group: "draw" },
+    { key: "highlighter", icon: <Highlighter className="h-4 w-4" />, label: "Highlighter", shortcut: "H", group: "draw" },
+    { key: "eraser", icon: <Eraser className="h-4 w-4" />, label: "Eraser", shortcut: "E", group: "draw" },
+    { key: "laser", icon: <Pointer className="h-4 w-4" />, label: "Laser Pointer", shortcut: "L", group: "draw" },
+    { key: "rect", icon: <Square className="h-4 w-4" />, label: "Rectangle", shortcut: "R", group: "shape" },
+    { key: "circle", icon: <Circle className="h-4 w-4" />, label: "Ellipse", shortcut: "C", group: "shape" },
+    { key: "triangle", icon: <Triangle className="h-4 w-4" />, label: "Triangle", shortcut: "", group: "shape" },
+    { key: "diamond", icon: <Diamond className="h-4 w-4" />, label: "Diamond", shortcut: "D", group: "shape" },
+    { key: "line", icon: <Minus className="h-4 w-4" />, label: "Line", shortcut: "N", group: "line" },
+    { key: "arrow", icon: <ArrowRight className="h-4 w-4" />, label: "Arrow", shortcut: "A", group: "line" },
+    { key: "connector", icon: <Link2 className="h-4 w-4" />, label: "Connector", shortcut: "", group: "line" },
   ]
-
-  const shapeTools: { key: ToolType; icon: React.ReactNode; label: string; shortcut: string }[] = [
-    { key: "rect", icon: <Square className="h-4 w-4" />, label: "Rectangle", shortcut: "R" },
-    { key: "circle", icon: <Circle className="h-4 w-4" />, label: "Ellipse", shortcut: "C" },
-    { key: "triangle", icon: <Triangle className="h-4 w-4" />, label: "Triangle", shortcut: "" },
-    { key: "diamond", icon: <Diamond className="h-4 w-4" />, label: "Diamond", shortcut: "D" },
-    { key: "line", icon: <Minus className="h-4 w-4" />, label: "Line", shortcut: "N" },
-    { key: "arrow", icon: <ArrowRight className="h-4 w-4" />, label: "Arrow", shortcut: "A" },
-    { key: "connector", icon: <Link2 className="h-4 w-4" />, label: "Connector", shortcut: "" },
-  ]
-
-  const insertTools: { key: ToolType; icon: React.ReactNode; label: string; shortcut: string; action?: () => void }[] = [
-    { key: "text", icon: <Type className="h-4 w-4" />, label: "Text", shortcut: "T", action: () => setShowTextDialog(true) },
-    { key: "sticky", icon: <StickyNote className="h-4 w-4" />, label: "Sticky Note", shortcut: "S", action: () => setShowStickyDialog(true) },
-    { key: "equation", icon: <Sigma className="h-4 w-4" />, label: "Equation", shortcut: "Q", action: () => setShowEquationDialog(true) },
-    { key: "image", icon: <ImageIcon className="h-4 w-4" />, label: "Image", shortcut: "", action: () => fileInputRef.current?.click() },
-  ]
-
-  // Determine which grouped icon to show based on active tool
-  const activeDrawTool = drawTools.find((t) => t.key === tool)
-  const activeShapeTool = shapeTools.find((t) => t.key === tool)
 
   // Present Mode
   if (presentMode) {
@@ -777,13 +649,12 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
   // Main Canvas Editor Layout
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#0f1117]">
-      {/* Minimal Top Bar (glass) */}
+      {/* Top Bar */}
       <div className="flex items-center gap-2 px-3 py-1.5 shrink-0 bg-[#1a1d2e]/80 backdrop-blur-xl border-b border-white/[0.06]">
         <button onClick={onBack} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Back to boards">
-          <Menu className="h-4 w-4" />
+          <ChevronLeft className="h-4 w-4" />
         </button>
 
-        {/* Board title */}
         {isRenamingTitle ? (
           <input
             className="text-sm font-medium text-white bg-white/10 rounded px-2 py-0.5 border border-blue-500/50 focus:outline-none max-w-[200px]"
@@ -810,80 +681,204 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
 
         <div className="flex-1" />
 
-        {/* Undo/Redo */}
-        <button onClick={canvasActions.undo} disabled={!canvasActions.canUndo} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30 transition-colors" aria-label="Undo"><Undo2 className="h-4 w-4" /></button>
-        <button onClick={canvasActions.redo} disabled={!canvasActions.canRedo} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30 transition-colors" aria-label="Redo"><Redo2 className="h-4 w-4" /></button>
+        {/* Center: Undo/Redo + Zoom */}
+        <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/[0.04]">
+          <button onClick={canvasActions.undo} disabled={!canvasActions.canUndo} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30 transition-colors" aria-label="Undo" title="Undo"><Undo2 className="h-3.5 w-3.5" /></button>
+          <button onClick={canvasActions.redo} disabled={!canvasActions.canRedo} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30 transition-colors" aria-label="Redo" title="Redo"><Redo2 className="h-3.5 w-3.5" /></button>
+          <div className="h-4 w-px bg-white/[0.08] mx-1" />
+          <button onClick={() => canvasActions.zoomTo(canvasActions.getZoom() * 0.8)} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Zoom out"><ZoomOut className="h-3.5 w-3.5" /></button>
+          <span className="text-xs text-gray-400 w-10 text-center tabular-nums select-none">{zoom}%</span>
+          <button onClick={() => canvasActions.zoomTo(canvasActions.getZoom() * 1.25)} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Zoom in"><ZoomIn className="h-3.5 w-3.5" /></button>
+          <button onClick={canvasActions.zoomToFit} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Zoom to fit" title="Fit to view"><Maximize2 className="h-3.5 w-3.5" /></button>
+        </div>
 
-        <div className="h-4 w-px bg-white/[0.08]" />
+        <div className="flex-1" />
 
-        {/* Zoom controls */}
-        <button onClick={() => canvasActions.zoomTo(canvasActions.getZoom() * 0.8)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Zoom out"><ZoomOut className="h-4 w-4" /></button>
-        <span className="text-xs text-gray-400 w-12 text-center tabular-nums">{zoom}%</span>
-        <button onClick={() => canvasActions.zoomTo(canvasActions.getZoom() * 1.25)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Zoom in"><ZoomIn className="h-4 w-4" /></button>
-        <button onClick={canvasActions.zoomToFit} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Zoom to fit"><Maximize2 className="h-3.5 w-3.5" /></button>
+        {/* Right: actions */}
+        <div className="flex items-center gap-1">
+          <button onClick={togglePublic} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label={board?.isPublic ? "Make private" : "Make public"} title={board?.isPublic ? "Public" : "Private"}>
+            {board?.isPublic ? <Globe className="h-4 w-4 text-green-400" /> : <GlobeLock className="h-4 w-4" />}
+          </button>
+          <button onClick={() => setPresentMode(true)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Present" title="Present mode"><Presentation className="h-4 w-4" /></button>
 
-        <div className="h-4 w-px bg-white/[0.08]" />
-
-        {/* Quick actions */}
-        <button onClick={togglePublic} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label={board?.isPublic ? "Make private" : "Make public"}>
-          {board?.isPublic ? <Globe className="h-4 w-4 text-green-400" /> : <GlobeLock className="h-4 w-4" />}
-        </button>
-        <button onClick={() => setPresentMode(true)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Present"><Presentation className="h-4 w-4" /></button>
-
-        {/* Background Picker */}
-        <div className="relative">
-          <button onClick={() => { setShowBgPicker(!showBgPicker); setShowExportMenu(false) }} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Background"><Grid3X3 className="h-4 w-4" /></button>
-          {showBgPicker && (
-            <div className="absolute top-full right-0 mt-1 w-56 bg-[#1a1d2e]/95 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-2xl z-50 p-2">
-              {BACKGROUND_OPTIONS.map((opt) => (
-                <button
-                  key={opt.key}
-                  className={cn("w-full text-left px-3 py-2 text-sm rounded-lg transition-colors", background === opt.key ? "bg-blue-600/20 text-blue-400" : "text-gray-300 hover:bg-white/5")}
-                  onClick={() => { setBackground(opt.key); setShowBgPicker(false); setHasChanges(true) }}
-                >
-                  <span className="font-medium">{opt.label}</span>
-                  <span className="text-xs text-gray-500 ml-2">{opt.description}</span>
-                </button>
-              ))}
-              <div className="border-t border-white/[0.08] mt-2 pt-2 px-3">
-                <label className="text-xs text-gray-400">Custom color</label>
-                <input type="color" value={customBgColor} onChange={(e) => { setCustomBgColor(e.target.value); setHasChanges(true) }} className="w-full h-8 mt-1 rounded cursor-pointer" />
+          {/* Background Picker */}
+          <div className="relative">
+            <button onClick={() => { setShowBgPicker(!showBgPicker); setShowExportMenu(false) }} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Background" title="Background style"><Grid3X3 className="h-4 w-4" /></button>
+            {showBgPicker && (
+              <div className="absolute top-full right-0 mt-1 w-56 bg-[#1a1d2e]/95 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-2xl z-50 p-2">
+                {BACKGROUND_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.key}
+                    className={cn("w-full text-left px-3 py-2 text-sm rounded-lg transition-colors", background === opt.key ? "bg-blue-600/20 text-blue-400" : "text-gray-300 hover:bg-white/5")}
+                    onClick={() => { setBackground(opt.key); setShowBgPicker(false); setHasChanges(true) }}
+                  >
+                    <span className="font-medium">{opt.label}</span>
+                    <span className="text-xs text-gray-500 ml-2">{opt.description}</span>
+                  </button>
+                ))}
+                <div className="border-t border-white/[0.08] mt-2 pt-2 px-3">
+                  <label className="text-xs text-gray-400">Custom color</label>
+                  <input type="color" value={customBgColor} onChange={(e) => { setCustomBgColor(e.target.value); setHasChanges(true) }} className="w-full h-8 mt-1 rounded cursor-pointer" />
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+
+          {/* Export */}
+          <div className="relative">
+            <button onClick={() => { setShowExportMenu(!showExportMenu); setShowBgPicker(false) }} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Export" title="Export / Import"><Download className="h-4 w-4" /></button>
+            {showExportMenu && (
+              <div className="absolute top-full right-0 mt-1 w-44 bg-[#1a1d2e]/95 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-2xl z-50 p-1">
+                <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportPNG}><FileImage className="h-4 w-4" /> Export PNG</button>
+                <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportSVG}><FileImage className="h-4 w-4" /> Export SVG</button>
+                <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportPDF}><FileText className="h-4 w-4" /> Export PDF</button>
+                <div className="border-t border-white/[0.08] my-1" />
+                <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportJSON}><FileJson className="h-4 w-4" /> Save as JSON</button>
+                <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={() => { importInputRef.current?.click(); setShowExportMenu(false) }}><Upload className="h-4 w-4" /> Load JSON</button>
+              </div>
+            )}
+          </div>
+
+          <button onClick={() => setShowShortcuts(true)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Shortcuts" title="Keyboard shortcuts"><Keyboard className="h-4 w-4" /></button>
+
+          <button
+            onClick={handleSave}
+            className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ml-1", hasChanges ? "bg-blue-600 text-white hover:bg-blue-700" : "text-gray-400 bg-white/5")}
+          >
+            <Save className="h-3.5 w-3.5" />
+            Save
+          </button>
+
+          <button onClick={() => setConfirmDelete(true)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors" aria-label="Delete board" title="Delete this board"><Trash2 className="h-4 w-4" /></button>
         </div>
-
-        {/* Export */}
-        <div className="relative">
-          <button onClick={() => { setShowExportMenu(!showExportMenu); setShowBgPicker(false) }} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Export"><Download className="h-4 w-4" /></button>
-          {showExportMenu && (
-            <div className="absolute top-full right-0 mt-1 w-44 bg-[#1a1d2e]/95 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-2xl z-50 p-1">
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportPNG}><FileImage className="h-4 w-4" /> Export PNG</button>
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportSVG}><FileImage className="h-4 w-4" /> Export SVG</button>
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportPDF}><FileText className="h-4 w-4" /> Export PDF</button>
-              <div className="border-t border-white/[0.08] my-1" />
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportJSON}><FileJson className="h-4 w-4" /> Save as JSON</button>
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={() => { importInputRef.current?.click(); setShowExportMenu(false) }}><Upload className="h-4 w-4" /> Load JSON</button>
-            </div>
-          )}
-        </div>
-
-        <button onClick={() => setShowShortcuts(true)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Shortcuts"><Keyboard className="h-4 w-4" /></button>
-
-        {/* Save */}
-        <button
-          onClick={handleSave}
-          className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors", hasChanges ? "bg-blue-600 text-white hover:bg-blue-700" : "text-gray-400 bg-white/5")}
-        >
-          <Save className="h-3.5 w-3.5" />
-          Save
-        </button>
-
-        <button onClick={() => setConfirmDelete(true)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors" aria-label="Delete board"><Trash2 className="h-4 w-4" /></button>
       </div>
 
       {/* Main Canvas Area */}
       <div className="flex-1 flex overflow-hidden relative">
+        {/* Left Sidebar: Tool Palette */}
+        <div className="w-12 bg-[#1a1d2e]/60 backdrop-blur-xl border-r border-white/[0.06] flex flex-col items-center py-2 gap-0.5 shrink-0 overflow-y-auto">
+          {/* Pointer tools */}
+          {allTools.filter(t => t.group === "pointer").map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTool(t.key)}
+              className={cn(
+                "w-9 h-9 flex items-center justify-center rounded-lg transition-all",
+                tool === t.key ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "text-gray-400 hover:text-white hover:bg-white/5"
+              )}
+              title={`${t.label}${t.shortcut ? ` (${t.shortcut})` : ""}`}
+              aria-label={t.label}
+            >
+              {t.icon}
+            </button>
+          ))}
+
+          <div className="w-6 h-px bg-white/[0.08] my-1" />
+
+          {/* Draw tools */}
+          {allTools.filter(t => t.group === "draw").map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTool(t.key)}
+              className={cn(
+                "w-9 h-9 flex items-center justify-center rounded-lg transition-all",
+                tool === t.key ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "text-gray-400 hover:text-white hover:bg-white/5"
+              )}
+              title={`${t.label}${t.shortcut ? ` (${t.shortcut})` : ""}`}
+              aria-label={t.label}
+            >
+              {t.icon}
+            </button>
+          ))}
+
+          <div className="w-6 h-px bg-white/[0.08] my-1" />
+
+          {/* Shape tools */}
+          {allTools.filter(t => t.group === "shape").map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTool(t.key)}
+              className={cn(
+                "w-9 h-9 flex items-center justify-center rounded-lg transition-all",
+                tool === t.key ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "text-gray-400 hover:text-white hover:bg-white/5"
+              )}
+              title={`${t.label}${t.shortcut ? ` (${t.shortcut})` : ""}`}
+              aria-label={t.label}
+            >
+              {t.icon}
+            </button>
+          ))}
+
+          <div className="w-6 h-px bg-white/[0.08] my-1" />
+
+          {/* Line tools */}
+          {allTools.filter(t => t.group === "line").map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTool(t.key)}
+              className={cn(
+                "w-9 h-9 flex items-center justify-center rounded-lg transition-all",
+                tool === t.key ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "text-gray-400 hover:text-white hover:bg-white/5"
+              )}
+              title={`${t.label}${t.shortcut ? ` (${t.shortcut})` : ""}`}
+              aria-label={t.label}
+            >
+              {t.icon}
+            </button>
+          ))}
+
+          <div className="w-6 h-px bg-white/[0.08] my-1" />
+
+          {/* Insert tools */}
+          <button
+            onClick={() => setShowTextDialog(true)}
+            className="w-9 h-9 flex items-center justify-center rounded-lg transition-all text-gray-400 hover:text-white hover:bg-white/5"
+            title="Text (T)"
+            aria-label="Add text"
+          >
+            <Type className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => setShowStickyDialog(true)}
+            className="w-9 h-9 flex items-center justify-center rounded-lg transition-all text-gray-400 hover:text-white hover:bg-white/5"
+            title="Sticky Note (S)"
+            aria-label="Add sticky note"
+          >
+            <StickyNote className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => setShowEquationDialog(true)}
+            className="w-9 h-9 flex items-center justify-center rounded-lg transition-all text-gray-400 hover:text-white hover:bg-white/5"
+            title="Equation (Q)"
+            aria-label="Add equation"
+          >
+            <Sigma className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="w-9 h-9 flex items-center justify-center rounded-lg transition-all text-gray-400 hover:text-white hover:bg-white/5"
+            title="Image"
+            aria-label="Add image"
+          >
+            <ImageIcon className="h-4 w-4" />
+          </button>
+
+          <div className="flex-1" />
+
+          {/* Frames toggle at bottom */}
+          <button
+            onClick={() => setShowFrames(!showFrames)}
+            className={cn(
+              "w-9 h-9 flex items-center justify-center rounded-lg transition-all",
+              showFrames ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
+            )}
+            title="Frames"
+            aria-label="Toggle frames"
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </button>
+        </div>
+
         {/* Frames sidebar */}
         {showFrames && (
           <div className="w-48 bg-[#1a1d2e]/90 backdrop-blur-xl border-r border-white/[0.06] flex flex-col shrink-0">
@@ -928,238 +923,120 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
             }}
           />
 
-          {/* Floating Bottom Toolbar (Zoom-style, glass) */}
-          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30">
-            <div className="flex items-center gap-1 px-2 py-1.5 rounded-2xl bg-[#1a1d2e]/80 backdrop-blur-xl border border-white/[0.08] shadow-2xl">
-
-              {/* Select */}
-              <ToolButton
-                active={tool === "select"}
-                onClick={() => setTool("select")}
-                icon={<MousePointer2 className="h-4 w-4" />}
-                label="Select (V)"
-              />
-
-              <ToolDivider />
-
-              {/* Draw group */}
-              <ToolPopover
-                open={showDrawPopover}
-                onClose={() => setShowDrawPopover(false)}
-                trigger={
-                  <button
-                    onClick={() => { setShowDrawPopover(!showDrawPopover); setShowShapesPopover(false); setShowInsertPopover(false) }}
-                    className={cn(
-                      "flex items-center gap-0.5 p-2 rounded-xl transition-all",
-                      activeDrawTool ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
-                    )}
-                    title="Drawing tools"
-                  >
-                    {activeDrawTool ? activeDrawTool.icon : <PenTool className="h-4 w-4" />}
-                    <ChevronDownIcon className="h-3 w-3 opacity-50" />
-                  </button>
-                }
-              >
-                <div className="grid grid-cols-2 gap-1">
-                  {drawTools.map((t) => (
-                    <button
-                      key={t.key}
-                      onClick={() => { setTool(t.key); setShowDrawPopover(false) }}
-                      className={cn("flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors whitespace-nowrap", tool === t.key ? "bg-blue-600/20 text-blue-400" : "text-gray-300 hover:bg-white/5")}
-                    >
-                      {t.icon}
-                      <span>{t.label}</span>
-                      {t.shortcut && <span className="text-[10px] text-gray-500 ml-auto">{t.shortcut}</span>}
-                    </button>
-                  ))}
-                </div>
-              </ToolPopover>
-
-              {/* Shapes group */}
-              <ToolPopover
-                open={showShapesPopover}
-                onClose={() => setShowShapesPopover(false)}
-                trigger={
-                  <button
-                    onClick={() => { setShowShapesPopover(!showShapesPopover); setShowDrawPopover(false); setShowInsertPopover(false) }}
-                    className={cn(
-                      "flex items-center gap-0.5 p-2 rounded-xl transition-all",
-                      activeShapeTool ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
-                    )}
-                    title="Shape tools"
-                  >
-                    {activeShapeTool ? activeShapeTool.icon : <Shapes className="h-4 w-4" />}
-                    <ChevronDownIcon className="h-3 w-3 opacity-50" />
-                  </button>
-                }
-              >
-                <div className="grid grid-cols-2 gap-1">
-                  {shapeTools.map((t) => (
-                    <button
-                      key={t.key}
-                      onClick={() => { setTool(t.key); setShowShapesPopover(false) }}
-                      className={cn("flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors whitespace-nowrap", tool === t.key ? "bg-blue-600/20 text-blue-400" : "text-gray-300 hover:bg-white/5")}
-                    >
-                      {t.icon}
-                      <span>{t.label}</span>
-                      {t.shortcut && <span className="text-[10px] text-gray-500 ml-auto">{t.shortcut}</span>}
-                    </button>
-                  ))}
-                </div>
-              </ToolPopover>
-
-              {/* Insert group */}
-              <ToolPopover
-                open={showInsertPopover}
-                onClose={() => setShowInsertPopover(false)}
-                trigger={
-                  <button
-                    onClick={() => { setShowInsertPopover(!showInsertPopover); setShowDrawPopover(false); setShowShapesPopover(false) }}
-                    className={cn(
-                      "flex items-center gap-0.5 p-2 rounded-xl transition-all",
-                      "text-gray-400 hover:text-white hover:bg-white/5"
-                    )}
-                    title="Insert"
-                  >
-                    <PlusCircle className="h-4 w-4" />
-                    <ChevronDownIcon className="h-3 w-3 opacity-50" />
-                  </button>
-                }
-              >
-                <div className="grid grid-cols-1 gap-1">
-                  {insertTools.map((t) => (
-                    <button
-                      key={t.key}
-                      onClick={() => { t.action?.(); setShowInsertPopover(false) }}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 transition-colors whitespace-nowrap"
-                    >
-                      {t.icon}
-                      <span>{t.label}</span>
-                      {t.shortcut && <span className="text-[10px] text-gray-500 ml-auto">{t.shortcut}</span>}
-                    </button>
-                  ))}
-                </div>
-              </ToolPopover>
-
-              <ToolDivider />
-
-              {/* Pan */}
-              <ToolButton
-                active={tool === "pan"}
-                onClick={() => setTool("pan")}
-                icon={<Hand className="h-4 w-4" />}
-                label="Pan (Space)"
-              />
-
-              {/* Frames toggle */}
-              <ToolButton
-                active={showFrames}
-                onClick={() => setShowFrames(!showFrames)}
-                icon={<LayoutGrid className="h-4 w-4" />}
-                label="Frames"
-              />
-            </div>
-          </div>
-
-          {/* Context Style Panel (glass, above toolbar when object selected) */}
-          {selectedObj && tool === "select" && (
-            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30">
-              <div className="bg-[#1a1d2e]/85 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-2xl p-2.5 flex flex-wrap items-center gap-2 max-w-[calc(100vw-10rem)] overflow-x-auto">
-                {/* Colors */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-gray-400">Stroke</span>
-                  <input type="color" value={style.strokeColor} onChange={(e) => setStyle((s) => ({ ...s, strokeColor: e.target.value }))} className="w-6 h-6 rounded cursor-pointer border-0" />
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-gray-400">Fill</span>
-                  <input type="color" value={style.fillColor === "transparent" ? "#ffffff" : style.fillColor} onChange={(e) => setStyle((s) => ({ ...s, fillColor: e.target.value }))} className="w-6 h-6 rounded cursor-pointer border-0" />
-                  <button onClick={() => setStyle((s) => ({ ...s, fillColor: "transparent" }))} className={cn("text-xs px-1.5 py-0.5 rounded border transition-colors", style.fillColor === "transparent" ? "border-blue-400 text-blue-400" : "border-white/10 text-gray-400 hover:text-white")} title="No fill">{"\u2205"}</button>
-                </div>
-                <div className="h-5 w-px bg-white/[0.08]" />
-                {/* Stroke width + dash */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-gray-400">W</span>
-                  <input type="range" min={1} max={20} value={style.strokeWidth} onChange={(e) => setStyle((s) => ({ ...s, strokeWidth: Number(e.target.value) }))} className="w-14 accent-blue-500" />
-                  <span className="text-xs text-gray-400 w-4 tabular-nums">{style.strokeWidth}</span>
-                </div>
-                <select
-                  value={style.dashStyle}
-                  onChange={(e) => setStyle((s) => ({ ...s, dashStyle: e.target.value as any }))}
-                  className="text-xs bg-white/5 border border-white/[0.08] text-gray-300 rounded px-1.5 py-0.5 cursor-pointer"
-                  title="Dash style"
-                >
-                  <option value="solid">Solid</option>
-                  <option value="dashed">Dashed</option>
-                  <option value="dotted">Dotted</option>
-                </select>
-                <div className="h-5 w-px bg-white/[0.08]" />
-                {/* Opacity */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-gray-400">Opacity</span>
-                  <input type="range" min={0} max={1} step={0.05} value={style.fillOpacity} onChange={(e) => setStyle((s) => ({ ...s, fillOpacity: Number(e.target.value) }))} className="w-14 accent-blue-500" />
-                  <span className="text-xs text-gray-400 w-6 tabular-nums">{Math.round(style.fillOpacity * 100)}%</span>
-                </div>
-                <div className="h-5 w-px bg-white/[0.08]" />
-                {/* Font formatting */}
-                <button onClick={() => setStyle((s) => ({ ...s, fontBold: !s.fontBold }))} className={cn("p-1 rounded transition-colors", style.fontBold ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white")} title="Bold"><Bold className="h-3.5 w-3.5" /></button>
-                <button onClick={() => setStyle((s) => ({ ...s, fontItalic: !s.fontItalic }))} className={cn("p-1 rounded transition-colors", style.fontItalic ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white")} title="Italic"><Italic className="h-3.5 w-3.5" /></button>
-                <button onClick={() => setStyle((s) => ({ ...s, fontUnderline: !s.fontUnderline }))} className={cn("p-1 rounded transition-colors", style.fontUnderline ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white")} title="Underline"><Underline className="h-3.5 w-3.5" /></button>
-                <div className="h-5 w-px bg-white/[0.08]" />
-                {/* Layer order */}
-                <button onClick={canvasActions.bringForward} className="p-1 text-gray-400 hover:text-white" title="Bring forward"><ChevronUp className="h-4 w-4" /></button>
-                <button onClick={canvasActions.sendBackward} className="p-1 text-gray-400 hover:text-white" title="Send backward"><ChevronDown className="h-4 w-4" /></button>
-                <button onClick={canvasActions.bringToFront} className="p-1 text-gray-400 hover:text-white" title="Bring to front"><ChevronsUp className="h-4 w-4" /></button>
-                <button onClick={canvasActions.sendToBack} className="p-1 text-gray-400 hover:text-white" title="Send to back"><ChevronsDown className="h-4 w-4" /></button>
-                <div className="h-5 w-px bg-white/[0.08]" />
-                {/* Alignment (2+ objects) */}
-                {selectedCount >= 2 && (
-                  <>
-                    <button onClick={() => canvasActions.alignObjects("left")} className="p-1 text-gray-400 hover:text-white" title="Align left"><AlignLeft className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => canvasActions.alignObjects("centerH")} className="p-1 text-gray-400 hover:text-white" title="Align center H"><AlignCenter className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => canvasActions.alignObjects("right")} className="p-1 text-gray-400 hover:text-white" title="Align right"><AlignRight className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => canvasActions.alignObjects("top")} className="p-1 text-gray-400 hover:text-white" title="Align top"><AlignStartVertical className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => canvasActions.alignObjects("centerV")} className="p-1 text-gray-400 hover:text-white" title="Align middle"><AlignCenterVertical className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => canvasActions.alignObjects("bottom")} className="p-1 text-gray-400 hover:text-white" title="Align bottom"><AlignEndVertical className="h-3.5 w-3.5" /></button>
-                    {selectedCount >= 3 && (
-                      <>
-                        <button onClick={() => canvasActions.distributeObjects("horizontal")} className="p-1 text-gray-400 hover:text-white" title="Distribute H"><AlignHorizontalDistributeCenter className="h-3.5 w-3.5" /></button>
-                        <button onClick={() => canvasActions.distributeObjects("vertical")} className="p-1 text-gray-400 hover:text-white" title="Distribute V"><AlignVerticalDistributeCenter className="h-3.5 w-3.5" /></button>
-                      </>
-                    )}
-                    <div className="h-5 w-px bg-white/[0.08]" />
-                  </>
-                )}
-                {/* Lock/Group/Dupe/Delete */}
-                <button onClick={() => canvasActions.lockObject(true)} className="p-1 text-gray-400 hover:text-white" title="Lock"><Lock className="h-4 w-4" /></button>
-                <button onClick={() => canvasActions.lockObject(false)} className="p-1 text-gray-400 hover:text-white" title="Unlock"><Unlock className="h-4 w-4" /></button>
-                <div className="h-5 w-px bg-white/[0.08]" />
-                <button onClick={canvasActions.groupSelected} className="p-1 text-gray-400 hover:text-white" title="Group"><Group className="h-4 w-4" /></button>
-                <button onClick={canvasActions.ungroupSelected} className="p-1 text-gray-400 hover:text-white" title="Ungroup"><Ungroup className="h-4 w-4" /></button>
-                <div className="h-5 w-px bg-white/[0.08]" />
-                <button onClick={canvasActions.duplicateSelected} className="p-1 text-gray-400 hover:text-white" title="Duplicate"><Copy className="h-4 w-4" /></button>
-                <button onClick={canvasActions.deleteSelected} className="p-1 text-red-400 hover:text-red-300" title="Delete"><Trash2 className="h-4 w-4" /></button>
-              </div>
-            </div>
-          )}
-
-          {/* Color bar (when drawing tools active) */}
+          {/* Color/Stroke bar (when drawing tools active) */}
           {["pen", "highlighter", "rect", "circle", "triangle", "line", "arrow", "diamond", "connector"].includes(tool) && !selectedObj && (
-            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30">
-              <div className="bg-[#1a1d2e]/85 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-2xl p-2 flex items-center gap-2">
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30">
+              <div className="bg-[#1a1d2e]/90 backdrop-blur-xl border border-white/[0.08] rounded-2xl shadow-2xl p-2.5 flex items-center gap-2">
                 {COLORS.map((c) => (
                   <button
                     key={c}
                     onClick={() => setStyle((s) => ({ ...s, strokeColor: c }))}
-                    className={cn("w-6 h-6 rounded-full border-2 transition-transform", style.strokeColor === c ? "border-blue-400 scale-110" : "border-transparent hover:scale-105")}
+                    className={cn("w-7 h-7 rounded-full border-2 transition-transform hover:scale-110", style.strokeColor === c ? "border-white scale-110 ring-2 ring-blue-500/40" : "border-transparent")}
                     style={{ backgroundColor: c }}
                     aria-label={"Color " + c}
                   />
                 ))}
-                <div className="h-5 w-px bg-white/[0.08]" />
-                <input type="color" value={style.strokeColor} onChange={(e) => setStyle((s) => ({ ...s, strokeColor: e.target.value }))} className="w-6 h-6 rounded cursor-pointer border-0" aria-label="Custom color" />
-                <div className="h-5 w-px bg-white/[0.08]" />
-                <input type="range" min={1} max={20} value={style.strokeWidth} onChange={(e) => setStyle((s) => ({ ...s, strokeWidth: Number(e.target.value) }))} className="w-16 accent-blue-500" aria-label="Stroke width" />
-                <span className="text-xs text-gray-400 w-6 tabular-nums">{style.strokeWidth}</span>
+                <div className="h-6 w-px bg-white/[0.08] mx-1" />
+                <input type="color" value={style.strokeColor} onChange={(e) => setStyle((s) => ({ ...s, strokeColor: e.target.value }))} className="w-7 h-7 rounded-full cursor-pointer border-0 bg-transparent" aria-label="Custom color" />
+                <div className="h-6 w-px bg-white/[0.08] mx-1" />
+                <div className="flex items-center gap-2">
+                  <input type="range" min={1} max={20} value={style.strokeWidth} onChange={(e) => setStyle((s) => ({ ...s, strokeWidth: Number(e.target.value) }))} className="w-20 accent-blue-500" aria-label="Stroke width" />
+                  <span className="text-xs text-gray-400 w-5 tabular-nums text-center">{style.strokeWidth}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Context Style Panel (when object selected) */}
+          {selectedObj && tool === "select" && (
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30">
+              <div className="bg-[#1a1d2e]/90 backdrop-blur-xl border border-white/[0.08] rounded-2xl shadow-2xl p-3 flex flex-wrap items-center gap-3 max-w-[calc(100vw-8rem)]">
+                {/* Colors */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-gray-500 uppercase tracking-wider">Stroke</span>
+                    <input type="color" value={style.strokeColor} onChange={(e) => setStyle((s) => ({ ...s, strokeColor: e.target.value }))} className="w-6 h-6 rounded cursor-pointer border-0" />
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-gray-500 uppercase tracking-wider">Fill</span>
+                    <input type="color" value={style.fillColor === "transparent" ? "#ffffff" : style.fillColor} onChange={(e) => setStyle((s) => ({ ...s, fillColor: e.target.value }))} className="w-6 h-6 rounded cursor-pointer border-0" />
+                    <button onClick={() => setStyle((s) => ({ ...s, fillColor: "transparent" }))} className={cn("text-xs px-1.5 py-0.5 rounded border transition-colors", style.fillColor === "transparent" ? "border-blue-400 text-blue-400" : "border-white/10 text-gray-400 hover:text-white")} title="No fill">{"\u2205"}</button>
+                  </div>
+                </div>
+                <div className="h-6 w-px bg-white/[0.08]" />
+
+                {/* Stroke width + dash */}
+                <div className="flex items-center gap-2">
+                  <input type="range" min={1} max={20} value={style.strokeWidth} onChange={(e) => setStyle((s) => ({ ...s, strokeWidth: Number(e.target.value) }))} className="w-16 accent-blue-500" />
+                  <span className="text-xs text-gray-400 w-4 tabular-nums">{style.strokeWidth}</span>
+                  <select
+                    value={style.dashStyle}
+                    onChange={(e) => setStyle((s) => ({ ...s, dashStyle: e.target.value as any }))}
+                    className="text-xs bg-white/5 border border-white/[0.08] text-gray-300 rounded px-1.5 py-0.5 cursor-pointer"
+                    title="Dash style"
+                  >
+                    <option value="solid">Solid</option>
+                    <option value="dashed">Dashed</option>
+                    <option value="dotted">Dotted</option>
+                  </select>
+                </div>
+                <div className="h-6 w-px bg-white/[0.08]" />
+
+                {/* Opacity */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-gray-500">Opacity</span>
+                  <input type="range" min={0} max={1} step={0.05} value={style.fillOpacity} onChange={(e) => setStyle((s) => ({ ...s, fillOpacity: Number(e.target.value) }))} className="w-14 accent-blue-500" />
+                  <span className="text-xs text-gray-400 w-6 tabular-nums">{Math.round(style.fillOpacity * 100)}%</span>
+                </div>
+                <div className="h-6 w-px bg-white/[0.08]" />
+
+                {/* Font formatting */}
+                <div className="flex items-center gap-0.5">
+                  <button onClick={() => setStyle((s) => ({ ...s, fontBold: !s.fontBold }))} className={cn("p-1.5 rounded-md transition-colors", style.fontBold ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-white/5")} title="Bold"><Bold className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => setStyle((s) => ({ ...s, fontItalic: !s.fontItalic }))} className={cn("p-1.5 rounded-md transition-colors", style.fontItalic ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-white/5")} title="Italic"><Italic className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => setStyle((s) => ({ ...s, fontUnderline: !s.fontUnderline }))} className={cn("p-1.5 rounded-md transition-colors", style.fontUnderline ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-white/5")} title="Underline"><Underline className="h-3.5 w-3.5" /></button>
+                </div>
+                <div className="h-6 w-px bg-white/[0.08]" />
+
+                {/* Layer order */}
+                <div className="flex items-center gap-0.5">
+                  <button onClick={canvasActions.bringForward} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Bring forward"><ChevronUp className="h-3.5 w-3.5" /></button>
+                  <button onClick={canvasActions.sendBackward} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Send backward"><ChevronDown className="h-3.5 w-3.5" /></button>
+                  <button onClick={canvasActions.bringToFront} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Bring to front"><ChevronsUp className="h-3.5 w-3.5" /></button>
+                  <button onClick={canvasActions.sendToBack} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Send to back"><ChevronsDown className="h-3.5 w-3.5" /></button>
+                </div>
+
+                {/* Alignment (2+ objects) */}
+                {selectedCount >= 2 && (
+                  <>
+                    <div className="h-6 w-px bg-white/[0.08]" />
+                    <div className="flex items-center gap-0.5">
+                      <button onClick={() => canvasActions.alignObjects("left")} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Align left"><AlignLeft className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => canvasActions.alignObjects("centerH")} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Align center"><AlignCenter className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => canvasActions.alignObjects("right")} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Align right"><AlignRight className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => canvasActions.alignObjects("top")} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Align top"><AlignStartVertical className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => canvasActions.alignObjects("centerV")} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Align middle"><AlignCenterVertical className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => canvasActions.alignObjects("bottom")} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Align bottom"><AlignEndVertical className="h-3.5 w-3.5" /></button>
+                      {selectedCount >= 3 && (
+                        <>
+                          <button onClick={() => canvasActions.distributeObjects("horizontal")} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Distribute H"><AlignHorizontalDistributeCenter className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => canvasActions.distributeObjects("vertical")} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Distribute V"><AlignVerticalDistributeCenter className="h-3.5 w-3.5" /></button>
+                        </>
+                      )}
+                    </div>
+                  </>
+                )}
+                <div className="h-6 w-px bg-white/[0.08]" />
+
+                {/* Lock/Group/Dupe/Delete */}
+                <div className="flex items-center gap-0.5">
+                  <button onClick={() => canvasActions.lockObject(true)} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Lock"><Lock className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => canvasActions.lockObject(false)} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Unlock"><Unlock className="h-3.5 w-3.5" /></button>
+                  <button onClick={canvasActions.groupSelected} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Group"><Group className="h-3.5 w-3.5" /></button>
+                  <button onClick={canvasActions.ungroupSelected} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Ungroup"><Ungroup className="h-3.5 w-3.5" /></button>
+                  <button onClick={canvasActions.duplicateSelected} className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5" title="Duplicate"><Copy className="h-3.5 w-3.5" /></button>
+                  <button onClick={canvasActions.deleteSelected} className="p-1.5 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                </div>
               </div>
             </div>
           )}
@@ -1283,23 +1160,6 @@ function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
 // ============================================================================
 // Small Helper Components
 // ============================================================================
-
-function ToolButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn("p-2 rounded-xl transition-all", active ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "text-gray-400 hover:text-white hover:bg-white/5")}
-      title={label}
-      aria-label={label}
-    >
-      {icon}
-    </button>
-  )
-}
-
-function ToolDivider() {
-  return <div className="h-5 w-px bg-white/[0.08] mx-0.5" />
-}
 
 function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
