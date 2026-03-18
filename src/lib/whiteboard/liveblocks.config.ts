@@ -1,16 +1,10 @@
 import { createClient } from "@liveblocks/client"
 import { createRoomContext } from "@liveblocks/react"
-import type { Presence } from "@/lib/whiteboard/types"
 
 const client = createClient({
-  authEndpoint: "/api/liveblocks-auth",
+  publicApiKey: process.env.NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_KEY!,
   throttle: 16, // ~60fps cursor updates
 })
-
-// Keep storage simple — elements are synced via broadcast events, not LiveStorage
-type RoomStorage = {
-  [key: string]: unknown
-}
 
 export const {
   RoomProvider,
@@ -22,4 +16,4 @@ export const {
   useBroadcastEvent,
   useEventListener,
   useStatus,
-} = createRoomContext<Presence, RoomStorage>(client)
+} = createRoomContext(client)

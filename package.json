@@ -28,7 +28,6 @@
     "@floating-ui/react-dom": "^2.1.8",
     "@hello-pangea/dnd": "^18.0.1",
     "@liveblocks/client": "^3.15.3",
-    "@liveblocks/node": "^3.15.3",
     "@liveblocks/react": "^3.15.3",
     "@neondatabase/serverless": "^1.0.2",
     "@prisma/adapter-neon": "^6.19.2",

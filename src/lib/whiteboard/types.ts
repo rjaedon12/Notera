@@ -77,7 +77,7 @@ export type Presence = {
   userName: string
   userColor: string
   userId: string
-  [key: string]: unknown
+  [key: string]: string | number | boolean | null | { x: number; y: number } | undefined
 }
 
 export type Storage = {

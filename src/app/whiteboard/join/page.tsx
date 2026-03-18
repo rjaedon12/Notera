@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { joinBoardViaShareLink } from "@/lib/whiteboard/actions"
 import toast from "react-hot-toast"
 
-export default function JoinBoardPage() {
+function JoinBoardContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [status, setStatus] = useState<"loading" | "error">("loading")
@@ -48,5 +48,13 @@ export default function JoinBoardPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function JoinBoardPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-[calc(100vh-4rem)]"><div className="animate-pulse text-zinc-400">Loading...</div></div>}>
+      <JoinBoardContent />
+    </Suspense>
   )
 }
