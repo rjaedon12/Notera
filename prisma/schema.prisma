@@ -126,6 +126,8 @@ model User {
   forumPosts       ForumPost[]
   forumReplies     ForumReply[]
   forumReactions   ForumReaction[]
+  whiteboardBoards WhiteboardBoard[] @relation("WhiteboardOwner")
+  whiteboardMemberships WhiteboardMember[]
 }
 
 // ─── Flashcards ──────────────────────────────────────────
@@ -686,4 +688,60 @@ model NotePage {
   @@index([userId])
   @@index([parentId])
   @@index([groupId])
+}
+
+// ─── Whiteboard ──────────────────────────────────────────
+
+enum WhiteboardRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+model WhiteboardBoard {
+  id          String   @id @default(cuid())
+  title       String   @default("Untitled Board")
+  thumbnail   String?  // base64 data URL or storage URL
+  elements    Json     @default("[]") // serialised WhiteboardElement[]
+  background  String   @default("plain") // plain | dots | grid | lined
+  bgColor     String   @default("#ffffff")
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ownerId String
+  owner   User @relation("WhiteboardOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  members    WhiteboardMember[]
+  shareLinks WhiteboardShareLink[]
+
+  @@index([ownerId])
+  @@index([updatedAt])
+}
+
+model WhiteboardMember {
+  boardId  String
+  userId   String
+  role     WhiteboardRole @default(EDITOR)
+  joinedAt DateTime       @default(now())
+
+  board WhiteboardBoard @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([boardId, userId])
+  @@index([userId])
+}
+
+model WhiteboardShareLink {
+  id         String          @id @default(cuid())
+  token      String          @unique @default(cuid())
+  permission WhiteboardRole  @default(VIEWER)
+  expiresAt  DateTime?
+  createdAt  DateTime        @default(now())
+
+  boardId String
+  board   WhiteboardBoard @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([boardId])
 }

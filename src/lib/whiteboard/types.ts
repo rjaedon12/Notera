@@ -1,167 +1,134 @@
-// ============================================================================
-// WHITEBOARD TYPES
-// ============================================================================
+// ─── Whiteboard Types ────────────────────────────────────
 
 export type ToolType =
   | "select"
   | "pen"
   | "highlighter"
   | "eraser"
-  | "laser"
-  | "rect"
+  | "rectangle"
   | "circle"
-  | "triangle"
   | "line"
   | "arrow"
-  | "diamond"
   | "text"
   | "sticky"
-  | "image"
-  | "connector"
-  | "equation"
   | "pan"
 
-export type BackgroundType =
-  | "plain"
-  | "plain-dark"
-  | "dots"
-  | "grid"
-  | "lined"
-  | "isometric"
-  | "crosshatch"
-  | "transparent"
+export type BackgroundType = "plain" | "dots" | "grid" | "lined"
 
-export type ShareMode = "view" | "edit"
-
-export interface ShareLink {
-  id: string
-  boardId: string
-  mode: ShareMode
-  createdAt: string
-  expiresAt?: string
+export interface Point {
+  x: number
+  y: number
+  pressure?: number
 }
 
-export type DashStyle = "solid" | "dashed" | "dotted"
-
-export interface WBUser {
-  id: string
-  username: string
-  passwordHash: string
-  email?: string
-  joinDate: string
-  lastActive: string
-  banned: boolean
-  isAdmin: boolean
+export interface Camera {
+  x: number
+  y: number
+  zoom: number
 }
 
-export interface WBBoard {
+export interface StrokeStyle {
+  color: string
+  size: number
+  opacity: number
+}
+
+export interface WhiteboardElement {
   id: string
-  ownerId: string
+  type: ToolType
+  points: Point[]
+  style: StrokeStyle
+  // For shapes, text, sticky
+  x: number
+  y: number
+  width: number
+  height: number
+  rotation: number
+  // Text content (for text & sticky)
+  content?: string
+  // Sticky note color
+  stickyColor?: string
+  // Computed SVG path data (cached for rendering)
+  pathData?: string
+  // Creation metadata
+  createdBy: string
+  createdAt: number
+}
+
+export interface BoardMeta {
+  id: string
   title: string
-  isPublic: boolean
-  flagged: boolean
-  frames: WBFrame[]
-  activeFrameId: string
+  thumbnail: string | null
   background: BackgroundType
-  customBgColor: string
+  bgColor: string
+  isPublic: boolean
   createdAt: string
   updatedAt: string
-  canvasJSON: string // fabric.js canvas serialized JSON
-  thumbnail?: string // base64 PNG thumbnail for dashboard preview
-  shareLinks?: ShareLink[] // sharing links with view/edit modes
+  ownerId: string
+  ownerName: string | null
+  memberCount: number
 }
 
-export interface WBFrame {
-  id: string
-  name: string
-  viewportTransform: number[]
-  canvasJSON: string
+// ─── Liveblocks Types ────────────────────────────────────
+
+export interface Presence {
+  cursor: Point | null
+  selectedTool: ToolType
+  userName: string
+  userColor: string
+  userId: string
 }
 
-export interface Announcement {
-  text: string
-  color: string
-  enabled: boolean
+export interface Storage {
+  elements: WhiteboardElement[]
+  background: BackgroundType
+  bgColor: string
 }
 
-export interface WBStore {
-  users: Record<string, WBUser>
-  boards: Record<string, WBBoard>
-  currentUserId: string | null
-  announcement: Announcement
-}
-
-export interface StyleState {
-  strokeColor: string
-  fillColor: string
-  fillOpacity: number
-  strokeWidth: number
-  dashStyle: DashStyle
-  fontSize: number
-  fontFamily: string
-  textAlign: string
-  fontBold: boolean
-  fontItalic: boolean
-  fontUnderline: boolean
-}
-
-export const DEFAULT_STYLE: StyleState = {
-  strokeColor: "#3b82f6",
-  fillColor: "transparent",
-  fillOpacity: 1,
-  strokeWidth: 3,
-  dashStyle: "solid",
-  fontSize: 20,
-  fontFamily: "Inter, system-ui, sans-serif",
-  textAlign: "left",
-  fontBold: false,
-  fontItalic: false,
-  fontUnderline: false,
-}
+// ─── Constants ───────────────────────────────────────────
 
 export const COLORS = [
-  "#ffffff", "#000000", "#3b82f6", "#ef4444", "#22c55e",
-  "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316",
-  "#14b8a6", "#6366f1", "#84cc16", "#a855f7",
-]
+  "#1a1a1a", "#e03131", "#f08c00", "#2b8a3e",
+  "#1971c2", "#6741d9", "#c2255c", "#ffffff",
+  "#868e96", "#ff6b6b", "#ffd43b", "#51cf66",
+  "#339af0", "#9775fa", "#f783ac", "#ced4da",
+] as const
+
+export const HIGHLIGHTER_COLORS = [
+  "#fff3bf", "#d3f9d8", "#d0ebff", "#e5dbff",
+  "#ffe0e6", "#ffc9c9", "#b2f2bb", "#a5d8ff",
+] as const
 
 export const STICKY_COLORS = [
-  "#fef08a", "#fbcfe8", "#bfdbfe", "#bbf7d0", "#e9d5ff", "#fed7aa",
-]
+  "#fff3bf", // yellow
+  "#d3f9d8", // green
+  "#d0ebff", // blue
+  "#e5dbff", // purple
+  "#ffe8cc", // orange
+  "#ffc9c9", // red/pink
+] as const
 
-export const BACKGROUND_OPTIONS: { key: BackgroundType; label: string; description: string; icon: string }[] = [
-  { key: "plain", label: "Plain White", description: "Clean white canvas", icon: "□" },
-  { key: "plain-dark", label: "Plain Dark", description: "Dark canvas", icon: "■" },
-  { key: "dots", label: "Dots", description: "Dot grid pattern", icon: "⠿" },
-  { key: "grid", label: "Grid", description: "Square grid lines", icon: "#" },
-  { key: "lined", label: "Lined", description: "Ruled notebook lines", icon: "≡" },
-  { key: "isometric", label: "Isometric", description: "60° triangle grid", icon: "△" },
-  { key: "crosshatch", label: "Crosshatch", description: "Cross pattern", icon: "⊠" },
-  { key: "transparent", label: "Transparent", description: "No background (for export)", icon: "◇" },
-]
+export const STROKE_SIZES = [2, 4, 8, 14, 20] as const
 
-export const KEYBOARD_SHORTCUTS = [
-  { key: "V", action: "Select tool" },
-  { key: "P", action: "Pen tool" },
-  { key: "H", action: "Highlighter" },
-  { key: "E", action: "Eraser" },
-  { key: "L", action: "Laser pointer" },
-  { key: "R", action: "Rectangle" },
-  { key: "C", action: "Circle / Ellipse" },
-  { key: "T", action: "Text tool" },
-  { key: "S", action: "Sticky note" },
-  { key: "N", action: "Line" },
-  { key: "A", action: "Arrow" },
-  { key: "D", action: "Diamond" },
-  { key: "Q", action: "Equation" },
-  { key: "Space + Drag", action: "Pan canvas" },
-  { key: "Ctrl+Z", action: "Undo" },
-  { key: "Ctrl+Y", action: "Redo" },
-  { key: "Ctrl+D", action: "Duplicate" },
-  { key: "Ctrl+A", action: "Select all" },
-  { key: "Delete", action: "Delete selected" },
-  { key: "Ctrl+G", action: "Group" },
-  { key: "Ctrl+Shift+G", action: "Ungroup" },
-  { key: "?", action: "Show shortcuts" },
-  { key: "Scroll Wheel", action: "Zoom in/out" },
-]
+export const USER_COLORS = [
+  "#e03131", "#1971c2", "#2b8a3e", "#f08c00",
+  "#6741d9", "#c2255c", "#0c8599", "#e8590c",
+] as const
+
+export const MIN_ZOOM = 0.1
+export const MAX_ZOOM = 10
+export const DEFAULT_ZOOM = 1
+
+export const TOOLS_CONFIG: Record<ToolType, { label: string; shortcut: string }> = {
+  select: { label: "Select", shortcut: "V" },
+  pen: { label: "Pen", shortcut: "P" },
+  highlighter: { label: "Highlighter", shortcut: "H" },
+  eraser: { label: "Eraser", shortcut: "E" },
+  rectangle: { label: "Rectangle", shortcut: "R" },
+  circle: { label: "Circle", shortcut: "C" },
+  line: { label: "Line", shortcut: "L" },
+  arrow: { label: "Arrow", shortcut: "A" },
+  text: { label: "Text", shortcut: "T" },
+  sticky: { label: "Sticky Note", shortcut: "S" },
+  pan: { label: "Pan", shortcut: "Space" },
+}
