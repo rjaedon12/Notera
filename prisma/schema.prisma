@@ -125,6 +125,7 @@ model User {
   notePages        NotePage[]
   forumPosts       ForumPost[]
   forumReplies     ForumReply[]
+  forumReactions   ForumReaction[]
 }
 
 // ─── Flashcards ──────────────────────────────────────────
@@ -134,6 +135,7 @@ model FlashcardSet {
   title       String
   description String?
   isPublic    Boolean  @default(false)
+  isFeatured  Boolean  @default(false)
   tags        String[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -601,7 +603,8 @@ model ForumPost {
   userId String
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  replies ForumReply[]
+  replies   ForumReply[]
+  reactions ForumReaction[] @relation("PostReactions")
 
   @@index([createdAt])
   @@index([userId])
@@ -619,8 +622,35 @@ model ForumReply {
   postId String
   post   ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
 
+  parentReplyId String?
+  parentReply   ForumReply?  @relation("ReplyThread", fields: [parentReplyId], references: [id], onDelete: SetNull)
+  childReplies  ForumReply[] @relation("ReplyThread")
+
+  reactions ForumReaction[] @relation("ReplyReactions")
+
   @@index([postId, createdAt])
   @@index([userId])
+  @@index([parentReplyId])
+}
+
+model ForumReaction {
+  id        String   @id @default(cuid())
+  type      String   // LIKE or DISLIKE
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  postId  String?
+  post    ForumPost? @relation("PostReactions", fields: [postId], references: [id], onDelete: Cascade)
+
+  replyId String?
+  reply   ForumReply? @relation("ReplyReactions", fields: [replyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId, type])
+  @@unique([userId, replyId, type])
+  @@index([postId])
+  @@index([replyId])
 }
 
 // ─── Notes (Notion-style pages) ──────────────────────────

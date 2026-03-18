@@ -25,12 +25,14 @@ export function useStudySet(id: string) {
   })
 }
 
-export function usePublicSets(search?: string) {
+export function usePublicSets(search?: string, options?: { featured?: boolean; limit?: number }) {
   return useQuery<StudySet[]>({
-    queryKey: ["publicSets", search],
+    queryKey: ["publicSets", search, options?.featured, options?.limit],
     queryFn: async () => {
       const params = new URLSearchParams()
       if (search) params.set("search", search)
+      if (options?.featured) params.set("featured", "true")
+      if (options?.limit) params.set("limit", String(options.limit))
       const res = await fetch(`/api/sets/public?${params}`)
       if (!res.ok) throw new Error("Failed to fetch public sets")
       return res.json()

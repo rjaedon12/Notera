@@ -44,3 +44,29 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+// PATCH /api/admin/sets — toggle featured status (admin only)
+export async function PATCH(request: NextRequest) {
+  try {
+    if (!(await verifyAdminAuth())) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+    }
+
+    const { setId, isFeatured } = await request.json()
+    if (!setId) return NextResponse.json({ error: "setId is required" }, { status: 400 })
+    if (typeof isFeatured !== "boolean") return NextResponse.json({ error: "isFeatured must be boolean" }, { status: 400 })
+
+    const set = await prisma.flashcardSet.findUnique({ where: { id: setId } })
+    if (!set) return NextResponse.json({ error: "Set not found" }, { status: 404 })
+
+    const updated = await prisma.flashcardSet.update({
+      where: { id: setId },
+      data: { isFeatured },
+    })
+
+    return NextResponse.json(updated)
+  } catch (error) {
+    console.error("Admin patch set error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}

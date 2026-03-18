@@ -152,7 +152,7 @@ function HomeContent() {
   const { data: session, status } = useSession()
   const searchParams = useSearchParams()
   const search = searchParams.get("search") || ""
-  const { data: publicSets, isLoading } = usePublicSets(search)
+  const { data: publicSets, isLoading } = usePublicSets(search, { featured: !search, limit: search ? 50 : 9 })
   const { data: starredSetIds = [] } = useStarredSets()
   const toggleStar = useToggleSetStar()
 
@@ -218,6 +218,11 @@ function HomeContent() {
             <Star className="h-6 w-6" style={{ color: "var(--primary)" }} />
             {search ? `Search results for "${search}"` : "Featured Study Sets"}
           </h2>
+          {!search && (
+            <Link href="/discover" className="text-sm font-medium hover:underline flex items-center gap-1" style={{ color: "var(--primary)" }}>
+              View all <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          )}
         </div>
 
         {isLoading ? (
@@ -255,15 +260,8 @@ function HomeContent() {
                         </p>
                       )}
                       <div className="flex items-center gap-2 text-xs" style={{ color: "var(--muted-foreground)" }}>
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center"
-                          style={{ background: "rgba(79,142,247,0.15)", border: "1px solid rgba(79,142,247,0.2)" }}>
-                          <span className="font-medium" style={{ color: "var(--primary)", fontSize: "0.65rem" }}>
-                            {set.owner?.name?.[0]?.toUpperCase() || "U"}
-                          </span>
-                        </div>
-                        <span>{set.owner?.name || "Anonymous"}</span>
                         {isStarred && (
-                          <span className="ml-auto text-xs font-medium" style={{ color: "var(--primary)" }}>★ Starred</span>
+                          <span className="text-xs font-medium" style={{ color: "var(--primary)" }}>★ Starred</span>
                         )}
                       </div>
                     </CardContent>

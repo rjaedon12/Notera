@@ -11,11 +11,12 @@ import {
   Download, Upload, Plus, Trash2, Grid3X3,
   Copy, Group, Ungroup, Lock, Unlock, ChevronUp, ChevronDown, ChevronsUp,
   ChevronsDown, Keyboard, X, FileJson, FileImage,
-  FileText, Presentation, Globe, GlobeLock, LayoutGrid, Menu, LogOut,
-  Shield, Megaphone, AlignLeft, AlignCenter, AlignRight,
+  FileText, Presentation, Globe, GlobeLock, LayoutGrid, Menu,
+  AlignLeft, AlignCenter, AlignRight,
   AlignStartVertical, AlignEndVertical, AlignCenterVertical,
   AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter,
   Bold, Italic, Underline, Edit3, ChevronLeft, ChevronRight,
+  Shapes, PenTool, PlusCircle, ChevronDown as ChevronDownIcon,
 } from "lucide-react"
 import toast from "react-hot-toast"
 
@@ -33,8 +34,6 @@ import {
   exportCanvasPNG, exportCanvasSVG, exportCanvasPDF,
   exportBoardJSON, importBoardJSON,
 } from "@/lib/whiteboard/export-utils"
-import { useWBAuth } from "@/components/whiteboard/WBAuthProvider"
-import { LoginModal } from "@/components/whiteboard/LoginModal"
 import { ConfirmDialog } from "@/components/whiteboard/ConfirmDialog"
 import { useWhiteboardCanvas } from "@/components/whiteboard/useWhiteboardCanvas"
 
@@ -64,6 +63,87 @@ function EquationPreview({ latex }: { latex: string }) {
   if (error) return <span className="text-red-400 text-xs">{error}</span>
   return <div ref={ref} className="text-white" />
 }
+
+// ============================================================================
+// Toolbar Popover - Shared component for grouped tool menus
+// ============================================================================
+
+function ToolPopover({
+  open,
+  onClose,
+  trigger,
+  children,
+}: {
+  open: boolean
+  onClose: () => void
+  trigger: React.ReactNode
+  children: React.ReactNode
+}) {
+  const popoverRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        onClose()
+      }
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [open, onClose])
+
+  return (
+    <div className="relative" ref={popoverRef}>
+      {trigger}
+      {open && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50">
+          <div className="bg-[#1a1d2e]/90 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-2xl p-2 min-w-[120px]">
+            {children}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================================================
+// Board Templates (extracted from inline JSON for cleaner code)
+// ============================================================================
+
+const BOARD_TEMPLATES: { label: string; emoji: string; title: string; canvasJSON: string }[] = [
+  { label: "Blank", emoji: "\u2b1c", title: "Untitled Board", canvasJSON: "" },
+  { label: "Cornell Notes", emoji: "\ud83d\udcdd", title: "Cornell Notes", canvasJSON: JSON.stringify({ version: "6.0.0", objects: [
+    { type: "Rect", left: 40, top: 40, width: 180, height: 520, fill: "transparent", stroke: "#3b82f6", strokeWidth: 2 },
+    { type: "Rect", left: 40, top: 520, width: 740, height: 80, fill: "transparent", stroke: "#3b82f6", strokeWidth: 2 },
+    { type: "Rect", left: 220, top: 40, width: 560, height: 480, fill: "transparent", stroke: "#3b82f6", strokeWidth: 2 },
+    { type: "IText", text: "Cues / Keywords", left: 130, top: 20, fontSize: 13, fill: "#3b82f6", fontWeight: "bold", originX: "center" },
+    { type: "IText", text: "Notes", left: 500, top: 20, fontSize: 13, fill: "#3b82f6", fontWeight: "bold", originX: "center" },
+    { type: "IText", text: "Summary", left: 400, top: 504, fontSize: 13, fill: "#3b82f6", fontWeight: "bold", originX: "center" },
+  ]}) },
+  { label: "Mind Map", emoji: "\ud83e\udde0", title: "Mind Map", canvasJSON: JSON.stringify({ version: "6.0.0", objects: [
+    { type: "Ellipse", left: 340, top: 220, rx: 90, ry: 45, fill: "#3b82f620", stroke: "#3b82f6", strokeWidth: 2, originX: "center", originY: "center" },
+    { type: "IText", text: "Main Topic", left: 340, top: 220, fontSize: 18, fill: "#3b82f6", fontWeight: "bold", originX: "center", originY: "center" },
+  ]}) },
+  { label: "Kanban", emoji: "\ud83d\udccb", title: "Kanban Board", canvasJSON: JSON.stringify({ version: "6.0.0", objects: [
+    { type: "Rect", left: 20, top: 20, width: 200, height: 460, fill: "#3b82f610", stroke: "#3b82f640", strokeWidth: 1, rx: 8, ry: 8 },
+    { type: "Rect", left: 240, top: 20, width: 200, height: 460, fill: "#f59e0b10", stroke: "#f59e0b40", strokeWidth: 1, rx: 8, ry: 8 },
+    { type: "Rect", left: 460, top: 20, width: 200, height: 460, fill: "#22c55e10", stroke: "#22c55e40", strokeWidth: 1, rx: 8, ry: 8 },
+    { type: "IText", text: "To Do", left: 120, top: 38, fontSize: 15, fill: "#3b82f6", fontWeight: "bold", originX: "center" },
+    { type: "IText", text: "In Progress", left: 340, top: 38, fontSize: 15, fill: "#f59e0b", fontWeight: "bold", originX: "center" },
+    { type: "IText", text: "Done", left: 560, top: 38, fontSize: 15, fill: "#22c55e", fontWeight: "bold", originX: "center" },
+  ]}) },
+  { label: "Timeline", emoji: "\ud83d\udcc5", title: "Timeline", canvasJSON: JSON.stringify({ version: "6.0.0", objects: [
+    { type: "Line", x1: 40, y1: 240, x2: 760, y2: 240, stroke: "#3b82f6", strokeWidth: 3 },
+    { type: "Ellipse", left: 160, top: 240, rx: 10, ry: 10, fill: "#3b82f6", originX: "center", originY: "center" },
+    { type: "Ellipse", left: 340, top: 240, rx: 10, ry: 10, fill: "#3b82f6", originX: "center", originY: "center" },
+    { type: "Ellipse", left: 520, top: 240, rx: 10, ry: 10, fill: "#3b82f6", originX: "center", originY: "center" },
+    { type: "Ellipse", left: 700, top: 240, rx: 10, ry: 10, fill: "#3b82f6", originX: "center", originY: "center" },
+    { type: "IText", text: "Event 1", left: 160, top: 210, fontSize: 13, fill: "#ffffff", originX: "center", originY: "bottom" },
+    { type: "IText", text: "Event 2", left: 340, top: 270, fontSize: 13, fill: "#ffffff", originX: "center", originY: "top" },
+    { type: "IText", text: "Event 3", left: 520, top: 210, fontSize: 13, fill: "#ffffff", originX: "center", originY: "bottom" },
+    { type: "IText", text: "Event 4", left: 700, top: 270, fontSize: 13, fill: "#ffffff", originX: "center", originY: "top" },
+  ]}) },
+]
 
 // ============================================================================
 // Main Whiteboard Page Component
@@ -110,7 +190,6 @@ function WhiteboardMain({ user, isAdmin, onLogout }: WhiteboardMainProps) {
   const handleCreateBoard = (title: string, templateJSON?: string) => {
     const board = createBoardInStore(user.id, title)
     if (templateJSON) {
-      // Pre-populate canvas JSON from the template
       const updated = { ...board, canvasJSON: templateJSON }
       saveBoardToStore(updated)
     }
@@ -176,41 +255,6 @@ function WhiteboardMain({ user, isAdmin, onLogout }: WhiteboardMainProps) {
 // Board Dashboard
 // ============================================================================
 
-const BOARD_TEMPLATES: { label: string; emoji: string; title: string; canvasJSON: string }[] = [
-  { label: "Blank", emoji: "⬜", title: "Untitled Board", canvasJSON: "" },
-  { label: "Cornell Notes", emoji: "📝", title: "Cornell Notes", canvasJSON: JSON.stringify({ version: "6.0.0", objects: [
-    { type: "Rect", left: 40, top: 40, width: 180, height: 520, fill: "transparent", stroke: "#3b82f6", strokeWidth: 2 },
-    { type: "Rect", left: 40, top: 520, width: 740, height: 80, fill: "transparent", stroke: "#3b82f6", strokeWidth: 2 },
-    { type: "Rect", left: 220, top: 40, width: 560, height: 480, fill: "transparent", stroke: "#3b82f6", strokeWidth: 2 },
-    { type: "IText", text: "Cues / Keywords", left: 130, top: 20, fontSize: 13, fill: "#3b82f6", fontWeight: "bold", originX: "center" },
-    { type: "IText", text: "Notes", left: 500, top: 20, fontSize: 13, fill: "#3b82f6", fontWeight: "bold", originX: "center" },
-    { type: "IText", text: "Summary", left: 400, top: 504, fontSize: 13, fill: "#3b82f6", fontWeight: "bold", originX: "center" },
-  ]}) },
-  { label: "Mind Map", emoji: "🧠", title: "Mind Map", canvasJSON: JSON.stringify({ version: "6.0.0", objects: [
-    { type: "Ellipse", left: 340, top: 220, rx: 90, ry: 45, fill: "#3b82f620", stroke: "#3b82f6", strokeWidth: 2, originX: "center", originY: "center" },
-    { type: "IText", text: "Main Topic", left: 340, top: 220, fontSize: 18, fill: "#3b82f6", fontWeight: "bold", originX: "center", originY: "center" },
-  ]}) },
-  { label: "Kanban", emoji: "📋", title: "Kanban Board", canvasJSON: JSON.stringify({ version: "6.0.0", objects: [
-    { type: "Rect", left: 20, top: 20, width: 200, height: 460, fill: "#3b82f610", stroke: "#3b82f640", strokeWidth: 1, rx: 8, ry: 8 },
-    { type: "Rect", left: 240, top: 20, width: 200, height: 460, fill: "#f59e0b10", stroke: "#f59e0b40", strokeWidth: 1, rx: 8, ry: 8 },
-    { type: "Rect", left: 460, top: 20, width: 200, height: 460, fill: "#22c55e10", stroke: "#22c55e40", strokeWidth: 1, rx: 8, ry: 8 },
-    { type: "IText", text: "📥 To Do", left: 120, top: 38, fontSize: 15, fill: "#3b82f6", fontWeight: "bold", originX: "center" },
-    { type: "IText", text: "⚡ In Progress", left: 340, top: 38, fontSize: 15, fill: "#f59e0b", fontWeight: "bold", originX: "center" },
-    { type: "IText", text: "✅ Done", left: 560, top: 38, fontSize: 15, fill: "#22c55e", fontWeight: "bold", originX: "center" },
-  ]}) },
-  { label: "Timeline", emoji: "📅", title: "Timeline", canvasJSON: JSON.stringify({ version: "6.0.0", objects: [
-    { type: "Line", x1: 40, y1: 240, x2: 760, y2: 240, stroke: "#3b82f6", strokeWidth: 3 },
-    { type: "Ellipse", left: 160, top: 240, rx: 10, ry: 10, fill: "#3b82f6", originX: "center", originY: "center" },
-    { type: "Ellipse", left: 340, top: 240, rx: 10, ry: 10, fill: "#3b82f6", originX: "center", originY: "center" },
-    { type: "Ellipse", left: 520, top: 240, rx: 10, ry: 10, fill: "#3b82f6", originX: "center", originY: "center" },
-    { type: "Ellipse", left: 700, top: 240, rx: 10, ry: 10, fill: "#3b82f6", originX: "center", originY: "center" },
-    { type: "IText", text: "Event 1", left: 160, top: 210, fontSize: 13, fill: "#ffffff", originX: "center", originY: "bottom" },
-    { type: "IText", text: "Event 2", left: 340, top: 270, fontSize: 13, fill: "#ffffff", originX: "center", originY: "top" },
-    { type: "IText", text: "Event 3", left: 520, top: 210, fontSize: 13, fill: "#ffffff", originX: "center", originY: "bottom" },
-    { type: "IText", text: "Event 4", left: 700, top: 270, fontSize: 13, fill: "#ffffff", originX: "center", originY: "top" },
-  ]}) },
-]
-
 interface BoardDashboardProps {
   boards: WBBoard[]
   user: { id: string; username: string; isAdmin: boolean }
@@ -222,7 +266,7 @@ interface BoardDashboardProps {
   onLogout: () => void
 }
 
-function BoardDashboard({ boards, user, isAdmin, onCreateBoard, onOpenBoard, onDeleteBoard, onDuplicateBoard, onLogout }: BoardDashboardProps) {
+function BoardDashboard({ boards, onCreateBoard, onOpenBoard, onDeleteBoard, onDuplicateBoard }: BoardDashboardProps) {
   const [newTitle, setNewTitle] = useState("")
   const [showNew, setShowNew] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState(0)
@@ -235,33 +279,15 @@ function BoardDashboard({ boards, user, isAdmin, onCreateBoard, onOpenBoard, onD
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground font-heading">My Whiteboards</h1>
-            <p className="text-muted-foreground mt-1">Welcome, {user.username}</p>
+            <p className="text-muted-foreground mt-1">Create and manage your visual workspaces</p>
           </div>
-          <div className="flex items-center gap-3">
-            {isAdmin && (
-              <a
-                href="/admin?tab=whiteboards"
-                className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-red-600/10 text-red-500 hover:bg-red-600/20 transition-colors"
-              >
-                <Shield className="h-4 w-4" />
-                Admin
-              </a>
-            )}
-            <button
-              onClick={() => setShowNew(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              New Board
-            </button>
-            <button
-              onClick={onLogout}
-              className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label="Log out"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
-          </div>
+          <button
+            onClick={() => setShowNew(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            New Board
+          </button>
         </div>
 
         {/* Board Grid */}
@@ -285,7 +311,6 @@ function BoardDashboard({ boards, user, isAdmin, onCreateBoard, onOpenBoard, onD
                 className="group relative rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-lg transition-all cursor-pointer overflow-hidden"
                 onClick={() => onOpenBoard(board.id)}
               >
-                {/* Thumbnail preview */}
                 <div className="h-32 bg-muted/30 relative">
                   {board.thumbnail ? (
                     <img src={board.thumbnail} alt={board.title} className="w-full h-full object-cover" />
@@ -294,7 +319,6 @@ function BoardDashboard({ boards, user, isAdmin, onCreateBoard, onOpenBoard, onD
                       <LayoutGrid className="h-10 w-10 text-muted-foreground/20" />
                     </div>
                   )}
-                  {/* Hover action buttons */}
                   <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {board.isPublic ? (
                       <span className="p-1 rounded-md bg-black/40"><Globe className="h-3.5 w-3.5 text-green-400" /></span>
@@ -321,11 +345,10 @@ function BoardDashboard({ boards, user, isAdmin, onCreateBoard, onOpenBoard, onD
                     </button>
                   </div>
                 </div>
-                {/* Board info */}
                 <div className="p-4">
                   <h3 className="font-semibold text-card-foreground truncate">{board.title}</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {new Date(board.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })} · {board.background}
+                    {new Date(board.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
                   </p>
                 </div>
               </div>
@@ -337,9 +360,8 @@ function BoardDashboard({ boards, user, isAdmin, onCreateBoard, onOpenBoard, onD
       {/* New Board Modal */}
       {showNew && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowNew(false)}>
-          <div className="w-full max-w-lg mx-4 rounded-2xl bg-[#1e2133] border border-white/10 p-6" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-lg mx-4 rounded-2xl bg-[#1e2133]/95 backdrop-blur-xl border border-white/[0.08] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-white mb-4">New Whiteboard</h3>
-            {/* Template picker */}
             <p className="text-xs text-gray-400 mb-2">Start from a template</p>
             <div className="grid grid-cols-5 gap-2 mb-4">
               {BOARD_TEMPLATES.map((tpl, i) => (
@@ -351,7 +373,7 @@ function BoardDashboard({ boards, user, isAdmin, onCreateBoard, onOpenBoard, onD
                   }}
                   className={cn(
                     "flex flex-col items-center gap-1 p-2 rounded-xl border text-center transition-colors",
-                    selectedTemplate === i ? "border-blue-500 bg-blue-600/10" : "border-white/10 hover:bg-white/5"
+                    selectedTemplate === i ? "border-blue-500 bg-blue-600/10" : "border-white/[0.08] hover:bg-white/5"
                   )}
                 >
                   <span className="text-2xl">{tpl.emoji}</span>
@@ -364,7 +386,7 @@ function BoardDashboard({ boards, user, isAdmin, onCreateBoard, onOpenBoard, onD
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               placeholder="Board title..."
-              className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 mb-4"
+              className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/[0.08] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 mb-4"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -397,7 +419,6 @@ function BoardDashboard({ boards, user, isAdmin, onCreateBoard, onOpenBoard, onD
         </div>
       )}
 
-      {/* Confirm delete */}
       <ConfirmDialog
         open={confirmDelete.open}
         title="Delete Board"
@@ -412,7 +433,7 @@ function BoardDashboard({ boards, user, isAdmin, onCreateBoard, onOpenBoard, onD
 }
 
 // ============================================================================
-// Whiteboard Canvas (Full Editor)
+// Whiteboard Canvas (Full Editor) - Zoom-Style Redesign
 // ============================================================================
 
 interface WhiteboardCanvasProps {
@@ -423,11 +444,10 @@ interface WhiteboardCanvasProps {
   onLogout: () => void
 }
 
-function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: WhiteboardCanvasProps) {
+function WhiteboardCanvas({ boardId, onBack }: WhiteboardCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importInputRef = useRef<HTMLInputElement>(null)
-  const minimapRef = useRef<HTMLCanvasElement>(null)
 
   // Board state
   const [board, setBoard] = useState<WBBoard | null>(null)
@@ -460,6 +480,11 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
   const [renameValue, setRenameValue] = useState("")
   const [selectedCount, setSelectedCount] = useState(0)
 
+  // Popover states for grouped tools
+  const [showDrawPopover, setShowDrawPopover] = useState(false)
+  const [showShapesPopover, setShowShapesPopover] = useState(false)
+  const [showInsertPopover, setShowInsertPopover] = useState(false)
+
   // Frames state
   const [frames, setFrames] = useState<WBFrame[]>([])
   const [activeFrameId, setActiveFrameId] = useState("")
@@ -470,7 +495,6 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
     tool, style, background, customBgColor, isDark,
     onObjectSelected: (obj) => {
       setSelectedObj(obj)
-      // Count multi-select objects from the canvas after tick
       setTimeout(() => {
         const c = canvasActions.getCanvas()
         if (!c) { setSelectedCount(obj ? 1 : 0); return }
@@ -513,9 +537,7 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
   // Auto-save every 30s
   useEffect(() => {
     const interval = setInterval(() => {
-      if (board && hasChanges) {
-        handleSave()
-      }
+      if (board && hasChanges) handleSave()
     }, 30000)
     return () => clearInterval(interval)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -576,7 +598,8 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
         setShowBgPicker(false); setShowExportMenu(false)
         setShowShortcuts(false); setShowTextDialog(false)
         setShowStickyDialog(false); setShowEquationDialog(false)
-        setShowFrames(false)
+        setShowFrames(false); setShowDrawPopover(false)
+        setShowShapesPopover(false); setShowInsertPopover(false)
       }
     }
     window.addEventListener("keydown", handler)
@@ -616,7 +639,7 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
     toast.success("Board renamed")
   }, [board, renameValue])
 
-  // Update minimap every 2s when canvas is modified
+  // Update minimap
   useEffect(() => {
     const interval = setInterval(() => {
       const url = canvasActions.getMinimapDataUrl()
@@ -626,28 +649,10 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
   }, [canvasActions])
 
   // Export handlers
-  const handleExportPNG = () => {
-    const el = canvasActions.getCanvasEl()
-    if (el) exportCanvasPNG(el, board?.title || "whiteboard")
-    setShowExportMenu(false)
-  }
-  const handleExportSVG = () => {
-    const svg = canvasActions.getSVGString()
-    if (svg) exportCanvasSVG(svg, board?.title || "whiteboard")
-    setShowExportMenu(false)
-  }
-  const handleExportPDF = async () => {
-    const el = canvasActions.getCanvasEl()
-    if (el) await exportCanvasPDF(el, board?.title || "whiteboard")
-    setShowExportMenu(false)
-  }
-  const handleExportJSON = () => {
-    if (board) {
-      const updated = { ...board, canvasJSON: canvasActions.serializeCanvas() }
-      exportBoardJSON(updated)
-    }
-    setShowExportMenu(false)
-  }
+  const handleExportPNG = () => { const el = canvasActions.getCanvasEl(); if (el) exportCanvasPNG(el, board?.title || "whiteboard"); setShowExportMenu(false) }
+  const handleExportSVG = () => { const svg = canvasActions.getSVGString(); if (svg) exportCanvasSVG(svg, board?.title || "whiteboard"); setShowExportMenu(false) }
+  const handleExportPDF = async () => { const el = canvasActions.getCanvasEl(); if (el) await exportCanvasPDF(el, board?.title || "whiteboard"); setShowExportMenu(false) }
+  const handleExportJSON = () => { if (board) { const updated = { ...board, canvasJSON: canvasActions.serializeCanvas() }; exportBoardJSON(updated) }; setShowExportMenu(false) }
   const handleImportJSON = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -659,9 +664,7 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
         setHasChanges(true)
         toast.success("Board imported!")
       }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to import")
-    }
+    } catch (err: any) { toast.error(err.message || "Failed to import") }
   }
 
   // Image upload
@@ -669,9 +672,7 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = (ev) => {
-      canvasActions.addImage(ev.target?.result as string)
-    }
+    reader.onload = (ev) => { canvasActions.addImage(ev.target?.result as string) }
     reader.readAsDataURL(file)
   }
 
@@ -687,12 +688,7 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
   // Frame management
   const addFrame = () => {
     const id = crypto.randomUUID()
-    const newFrame: WBFrame = {
-      id,
-      name: `Frame ${frames.length + 1}`,
-      viewportTransform: [1, 0, 0, 1, 0, 0],
-      canvasJSON: "",
-    }
+    const newFrame: WBFrame = { id, name: "Frame " + (frames.length + 1), viewportTransform: [1, 0, 0, 1, 0, 0], canvasJSON: "" }
     setFrames([...frames, newFrame])
     setHasChanges(true)
   }
@@ -704,28 +700,7 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
     setHasChanges(true)
   }
 
-  // Tool definitions
-  const tools: { key: ToolType; icon: React.ReactNode; label: string; shortcut: string }[] = [
-    { key: "select", icon: <MousePointer2 className="h-4 w-4" />, label: "Select", shortcut: "V" },
-    { key: "pen", icon: <Pencil className="h-4 w-4" />, label: "Pen", shortcut: "P" },
-    { key: "highlighter", icon: <Highlighter className="h-4 w-4" />, label: "Highlighter", shortcut: "H" },
-    { key: "eraser", icon: <Eraser className="h-4 w-4" />, label: "Eraser", shortcut: "E" },
-    { key: "laser", icon: <Pointer className="h-4 w-4" />, label: "Laser", shortcut: "L" },
-    { key: "rect", icon: <Square className="h-4 w-4" />, label: "Rectangle", shortcut: "R" },
-    { key: "circle", icon: <Circle className="h-4 w-4" />, label: "Ellipse", shortcut: "C" },
-    { key: "triangle", icon: <Triangle className="h-4 w-4" />, label: "Triangle", shortcut: "" },
-    { key: "line", icon: <Minus className="h-4 w-4" />, label: "Line", shortcut: "N" },
-    { key: "arrow", icon: <ArrowRight className="h-4 w-4" />, label: "Arrow", shortcut: "A" },
-    { key: "diamond", icon: <Diamond className="h-4 w-4" />, label: "Diamond", shortcut: "D" },
-    { key: "text", icon: <Type className="h-4 w-4" />, label: "Text", shortcut: "T" },
-    { key: "sticky", icon: <StickyNote className="h-4 w-4" />, label: "Sticky Note", shortcut: "S" },
-    { key: "image", icon: <ImageIcon className="h-4 w-4" />, label: "Image", shortcut: "" },
-    { key: "connector", icon: <Link2 className="h-4 w-4" />, label: "Connector", shortcut: "" },
-    { key: "equation", icon: <Sigma className="h-4 w-4" />, label: "Equation", shortcut: "Q" },
-    { key: "pan", icon: <Hand className="h-4 w-4" />, label: "Pan", shortcut: "Space" },
-  ]
-
-  const lastSavedText = lastSaved ? `Saved ${getTimeAgo(lastSaved)}` : "Not saved"
+  const lastSavedText = lastSaved ? "Saved " + getTimeAgo(lastSaved) : "Not saved"
 
   // Frame navigation for present mode
   const currentFrameIdx = frames.findIndex((f) => f.id === activeFrameId)
@@ -740,10 +715,39 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
     setActiveFrameId(frames[prev].id)
   }, [frames, currentFrameIdx])
 
+  // Grouped tool definitions
+  const drawTools: { key: ToolType; icon: React.ReactNode; label: string; shortcut: string }[] = [
+    { key: "pen", icon: <Pencil className="h-4 w-4" />, label: "Pen", shortcut: "P" },
+    { key: "highlighter", icon: <Highlighter className="h-4 w-4" />, label: "Highlighter", shortcut: "H" },
+    { key: "eraser", icon: <Eraser className="h-4 w-4" />, label: "Eraser", shortcut: "E" },
+    { key: "laser", icon: <Pointer className="h-4 w-4" />, label: "Laser", shortcut: "L" },
+  ]
+
+  const shapeTools: { key: ToolType; icon: React.ReactNode; label: string; shortcut: string }[] = [
+    { key: "rect", icon: <Square className="h-4 w-4" />, label: "Rectangle", shortcut: "R" },
+    { key: "circle", icon: <Circle className="h-4 w-4" />, label: "Ellipse", shortcut: "C" },
+    { key: "triangle", icon: <Triangle className="h-4 w-4" />, label: "Triangle", shortcut: "" },
+    { key: "diamond", icon: <Diamond className="h-4 w-4" />, label: "Diamond", shortcut: "D" },
+    { key: "line", icon: <Minus className="h-4 w-4" />, label: "Line", shortcut: "N" },
+    { key: "arrow", icon: <ArrowRight className="h-4 w-4" />, label: "Arrow", shortcut: "A" },
+    { key: "connector", icon: <Link2 className="h-4 w-4" />, label: "Connector", shortcut: "" },
+  ]
+
+  const insertTools: { key: ToolType; icon: React.ReactNode; label: string; shortcut: string; action?: () => void }[] = [
+    { key: "text", icon: <Type className="h-4 w-4" />, label: "Text", shortcut: "T", action: () => setShowTextDialog(true) },
+    { key: "sticky", icon: <StickyNote className="h-4 w-4" />, label: "Sticky Note", shortcut: "S", action: () => setShowStickyDialog(true) },
+    { key: "equation", icon: <Sigma className="h-4 w-4" />, label: "Equation", shortcut: "Q", action: () => setShowEquationDialog(true) },
+    { key: "image", icon: <ImageIcon className="h-4 w-4" />, label: "Image", shortcut: "", action: () => fileInputRef.current?.click() },
+  ]
+
+  // Determine which grouped icon to show based on active tool
+  const activeDrawTool = drawTools.find((t) => t.key === tool)
+  const activeShapeTool = shapeTools.find((t) => t.key === tool)
+
+  // Present Mode
   if (presentMode) {
     return (
       <div className="fixed inset-0 z-[100] bg-black flex flex-col" style={{ touchAction: "none" }}>
-        {/* Minimal present toolbar — visible on hover */}
         <div className="absolute top-0 inset-x-0 flex items-center justify-between px-4 py-2 bg-black/60 backdrop-blur-sm z-10 opacity-0 hover:opacity-100 transition-opacity">
           <span className="text-white font-medium text-sm">{board?.title}</span>
           <div className="flex items-center gap-2">
@@ -757,37 +761,29 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
             <button onClick={() => setPresentMode(false)} className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20" aria-label="Exit presentation"><X className="h-4 w-4" /></button>
           </div>
         </div>
-        {/* Canvas rendered inside present mode — same ref, Fabric stays alive */}
-        <div
-          ref={containerRef}
-          className="absolute inset-0"
-          style={{ cursor: "default", willChange: "transform" }}
-        />
-        {/* Frame indicator dots */}
+        <div ref={containerRef} className="absolute inset-0" style={{ cursor: "default", willChange: "transform" }} />
         {frames.length > 1 && (
           <div className="absolute bottom-4 inset-x-0 flex justify-center gap-2 z-10">
             {frames.map((f, i) => (
-              <button
-                key={f.id}
-                onClick={() => setActiveFrameId(f.id)}
-                className={cn("w-2 h-2 rounded-full transition-colors", i === currentFrameIdx ? "bg-white" : "bg-white/30 hover:bg-white/60")}
-                aria-label={`Go to frame ${i + 1}`}
-              />
+              <button key={f.id} onClick={() => setActiveFrameId(f.id)} className={cn("w-2 h-2 rounded-full transition-colors", i === currentFrameIdx ? "bg-white" : "bg-white/30 hover:bg-white/60")} aria-label={"Go to frame " + (i + 1)} />
             ))}
           </div>
         )}
-        <p className="absolute bottom-2 right-4 text-[10px] text-white/20 z-10">ESC or hover top-right to exit</p>
+        <p className="absolute bottom-2 right-4 text-[10px] text-white/20 z-10">ESC to exit</p>
       </div>
     )
   }
 
+  // Main Canvas Editor Layout
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Top Bar */}
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1e2133] border-b border-white/10 shrink-0">
-        <button onClick={onBack} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5" aria-label="Back to boards">
+    <div className="flex-1 flex flex-col overflow-hidden bg-[#0f1117]">
+      {/* Minimal Top Bar (glass) */}
+      <div className="flex items-center gap-2 px-3 py-1.5 shrink-0 bg-[#1a1d2e]/80 backdrop-blur-xl border-b border-white/[0.06]">
+        <button onClick={onBack} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Back to boards">
           <Menu className="h-4 w-4" />
         </button>
+
+        {/* Board title */}
         {isRenamingTitle ? (
           <input
             className="text-sm font-medium text-white bg-white/10 rounded px-2 py-0.5 border border-blue-500/50 focus:outline-none max-w-[200px]"
@@ -815,46 +811,30 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
         <div className="flex-1" />
 
         {/* Undo/Redo */}
-        <button onClick={canvasActions.undo} disabled={!canvasActions.canUndo} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30" aria-label="Undo (Ctrl+Z)">
-          <Undo2 className="h-4 w-4" />
-        </button>
-        <button onClick={canvasActions.redo} disabled={!canvasActions.canRedo} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30" aria-label="Redo (Ctrl+Y)">
-          <Redo2 className="h-4 w-4" />
-        </button>
+        <button onClick={canvasActions.undo} disabled={!canvasActions.canUndo} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30 transition-colors" aria-label="Undo"><Undo2 className="h-4 w-4" /></button>
+        <button onClick={canvasActions.redo} disabled={!canvasActions.canRedo} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30 transition-colors" aria-label="Redo"><Redo2 className="h-4 w-4" /></button>
 
-        <div className="h-4 w-px bg-white/10" />
+        <div className="h-4 w-px bg-white/[0.08]" />
 
-        {/* Zoom */}
-        <button onClick={() => canvasActions.zoomTo(canvasActions.getZoom() * 0.8)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5" aria-label="Zoom out">
-          <ZoomOut className="h-4 w-4" />
-        </button>
+        {/* Zoom controls */}
+        <button onClick={() => canvasActions.zoomTo(canvasActions.getZoom() * 0.8)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Zoom out"><ZoomOut className="h-4 w-4" /></button>
         <span className="text-xs text-gray-400 w-12 text-center tabular-nums">{zoom}%</span>
-        <button onClick={() => canvasActions.zoomTo(canvasActions.getZoom() * 1.25)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5" aria-label="Zoom in">
-          <ZoomIn className="h-4 w-4" />
-        </button>
-        <button onClick={canvasActions.zoomToFit} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5" aria-label="Zoom to fit">
-          <Maximize2 className="h-3.5 w-3.5" />
-        </button>
+        <button onClick={() => canvasActions.zoomTo(canvasActions.getZoom() * 1.25)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Zoom in"><ZoomIn className="h-4 w-4" /></button>
+        <button onClick={canvasActions.zoomToFit} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Zoom to fit"><Maximize2 className="h-3.5 w-3.5" /></button>
 
-        <div className="h-4 w-px bg-white/10" />
+        <div className="h-4 w-px bg-white/[0.08]" />
 
-        {/* Public/Private */}
-        <button onClick={togglePublic} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5" aria-label={board?.isPublic ? "Make private" : "Make public"}>
+        {/* Quick actions */}
+        <button onClick={togglePublic} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label={board?.isPublic ? "Make private" : "Make public"}>
           {board?.isPublic ? <Globe className="h-4 w-4 text-green-400" /> : <GlobeLock className="h-4 w-4" />}
         </button>
-
-        {/* Present */}
-        <button onClick={() => setPresentMode(true)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5" aria-label="Present">
-          <Presentation className="h-4 w-4" />
-        </button>
+        <button onClick={() => setPresentMode(true)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Present"><Presentation className="h-4 w-4" /></button>
 
         {/* Background Picker */}
         <div className="relative">
-          <button onClick={() => { setShowBgPicker(!showBgPicker); setShowExportMenu(false) }} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5" aria-label="Background">
-            <Grid3X3 className="h-4 w-4" />
-          </button>
+          <button onClick={() => { setShowBgPicker(!showBgPicker); setShowExportMenu(false) }} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Background"><Grid3X3 className="h-4 w-4" /></button>
           {showBgPicker && (
-            <div className="absolute top-full right-0 mt-1 w-56 bg-[#1e2133] border border-white/10 rounded-xl shadow-xl z-50 p-2">
+            <div className="absolute top-full right-0 mt-1 w-56 bg-[#1a1d2e]/95 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-2xl z-50 p-2">
               {BACKGROUND_OPTIONS.map((opt) => (
                 <button
                   key={opt.key}
@@ -865,7 +845,7 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
                   <span className="text-xs text-gray-500 ml-2">{opt.description}</span>
                 </button>
               ))}
-              <div className="border-t border-white/10 mt-2 pt-2 px-3">
+              <div className="border-t border-white/[0.08] mt-2 pt-2 px-3">
                 <label className="text-xs text-gray-400">Custom color</label>
                 <input type="color" value={customBgColor} onChange={(e) => { setCustomBgColor(e.target.value); setHasChanges(true) }} className="w-full h-8 mt-1 rounded cursor-pointer" />
               </div>
@@ -875,35 +855,20 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
 
         {/* Export */}
         <div className="relative">
-          <button onClick={() => { setShowExportMenu(!showExportMenu); setShowBgPicker(false) }} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5" aria-label="Export">
-            <Download className="h-4 w-4" />
-          </button>
+          <button onClick={() => { setShowExportMenu(!showExportMenu); setShowBgPicker(false) }} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Export"><Download className="h-4 w-4" /></button>
           {showExportMenu && (
-            <div className="absolute top-full right-0 mt-1 w-44 bg-[#1e2133] border border-white/10 rounded-xl shadow-xl z-50 p-1">
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportPNG}>
-                <FileImage className="h-4 w-4" /> Export PNG
-              </button>
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportSVG}>
-                <FileImage className="h-4 w-4" /> Export SVG
-              </button>
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportPDF}>
-                <FileText className="h-4 w-4" /> Export PDF
-              </button>
-              <div className="border-t border-white/10 my-1" />
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportJSON}>
-                <FileJson className="h-4 w-4" /> Save as JSON
-              </button>
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={() => { importInputRef.current?.click(); setShowExportMenu(false) }}>
-                <Upload className="h-4 w-4" /> Load JSON
-              </button>
+            <div className="absolute top-full right-0 mt-1 w-44 bg-[#1a1d2e]/95 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-2xl z-50 p-1">
+              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportPNG}><FileImage className="h-4 w-4" /> Export PNG</button>
+              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportSVG}><FileImage className="h-4 w-4" /> Export SVG</button>
+              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportPDF}><FileText className="h-4 w-4" /> Export PDF</button>
+              <div className="border-t border-white/[0.08] my-1" />
+              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={handleExportJSON}><FileJson className="h-4 w-4" /> Save as JSON</button>
+              <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2" onClick={() => { importInputRef.current?.click(); setShowExportMenu(false) }}><Upload className="h-4 w-4" /> Load JSON</button>
             </div>
           )}
         </div>
 
-        {/* Shortcuts */}
-        <button onClick={() => setShowShortcuts(true)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5" aria-label="Keyboard shortcuts">
-          <Keyboard className="h-4 w-4" />
-        </button>
+        <button onClick={() => setShowShortcuts(true)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Shortcuts"><Keyboard className="h-4 w-4" /></button>
 
         {/* Save */}
         <button
@@ -914,70 +879,29 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
           Save
         </button>
 
-        {/* Delete */}
-        <button onClick={() => setConfirmDelete(true)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10" aria-label="Delete board">
-          <Trash2 className="h-4 w-4" />
-        </button>
+        <button onClick={() => setConfirmDelete(true)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors" aria-label="Delete board"><Trash2 className="h-4 w-4" /></button>
       </div>
 
-      {/* Main area */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Toolbar */}
-        <div className="w-12 bg-[#1e2133] border-r border-white/10 flex flex-col items-center py-2 gap-0.5 overflow-y-auto shrink-0">
-          {tools.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => {
-                if (t.key === "text") { setShowTextDialog(true); return }
-                if (t.key === "sticky") { setShowStickyDialog(true); return }
-                if (t.key === "equation") { setShowEquationDialog(true); return }
-                if (t.key === "image") { fileInputRef.current?.click(); return }
-                setTool(t.key)
-              }}
-              title={`${t.label}${t.shortcut ? ` (${t.shortcut})` : ""}`}
-              aria-label={t.label}
-              className={cn(
-                "p-2 rounded-lg transition-colors",
-                tool === t.key ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
-              )}
-            >
-              {t.icon}
-            </button>
-          ))}
-
-          <div className="flex-1" />
-
-          <button onClick={() => setShowFrames(!showFrames)} className={cn("p-2 rounded-lg transition-colors", showFrames ? "bg-blue-600/20 text-blue-400" : "text-gray-400 hover:text-white hover:bg-white/5")} title="Frames" aria-label="Toggle frames panel">
-            <LayoutGrid className="h-4 w-4" />
-          </button>
-        </div>
-
+      {/* Main Canvas Area */}
+      <div className="flex-1 flex overflow-hidden relative">
         {/* Frames sidebar */}
         {showFrames && (
-          <div className="w-48 bg-[#1a1d2e] border-r border-white/10 flex flex-col shrink-0">
-            <div className="p-3 border-b border-white/10 flex items-center justify-between">
+          <div className="w-48 bg-[#1a1d2e]/90 backdrop-blur-xl border-r border-white/[0.06] flex flex-col shrink-0">
+            <div className="p-3 border-b border-white/[0.06] flex items-center justify-between">
               <span className="text-sm font-medium text-white">Frames</span>
-              <button onClick={addFrame} className="p-1 rounded text-gray-400 hover:text-white hover:bg-white/5" aria-label="Add frame">
-                <Plus className="h-4 w-4" />
-              </button>
+              <button onClick={addFrame} className="p-1 rounded text-gray-400 hover:text-white hover:bg-white/5" aria-label="Add frame"><Plus className="h-4 w-4" /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
-              {frames.length === 0 && (
-                <p className="text-xs text-gray-500 text-center py-4">No frames yet</p>
-              )}
+              {frames.length === 0 && <p className="text-xs text-gray-500 text-center py-4">No frames yet</p>}
               {frames.map((frame) => (
                 <div
                   key={frame.id}
-                  className={cn("flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm cursor-pointer",
-                    activeFrameId === frame.id ? "bg-blue-600/20 text-blue-400" : "text-gray-300 hover:bg-white/5"
-                  )}
+                  className={cn("flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm cursor-pointer", activeFrameId === frame.id ? "bg-blue-600/20 text-blue-400" : "text-gray-300 hover:bg-white/5")}
                   onClick={() => setActiveFrameId(frame.id)}
                 >
                   <span className="flex-1 truncate">{frame.name}</span>
                   {frames.length > 1 && (
-                    <button onClick={(e) => { e.stopPropagation(); deleteFrame(frame.id) }} className="p-0.5 text-gray-500 hover:text-red-400" aria-label="Delete frame">
-                      <X className="h-3 w-3" />
-                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); deleteFrame(frame.id) }} className="p-0.5 text-gray-500 hover:text-red-400" aria-label="Delete frame"><X className="h-3 w-3" /></button>
                   )}
                 </div>
               ))}
@@ -1004,117 +928,248 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
             }}
           />
 
-          {/* Context-sensitive style panel (bottom center, appears when object selected) */}
-          {selectedObj && tool === "select" && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-[#1e2133] border border-white/10 rounded-xl shadow-xl p-2.5 flex flex-wrap items-center gap-2 z-30 max-w-[calc(100vw-10rem)] overflow-x-auto">
-              {/* Colors */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-gray-400">Stroke</span>
-                <input type="color" value={style.strokeColor} onChange={(e) => setStyle((s) => ({ ...s, strokeColor: e.target.value }))} className="w-6 h-6 rounded cursor-pointer border-0" />
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-gray-400">Fill</span>
-                <input type="color" value={style.fillColor === "transparent" ? "#ffffff" : style.fillColor} onChange={(e) => setStyle((s) => ({ ...s, fillColor: e.target.value }))} className="w-6 h-6 rounded cursor-pointer border-0" />
-                <button
-                  onClick={() => setStyle((s) => ({ ...s, fillColor: "transparent" }))}
-                  className={cn("text-xs px-1.5 py-0.5 rounded border transition-colors", style.fillColor === "transparent" ? "border-blue-400 text-blue-400" : "border-white/10 text-gray-400 hover:text-white")}
-                  title="No fill"
-                >∅</button>
-              </div>
-              <div className="h-5 w-px bg-white/10" />
-              {/* Stroke width + dash */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-gray-400">W</span>
-                <input type="range" min={1} max={20} value={style.strokeWidth} onChange={(e) => setStyle((s) => ({ ...s, strokeWidth: Number(e.target.value) }))} className="w-14 accent-blue-500" />
-                <span className="text-xs text-gray-400 w-4 tabular-nums">{style.strokeWidth}</span>
-              </div>
-              <select
-                value={style.dashStyle}
-                onChange={(e) => setStyle((s) => ({ ...s, dashStyle: e.target.value as any }))}
-                className="text-xs bg-white/5 border border-white/10 text-gray-300 rounded px-1.5 py-0.5 cursor-pointer"
-                title="Dash style"
+          {/* Floating Bottom Toolbar (Zoom-style, glass) */}
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30">
+            <div className="flex items-center gap-1 px-2 py-1.5 rounded-2xl bg-[#1a1d2e]/80 backdrop-blur-xl border border-white/[0.08] shadow-2xl">
+
+              {/* Select */}
+              <ToolButton
+                active={tool === "select"}
+                onClick={() => setTool("select")}
+                icon={<MousePointer2 className="h-4 w-4" />}
+                label="Select (V)"
+              />
+
+              <ToolDivider />
+
+              {/* Draw group */}
+              <ToolPopover
+                open={showDrawPopover}
+                onClose={() => setShowDrawPopover(false)}
+                trigger={
+                  <button
+                    onClick={() => { setShowDrawPopover(!showDrawPopover); setShowShapesPopover(false); setShowInsertPopover(false) }}
+                    className={cn(
+                      "flex items-center gap-0.5 p-2 rounded-xl transition-all",
+                      activeDrawTool ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
+                    )}
+                    title="Drawing tools"
+                  >
+                    {activeDrawTool ? activeDrawTool.icon : <PenTool className="h-4 w-4" />}
+                    <ChevronDownIcon className="h-3 w-3 opacity-50" />
+                  </button>
+                }
               >
-                <option value="solid">─── Solid</option>
-                <option value="dashed">- - Dashed</option>
-                <option value="dotted">··· Dotted</option>
-              </select>
-              <div className="h-5 w-px bg-white/10" />
-              {/* Opacity */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-gray-400">Opacity</span>
-                <input type="range" min={0} max={1} step={0.05} value={style.fillOpacity} onChange={(e) => setStyle((s) => ({ ...s, fillOpacity: Number(e.target.value) }))} className="w-14 accent-blue-500" />
-                <span className="text-xs text-gray-400 w-6 tabular-nums">{Math.round(style.fillOpacity * 100)}%</span>
+                <div className="grid grid-cols-2 gap-1">
+                  {drawTools.map((t) => (
+                    <button
+                      key={t.key}
+                      onClick={() => { setTool(t.key); setShowDrawPopover(false) }}
+                      className={cn("flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors whitespace-nowrap", tool === t.key ? "bg-blue-600/20 text-blue-400" : "text-gray-300 hover:bg-white/5")}
+                    >
+                      {t.icon}
+                      <span>{t.label}</span>
+                      {t.shortcut && <span className="text-[10px] text-gray-500 ml-auto">{t.shortcut}</span>}
+                    </button>
+                  ))}
+                </div>
+              </ToolPopover>
+
+              {/* Shapes group */}
+              <ToolPopover
+                open={showShapesPopover}
+                onClose={() => setShowShapesPopover(false)}
+                trigger={
+                  <button
+                    onClick={() => { setShowShapesPopover(!showShapesPopover); setShowDrawPopover(false); setShowInsertPopover(false) }}
+                    className={cn(
+                      "flex items-center gap-0.5 p-2 rounded-xl transition-all",
+                      activeShapeTool ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
+                    )}
+                    title="Shape tools"
+                  >
+                    {activeShapeTool ? activeShapeTool.icon : <Shapes className="h-4 w-4" />}
+                    <ChevronDownIcon className="h-3 w-3 opacity-50" />
+                  </button>
+                }
+              >
+                <div className="grid grid-cols-2 gap-1">
+                  {shapeTools.map((t) => (
+                    <button
+                      key={t.key}
+                      onClick={() => { setTool(t.key); setShowShapesPopover(false) }}
+                      className={cn("flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors whitespace-nowrap", tool === t.key ? "bg-blue-600/20 text-blue-400" : "text-gray-300 hover:bg-white/5")}
+                    >
+                      {t.icon}
+                      <span>{t.label}</span>
+                      {t.shortcut && <span className="text-[10px] text-gray-500 ml-auto">{t.shortcut}</span>}
+                    </button>
+                  ))}
+                </div>
+              </ToolPopover>
+
+              {/* Insert group */}
+              <ToolPopover
+                open={showInsertPopover}
+                onClose={() => setShowInsertPopover(false)}
+                trigger={
+                  <button
+                    onClick={() => { setShowInsertPopover(!showInsertPopover); setShowDrawPopover(false); setShowShapesPopover(false) }}
+                    className={cn(
+                      "flex items-center gap-0.5 p-2 rounded-xl transition-all",
+                      "text-gray-400 hover:text-white hover:bg-white/5"
+                    )}
+                    title="Insert"
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                    <ChevronDownIcon className="h-3 w-3 opacity-50" />
+                  </button>
+                }
+              >
+                <div className="grid grid-cols-1 gap-1">
+                  {insertTools.map((t) => (
+                    <button
+                      key={t.key}
+                      onClick={() => { t.action?.(); setShowInsertPopover(false) }}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 transition-colors whitespace-nowrap"
+                    >
+                      {t.icon}
+                      <span>{t.label}</span>
+                      {t.shortcut && <span className="text-[10px] text-gray-500 ml-auto">{t.shortcut}</span>}
+                    </button>
+                  ))}
+                </div>
+              </ToolPopover>
+
+              <ToolDivider />
+
+              {/* Pan */}
+              <ToolButton
+                active={tool === "pan"}
+                onClick={() => setTool("pan")}
+                icon={<Hand className="h-4 w-4" />}
+                label="Pan (Space)"
+              />
+
+              {/* Frames toggle */}
+              <ToolButton
+                active={showFrames}
+                onClick={() => setShowFrames(!showFrames)}
+                icon={<LayoutGrid className="h-4 w-4" />}
+                label="Frames"
+              />
+            </div>
+          </div>
+
+          {/* Context Style Panel (glass, above toolbar when object selected) */}
+          {selectedObj && tool === "select" && (
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30">
+              <div className="bg-[#1a1d2e]/85 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-2xl p-2.5 flex flex-wrap items-center gap-2 max-w-[calc(100vw-10rem)] overflow-x-auto">
+                {/* Colors */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-gray-400">Stroke</span>
+                  <input type="color" value={style.strokeColor} onChange={(e) => setStyle((s) => ({ ...s, strokeColor: e.target.value }))} className="w-6 h-6 rounded cursor-pointer border-0" />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-gray-400">Fill</span>
+                  <input type="color" value={style.fillColor === "transparent" ? "#ffffff" : style.fillColor} onChange={(e) => setStyle((s) => ({ ...s, fillColor: e.target.value }))} className="w-6 h-6 rounded cursor-pointer border-0" />
+                  <button onClick={() => setStyle((s) => ({ ...s, fillColor: "transparent" }))} className={cn("text-xs px-1.5 py-0.5 rounded border transition-colors", style.fillColor === "transparent" ? "border-blue-400 text-blue-400" : "border-white/10 text-gray-400 hover:text-white")} title="No fill">{"\u2205"}</button>
+                </div>
+                <div className="h-5 w-px bg-white/[0.08]" />
+                {/* Stroke width + dash */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-gray-400">W</span>
+                  <input type="range" min={1} max={20} value={style.strokeWidth} onChange={(e) => setStyle((s) => ({ ...s, strokeWidth: Number(e.target.value) }))} className="w-14 accent-blue-500" />
+                  <span className="text-xs text-gray-400 w-4 tabular-nums">{style.strokeWidth}</span>
+                </div>
+                <select
+                  value={style.dashStyle}
+                  onChange={(e) => setStyle((s) => ({ ...s, dashStyle: e.target.value as any }))}
+                  className="text-xs bg-white/5 border border-white/[0.08] text-gray-300 rounded px-1.5 py-0.5 cursor-pointer"
+                  title="Dash style"
+                >
+                  <option value="solid">Solid</option>
+                  <option value="dashed">Dashed</option>
+                  <option value="dotted">Dotted</option>
+                </select>
+                <div className="h-5 w-px bg-white/[0.08]" />
+                {/* Opacity */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-gray-400">Opacity</span>
+                  <input type="range" min={0} max={1} step={0.05} value={style.fillOpacity} onChange={(e) => setStyle((s) => ({ ...s, fillOpacity: Number(e.target.value) }))} className="w-14 accent-blue-500" />
+                  <span className="text-xs text-gray-400 w-6 tabular-nums">{Math.round(style.fillOpacity * 100)}%</span>
+                </div>
+                <div className="h-5 w-px bg-white/[0.08]" />
+                {/* Font formatting */}
+                <button onClick={() => setStyle((s) => ({ ...s, fontBold: !s.fontBold }))} className={cn("p-1 rounded transition-colors", style.fontBold ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white")} title="Bold"><Bold className="h-3.5 w-3.5" /></button>
+                <button onClick={() => setStyle((s) => ({ ...s, fontItalic: !s.fontItalic }))} className={cn("p-1 rounded transition-colors", style.fontItalic ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white")} title="Italic"><Italic className="h-3.5 w-3.5" /></button>
+                <button onClick={() => setStyle((s) => ({ ...s, fontUnderline: !s.fontUnderline }))} className={cn("p-1 rounded transition-colors", style.fontUnderline ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white")} title="Underline"><Underline className="h-3.5 w-3.5" /></button>
+                <div className="h-5 w-px bg-white/[0.08]" />
+                {/* Layer order */}
+                <button onClick={canvasActions.bringForward} className="p-1 text-gray-400 hover:text-white" title="Bring forward"><ChevronUp className="h-4 w-4" /></button>
+                <button onClick={canvasActions.sendBackward} className="p-1 text-gray-400 hover:text-white" title="Send backward"><ChevronDown className="h-4 w-4" /></button>
+                <button onClick={canvasActions.bringToFront} className="p-1 text-gray-400 hover:text-white" title="Bring to front"><ChevronsUp className="h-4 w-4" /></button>
+                <button onClick={canvasActions.sendToBack} className="p-1 text-gray-400 hover:text-white" title="Send to back"><ChevronsDown className="h-4 w-4" /></button>
+                <div className="h-5 w-px bg-white/[0.08]" />
+                {/* Alignment (2+ objects) */}
+                {selectedCount >= 2 && (
+                  <>
+                    <button onClick={() => canvasActions.alignObjects("left")} className="p-1 text-gray-400 hover:text-white" title="Align left"><AlignLeft className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => canvasActions.alignObjects("centerH")} className="p-1 text-gray-400 hover:text-white" title="Align center H"><AlignCenter className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => canvasActions.alignObjects("right")} className="p-1 text-gray-400 hover:text-white" title="Align right"><AlignRight className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => canvasActions.alignObjects("top")} className="p-1 text-gray-400 hover:text-white" title="Align top"><AlignStartVertical className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => canvasActions.alignObjects("centerV")} className="p-1 text-gray-400 hover:text-white" title="Align middle"><AlignCenterVertical className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => canvasActions.alignObjects("bottom")} className="p-1 text-gray-400 hover:text-white" title="Align bottom"><AlignEndVertical className="h-3.5 w-3.5" /></button>
+                    {selectedCount >= 3 && (
+                      <>
+                        <button onClick={() => canvasActions.distributeObjects("horizontal")} className="p-1 text-gray-400 hover:text-white" title="Distribute H"><AlignHorizontalDistributeCenter className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => canvasActions.distributeObjects("vertical")} className="p-1 text-gray-400 hover:text-white" title="Distribute V"><AlignVerticalDistributeCenter className="h-3.5 w-3.5" /></button>
+                      </>
+                    )}
+                    <div className="h-5 w-px bg-white/[0.08]" />
+                  </>
+                )}
+                {/* Lock/Group/Dupe/Delete */}
+                <button onClick={() => canvasActions.lockObject(true)} className="p-1 text-gray-400 hover:text-white" title="Lock"><Lock className="h-4 w-4" /></button>
+                <button onClick={() => canvasActions.lockObject(false)} className="p-1 text-gray-400 hover:text-white" title="Unlock"><Unlock className="h-4 w-4" /></button>
+                <div className="h-5 w-px bg-white/[0.08]" />
+                <button onClick={canvasActions.groupSelected} className="p-1 text-gray-400 hover:text-white" title="Group"><Group className="h-4 w-4" /></button>
+                <button onClick={canvasActions.ungroupSelected} className="p-1 text-gray-400 hover:text-white" title="Ungroup"><Ungroup className="h-4 w-4" /></button>
+                <div className="h-5 w-px bg-white/[0.08]" />
+                <button onClick={canvasActions.duplicateSelected} className="p-1 text-gray-400 hover:text-white" title="Duplicate"><Copy className="h-4 w-4" /></button>
+                <button onClick={canvasActions.deleteSelected} className="p-1 text-red-400 hover:text-red-300" title="Delete"><Trash2 className="h-4 w-4" /></button>
               </div>
-              <div className="h-5 w-px bg-white/10" />
-              {/* Font formatting */}
-              <button onClick={() => setStyle((s) => ({ ...s, fontBold: !s.fontBold }))} className={cn("p-1 rounded transition-colors", style.fontBold ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white")} title="Bold"><Bold className="h-3.5 w-3.5" /></button>
-              <button onClick={() => setStyle((s) => ({ ...s, fontItalic: !s.fontItalic }))} className={cn("p-1 rounded transition-colors", style.fontItalic ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white")} title="Italic"><Italic className="h-3.5 w-3.5" /></button>
-              <button onClick={() => setStyle((s) => ({ ...s, fontUnderline: !s.fontUnderline }))} className={cn("p-1 rounded transition-colors", style.fontUnderline ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white")} title="Underline"><Underline className="h-3.5 w-3.5" /></button>
-              <div className="h-5 w-px bg-white/10" />
-              {/* Layer order */}
-              <button onClick={canvasActions.bringForward} className="p-1 text-gray-400 hover:text-white" title="Bring forward"><ChevronUp className="h-4 w-4" /></button>
-              <button onClick={canvasActions.sendBackward} className="p-1 text-gray-400 hover:text-white" title="Send backward"><ChevronDown className="h-4 w-4" /></button>
-              <button onClick={canvasActions.bringToFront} className="p-1 text-gray-400 hover:text-white" title="Bring to front"><ChevronsUp className="h-4 w-4" /></button>
-              <button onClick={canvasActions.sendToBack} className="p-1 text-gray-400 hover:text-white" title="Send to back"><ChevronsDown className="h-4 w-4" /></button>
-              <div className="h-5 w-px bg-white/10" />
-              {/* Alignment (show only when 2+ objects selected) */}
-              {selectedCount >= 2 && (
-                <>
-                  <button onClick={() => canvasActions.alignObjects("left")} className="p-1 text-gray-400 hover:text-white" title="Align left"><AlignLeft className="h-3.5 w-3.5" /></button>
-                  <button onClick={() => canvasActions.alignObjects("centerH")} className="p-1 text-gray-400 hover:text-white" title="Align center (H)"><AlignCenter className="h-3.5 w-3.5" /></button>
-                  <button onClick={() => canvasActions.alignObjects("right")} className="p-1 text-gray-400 hover:text-white" title="Align right"><AlignRight className="h-3.5 w-3.5" /></button>
-                  <button onClick={() => canvasActions.alignObjects("top")} className="p-1 text-gray-400 hover:text-white" title="Align top"><AlignStartVertical className="h-3.5 w-3.5" /></button>
-                  <button onClick={() => canvasActions.alignObjects("centerV")} className="p-1 text-gray-400 hover:text-white" title="Align middle (V)"><AlignCenterVertical className="h-3.5 w-3.5" /></button>
-                  <button onClick={() => canvasActions.alignObjects("bottom")} className="p-1 text-gray-400 hover:text-white" title="Align bottom"><AlignEndVertical className="h-3.5 w-3.5" /></button>
-                  {selectedCount >= 3 && (
-                    <>
-                      <button onClick={() => canvasActions.distributeObjects("horizontal")} className="p-1 text-gray-400 hover:text-white" title="Distribute horizontally"><AlignHorizontalDistributeCenter className="h-3.5 w-3.5" /></button>
-                      <button onClick={() => canvasActions.distributeObjects("vertical")} className="p-1 text-gray-400 hover:text-white" title="Distribute vertically"><AlignVerticalDistributeCenter className="h-3.5 w-3.5" /></button>
-                    </>
-                  )}
-                  <div className="h-5 w-px bg-white/10" />
-                </>
-              )}
-              {/* Lock/Group/Dupe/Delete */}
-              <button onClick={() => canvasActions.lockObject(true)} className="p-1 text-gray-400 hover:text-white" title="Lock"><Lock className="h-4 w-4" /></button>
-              <button onClick={() => canvasActions.lockObject(false)} className="p-1 text-gray-400 hover:text-white" title="Unlock"><Unlock className="h-4 w-4" /></button>
-              <div className="h-5 w-px bg-white/10" />
-              <button onClick={canvasActions.groupSelected} className="p-1 text-gray-400 hover:text-white" title="Group (Ctrl+G)"><Group className="h-4 w-4" /></button>
-              <button onClick={canvasActions.ungroupSelected} className="p-1 text-gray-400 hover:text-white" title="Ungroup (Ctrl+Shift+G)"><Ungroup className="h-4 w-4" /></button>
-              <div className="h-5 w-px bg-white/10" />
-              <button onClick={canvasActions.duplicateSelected} className="p-1 text-gray-400 hover:text-white" title="Duplicate (Ctrl+D)"><Copy className="h-4 w-4" /></button>
-              <button onClick={canvasActions.deleteSelected} className="p-1 text-red-400 hover:text-red-300" title="Delete"><Trash2 className="h-4 w-4" /></button>
             </div>
           )}
 
           {/* Color bar (when drawing tools active) */}
-          {["pen", "highlighter", "rect", "circle", "triangle", "line", "arrow", "diamond", "connector"].includes(tool) && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-[#1e2133] border border-white/10 rounded-xl shadow-xl p-2 flex items-center gap-2 z-30">
-              {COLORS.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setStyle((s) => ({ ...s, strokeColor: c }))}
-                  className={cn("w-6 h-6 rounded-full border-2 transition-transform", style.strokeColor === c ? "border-blue-400 scale-110" : "border-transparent hover:scale-105")}
-                  style={{ backgroundColor: c }}
-                  aria-label={`Color ${c}`}
-                />
-              ))}
-              <div className="h-5 w-px bg-white/10" />
-              <input type="color" value={style.strokeColor} onChange={(e) => setStyle((s) => ({ ...s, strokeColor: e.target.value }))} className="w-6 h-6 rounded cursor-pointer border-0" aria-label="Custom color" />
-              <div className="h-5 w-px bg-white/10" />
-              <input type="range" min={1} max={20} value={style.strokeWidth} onChange={(e) => setStyle((s) => ({ ...s, strokeWidth: Number(e.target.value) }))} className="w-16 accent-blue-500" aria-label="Stroke width" />
-              <span className="text-xs text-gray-400 w-6 tabular-nums">{style.strokeWidth}</span>
+          {["pen", "highlighter", "rect", "circle", "triangle", "line", "arrow", "diamond", "connector"].includes(tool) && !selectedObj && (
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30">
+              <div className="bg-[#1a1d2e]/85 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-2xl p-2 flex items-center gap-2">
+                {COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setStyle((s) => ({ ...s, strokeColor: c }))}
+                    className={cn("w-6 h-6 rounded-full border-2 transition-transform", style.strokeColor === c ? "border-blue-400 scale-110" : "border-transparent hover:scale-105")}
+                    style={{ backgroundColor: c }}
+                    aria-label={"Color " + c}
+                  />
+                ))}
+                <div className="h-5 w-px bg-white/[0.08]" />
+                <input type="color" value={style.strokeColor} onChange={(e) => setStyle((s) => ({ ...s, strokeColor: e.target.value }))} className="w-6 h-6 rounded cursor-pointer border-0" aria-label="Custom color" />
+                <div className="h-5 w-px bg-white/[0.08]" />
+                <input type="range" min={1} max={20} value={style.strokeWidth} onChange={(e) => setStyle((s) => ({ ...s, strokeWidth: Number(e.target.value) }))} className="w-16 accent-blue-500" aria-label="Stroke width" />
+                <span className="text-xs text-gray-400 w-6 tabular-nums">{style.strokeWidth}</span>
+              </div>
             </div>
           )}
 
           {/* Live Minimap */}
-          <div className="absolute bottom-4 right-4 w-36 h-24 bg-[#1e2133]/90 border border-white/10 rounded-lg overflow-hidden z-20 opacity-50 hover:opacity-100 transition-opacity cursor-pointer" title="Minimap — click to zoom to fit" onClick={canvasActions.zoomToFit}>
+          <div className="absolute bottom-4 right-4 w-36 h-24 bg-[#1a1d2e]/80 backdrop-blur-xl border border-white/[0.06] rounded-lg overflow-hidden z-20 opacity-40 hover:opacity-100 transition-opacity cursor-pointer" title="Minimap" onClick={canvasActions.zoomToFit}>
             {thumbnailUrl ? (
               <img src={thumbnailUrl} alt="minimap" className="w-full h-full object-contain" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-600 uppercase tracking-wider">
-                minimap
-              </div>
+              <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-600 uppercase tracking-wider">minimap</div>
             )}
           </div>
         </div>
@@ -1124,19 +1179,12 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
       <input ref={importInputRef} type="file" accept=".json" className="hidden" onChange={handleImportJSON} />
 
-      {/* Text Dialog */}
+      {/* Dialogs */}
       {showTextDialog && (
         <ModalOverlay onClose={() => setShowTextDialog(false)}>
           <div className="w-full max-w-md p-6">
             <h3 className="text-lg font-semibold text-white mb-4">Add Text</h3>
-            <textarea
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              className="w-full p-3 rounded-lg bg-white/5 border border-white/10 text-white resize-none mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-              rows={3}
-              placeholder="Type text here..."
-              autoFocus
-            />
+            <textarea value={textInput} onChange={(e) => setTextInput(e.target.value)} className="w-full p-3 rounded-lg bg-white/5 border border-white/[0.08] text-white resize-none mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50" rows={3} placeholder="Type text here..." autoFocus />
             <div className="flex items-center gap-2 mb-4">
               <label className="text-sm text-gray-400">Size:</label>
               <input type="range" min={12} max={72} value={style.fontSize} onChange={(e) => setStyle((s) => ({ ...s, fontSize: Number(e.target.value) }))} className="flex-1 accent-blue-500" />
@@ -1144,115 +1192,71 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
             </div>
             <div className="flex justify-end gap-2">
               <button onClick={() => setShowTextDialog(false)} className="px-4 py-2 text-sm rounded-lg text-gray-400 hover:bg-white/5">Cancel</button>
-              <button
-                onClick={() => {
-                  if (textInput.trim()) { canvasActions.addText(textInput, 0, 0, style); setTool("select") }
-                  setTextInput(""); setShowTextDialog(false)
-                }}
-                className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-              >
-                Add
-              </button>
+              <button onClick={() => { if (textInput.trim()) { canvasActions.addText(textInput, 0, 0, style); setTool("select") }; setTextInput(""); setShowTextDialog(false) }} className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700">Add</button>
             </div>
           </div>
         </ModalOverlay>
       )}
 
-      {/* Sticky Note Dialog */}
       {showStickyDialog && (
         <ModalOverlay onClose={() => setShowStickyDialog(false)}>
           <div className="w-full max-w-md p-6">
             <h3 className="text-lg font-semibold text-white mb-4">Add Sticky Note</h3>
-            <textarea
-              value={stickyInput}
-              onChange={(e) => setStickyInput(e.target.value)}
-              className="w-full p-3 rounded-lg bg-white/5 border border-white/10 text-white resize-none mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-              rows={3}
-              placeholder="Note content..."
-              autoFocus
-            />
+            <textarea value={stickyInput} onChange={(e) => setStickyInput(e.target.value)} className="w-full p-3 rounded-lg bg-white/5 border border-white/[0.08] text-white resize-none mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50" rows={3} placeholder="Note content..." autoFocus />
             <div className="mb-4">
               <label className="text-sm text-gray-400 block mb-2">Color:</label>
               <div className="flex gap-2">
                 {STICKY_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setStickyColor(c)}
-                    className={cn("w-8 h-8 rounded-lg border-2 transition-transform", stickyColor === c ? "border-blue-400 scale-110" : "border-transparent")}
-                    style={{ backgroundColor: c }}
-                    aria-label={`Sticky color ${c}`}
-                  />
+                  <button key={c} onClick={() => setStickyColor(c)} className={cn("w-8 h-8 rounded-lg border-2 transition-transform", stickyColor === c ? "border-blue-400 scale-110" : "border-transparent")} style={{ backgroundColor: c }} aria-label={"Sticky color " + c} />
                 ))}
               </div>
             </div>
             <div className="flex justify-end gap-2">
               <button onClick={() => setShowStickyDialog(false)} className="px-4 py-2 text-sm rounded-lg text-gray-400 hover:bg-white/5">Cancel</button>
-              <button
-                onClick={() => {
-                  canvasActions.addSticky(stickyInput || "New note", 0, 0, stickyColor)
-                  setStickyInput(""); setShowStickyDialog(false)
-                }}
-                className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-              >
-                Add
-              </button>
+              <button onClick={() => { canvasActions.addSticky(stickyInput || "New note", 0, 0, stickyColor); setStickyInput(""); setShowStickyDialog(false) }} className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700">Add</button>
             </div>
           </div>
         </ModalOverlay>
       )}
 
-      {/* Equation Dialog */}
       {showEquationDialog && (
         <ModalOverlay onClose={() => setShowEquationDialog(false)}>
           <div className="w-full max-w-md p-6">
             <h3 className="text-lg font-semibold text-white mb-2">Add Equation</h3>
-            <p className="text-xs text-gray-400 mb-4">Enter LaTeX notation (e.g. E = mc^2, \frac&#123;a&#125;&#123;b&#125;, \sqrt&#123;x&#125;)</p>
+            <p className="text-xs text-gray-400 mb-4">{"Enter LaTeX notation (e.g. E = mc^2, \\frac{a}{b}, \\sqrt{x})"}</p>
             <input
-              type="text"
-              value={equationInput}
-              onChange={(e) => setEquationInput(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 mb-2 font-mono"
-              placeholder="e.g. E = mc^2"
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  if (equationInput.trim()) canvasActions.addEquation(equationInput, 0, 0)
-                  setEquationInput(""); setShowEquationDialog(false)
-                }
-              }}
+              type="text" value={equationInput} onChange={(e) => setEquationInput(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/[0.08] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 mb-2 font-mono"
+              placeholder="e.g. E = mc^2" autoFocus
+              onKeyDown={(e) => { if (e.key === "Enter") { if (equationInput.trim()) canvasActions.addEquation(equationInput, 0, 0); setEquationInput(""); setShowEquationDialog(false) } }}
             />
-            {/* Live KaTeX preview */}
             {equationInput.trim() && (
-              <div className="mb-4 p-3 rounded-lg bg-white/5 border border-white/10 text-center overflow-x-auto">
+              <div className="mb-4 p-3 rounded-lg bg-white/5 border border-white/[0.08] text-center overflow-x-auto">
                 <EquationPreview latex={equationInput} />
               </div>
             )}
             <div className="flex justify-end gap-2">
               <button onClick={() => setShowEquationDialog(false)} className="px-4 py-2 text-sm rounded-lg text-gray-400 hover:bg-white/5">Cancel</button>
-              <button
-                onClick={() => {
-                  if (equationInput.trim()) canvasActions.addEquation(equationInput, 0, 0)
-                  setEquationInput(""); setShowEquationDialog(false)
-                }}
-                className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-              >
-                Add
-              </button>
+              <button onClick={() => { if (equationInput.trim()) canvasActions.addEquation(equationInput, 0, 0); setEquationInput(""); setShowEquationDialog(false) }} className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700">Add</button>
             </div>
           </div>
         </ModalOverlay>
       )}
 
-      {/* Keyboard Shortcuts Modal */}
       {showShortcuts && (
         <ModalOverlay onClose={() => setShowShortcuts(false)}>
           <div className="w-full max-w-lg p-6 max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white">Keyboard Shortcuts</h3>
-              <button onClick={() => setShowShortcuts(false)} className="p-1 text-gray-400 hover:text-white" aria-label="Close"><X className="h-5 w-5" /></button>
+              <button onClick={() => setShowShortcuts(false)} className="p-1 text-gray-400 hover:text-white"><X className="h-5 w-5" /></button>
             </div>
             <div className="space-y-1">
-              {KEYBOARD_SHORTCUTS.map((s) => (
+              {[...KEYBOARD_SHORTCUTS,
+                { key: "W / Up Arrow", action: "Pan up" },
+                { key: "A / Left Arrow", action: "Pan left" },
+                { key: "S / Down Arrow", action: "Pan down" },
+                { key: "D / Right Arrow", action: "Pan right" },
+              ].map((s) => (
                 <div key={s.key} className="flex items-center justify-between py-1.5 border-b border-white/5">
                   <span className="text-sm text-gray-300">{s.action}</span>
                   <kbd className="px-2 py-0.5 rounded bg-white/5 text-xs text-gray-400 font-mono">{s.key}</kbd>
@@ -1263,18 +1267,13 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
         </ModalOverlay>
       )}
 
-      {/* Confirm Delete Board */}
       <ConfirmDialog
         open={confirmDelete}
         title="Delete Board"
         message="Are you sure you want to delete this board? This cannot be undone."
         confirmLabel="Delete"
         destructive
-        onConfirm={() => {
-          if (board) deleteBoardFromStore(board.id)
-          setConfirmDelete(false)
-          onBack()
-        }}
+        onConfirm={() => { if (board) deleteBoardFromStore(board.id); setConfirmDelete(false); onBack() }}
         onCancel={() => setConfirmDelete(false)}
       />
     </div>
@@ -1282,13 +1281,30 @@ function WhiteboardCanvas({ boardId, user, isAdmin, onBack, onLogout }: Whiteboa
 }
 
 // ============================================================================
-// Helpers
+// Small Helper Components
 // ============================================================================
+
+function ToolButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn("p-2 rounded-xl transition-all", active ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "text-gray-400 hover:text-white hover:bg-white/5")}
+      title={label}
+      aria-label={label}
+    >
+      {icon}
+    </button>
+  )
+}
+
+function ToolDivider() {
+  return <div className="h-5 w-px bg-white/[0.08] mx-0.5" />
+}
 
 function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="mx-4 rounded-2xl bg-[#1e2133] border border-white/10 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="mx-4 rounded-2xl bg-[#1a1d2e]/95 backdrop-blur-xl border border-white/[0.08] shadow-2xl" onClick={(e) => e.stopPropagation()}>
         {children}
       </div>
     </div>
@@ -1300,8 +1316,8 @@ function getTimeAgo(iso: string): string {
   const seconds = Math.floor(diff / 1000)
   if (seconds < 60) return "just now"
   const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
+  if (minutes < 60) return minutes + "m ago"
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  return `${Math.floor(hours / 24)}d ago`
+  if (hours < 24) return hours + "h ago"
+  return Math.floor(hours / 24) + "d ago"
 }

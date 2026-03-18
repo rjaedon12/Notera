@@ -6,8 +6,14 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const search = searchParams.get("search")
+    const featured = searchParams.get("featured")
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "50")))
 
     const where: Record<string, unknown> = { isPublic: true }
+
+    if (featured === "true") {
+      where.isFeatured = true
+    }
 
     if (search) {
       where.OR = [
@@ -19,11 +25,10 @@ export async function GET(request: NextRequest) {
     const sets = await prisma.flashcardSet.findMany({
       where,
       include: {
-        user: { select: { id: true, name: true } },
         _count: { select: { cards: true } },
       },
       orderBy: { createdAt: "desc" },
-      take: 50,
+      take: limit,
     })
 
     return NextResponse.json(sets)

@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   Shield, Users, BookOpen, Brain, FileText, Ban, Trash2,
   LogOut, Loader2, ChevronRight, UserX, Crown, User, Megaphone,
-  Plus, ToggleLeft, ToggleRight, Clock,
+  Plus, ToggleLeft, ToggleRight, Clock, Star,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
@@ -28,6 +28,7 @@ interface AdminSet {
   id: string
   title: string
   isPublic: boolean
+  isFeatured: boolean
   createdAt: string
   user: { id: string; name: string | null; email: string }
   _count: { cards: number }
@@ -249,6 +250,23 @@ export default function AdminDashboard() {
     onError: () => toast.error("Failed to delete set"),
   })
 
+  // Toggle featured mutation
+  const toggleFeaturedMutation = useMutation({
+    mutationFn: async ({ setId, isFeatured }: { setId: string; isFeatured: boolean }) => {
+      const res = await fetch("/api/admin/sets", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ setId, isFeatured }),
+      })
+      if (!res.ok) throw new Error("Failed")
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-dash", "sets"] })
+      toast.success("Featured status updated")
+    },
+    onError: () => toast.error("Failed to update featured status"),
+  })
+
   // Delete quiz mutation
   const deleteQuizMutation = useMutation({
     mutationFn: async (bankId: string) => {
@@ -455,6 +473,7 @@ export default function AdminDashboard() {
                     <th className="text-left px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>Title</th>
                     <th className="text-left px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>Owner</th>
                     <th className="text-left px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>Cards</th>
+                    <th className="text-left px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>Featured</th>
                     <th className="text-left px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>Created</th>
                     <th className="text-right px-4 py-3 font-medium" style={{ color: "var(--muted-foreground)" }}>Actions</th>
                   </tr>
@@ -465,6 +484,15 @@ export default function AdminDashboard() {
                       <td className="px-4 py-3 text-foreground font-medium">{set.title}</td>
                       <td className="px-4 py-3" style={{ color: "var(--muted-foreground)" }}>{set.user?.name || set.user?.email}</td>
                       <td className="px-4 py-3" style={{ color: "var(--muted-foreground)" }}>{set._count.cards}</td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => toggleFeaturedMutation.mutate({ setId: set.id, isFeatured: !set.isFeatured })}
+                          className="p-1 rounded transition-colors hover:bg-yellow-500/10"
+                          title={set.isFeatured ? "Remove from featured" : "Feature this set"}
+                        >
+                          <Star className={cn("h-4 w-4", set.isFeatured ? "fill-yellow-400 text-yellow-400" : "text-gray-400")} />
+                        </button>
+                      </td>
                       <td className="px-4 py-3" style={{ color: "var(--muted-foreground)" }}>{new Date(set.createdAt).toLocaleDateString()}</td>
                       <td className="px-4 py-3 text-right">
                         <button onClick={() => {

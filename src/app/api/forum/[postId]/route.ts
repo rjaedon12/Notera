@@ -2,13 +2,14 @@ import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 
-// GET /api/forum/[postId] — get a single post with its replies
+// GET /api/forum/[postId] — get a single post with its replies + reactions
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ postId: string }> }
 ) {
   try {
     const { postId } = await params
+    const session = await auth()
 
     const post = await prisma.forumPost.findUnique({
       where: { id: postId },
@@ -18,8 +19,10 @@ export async function GET(
           orderBy: { createdAt: "asc" },
           include: {
             user: { select: { id: true, name: true, image: true } },
+            _count: { select: { childReplies: true } },
           },
         },
+        _count: { select: { replies: true } },
       },
     })
 
@@ -27,7 +30,22 @@ export async function GET(
       return Response.json({ error: "Post not found" }, { status: 404 })
     }
 
-    return Response.json(post)
+    // Get reaction counts for the post
+    const [likes, dislikes, userReaction] = await Promise.all([
+      prisma.forumReaction.count({ where: { postId, type: "LIKE" } }),
+      prisma.forumReaction.count({ where: { postId, type: "DISLIKE" } }),
+      session?.user?.id
+        ? prisma.forumReaction.findFirst({
+            where: { postId, userId: session.user.id },
+            select: { type: true },
+          })
+        : null,
+    ])
+
+    return Response.json({
+      ...post,
+      reactions: { likes, dislikes, userReaction: userReaction?.type || null },
+    })
   } catch (error) {
     console.error("Forum post GET error:", error)
     return Response.json({ error: "Internal server error" }, { status: 500 })

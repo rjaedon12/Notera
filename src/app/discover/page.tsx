@@ -157,10 +157,6 @@ function DiscoverContent() {
                     
                     <div className="flex items-center justify-between text-sm" style={{ color: "var(--muted-foreground)" }}>
                       <span>{set._count?.cards ?? 0} cards</span>
-                      <div className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {set.user?.name || "Anonymous"}
-                      </div>
                     </div>
                   </CardContent>
                 </Card>

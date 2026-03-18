@@ -26,7 +26,7 @@ export async function POST(
     }
 
     const body = await req.json()
-    const { content } = body
+    const { content, parentReplyId } = body
 
     if (!content || !content.trim()) {
       return Response.json({ error: "Content is required" }, { status: 400 })
@@ -40,6 +40,7 @@ export async function POST(
         body: content.trim(),
         userId: session.user.id,
         postId,
+        ...(parentReplyId ? { parentReplyId } : {}),
       },
       include: {
         user: { select: { id: true, name: true, image: true } },

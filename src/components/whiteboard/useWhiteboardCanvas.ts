@@ -131,7 +131,7 @@ export function useWhiteboardCanvas({
   const pushState = useCallback(() => {
     const c = canvasRef.current; if (!c) return
     undoStackRef.current.push(JSON.stringify(c.toJSON()))
-    if (undoStackRef.current.length > 120) undoStackRef.current.shift()
+    if (undoStackRef.current.length > 40) undoStackRef.current.shift()
     redoStackRef.current = []; setCanUndo(true); setCanRedo(false)
   }, [])
 
@@ -328,6 +328,53 @@ export function useWhiteboardCanvas({
     const up = (e: KeyboardEvent) => { if (e.code === "Space") { spaceDownRef.current = false; isPanningRef.current = false; lastPanPointRef.current = null } }
     window.addEventListener("keydown", down); window.addEventListener("keyup", up)
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up) }
+  }, [])
+
+  // WASD / Arrow key panning
+  useEffect(() => {
+    const PAN_SPEED = 20
+    const keysDown = new Set<string>()
+    let animId: number | null = null
+
+    const tick = () => {
+      const c = canvasRef.current
+      if (!c || keysDown.size === 0) { animId = null; return }
+      const vpt = c.viewportTransform!
+      if (keysDown.has("w") || keysDown.has("arrowup")) vpt[5] += PAN_SPEED
+      if (keysDown.has("s") || keysDown.has("arrowdown")) vpt[5] -= PAN_SPEED
+      if (keysDown.has("a") || keysDown.has("arrowleft")) vpt[4] += PAN_SPEED
+      if (keysDown.has("d") || keysDown.has("arrowright")) vpt[4] -= PAN_SPEED
+      c.requestRenderAll()
+      animId = requestAnimationFrame(tick)
+    }
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.contentEditable === "true") return
+      const key = e.key.toLowerCase()
+      if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key)) {
+        // Only pan with WASD when not actively editing text on canvas
+        const c = canvasRef.current
+        if (c && c.getActiveObject()?.type === "i-text" && (c.getActiveObject() as any).isEditing) return
+        e.preventDefault()
+        keysDown.add(key)
+        if (!animId) animId = requestAnimationFrame(tick)
+      }
+    }
+
+    const onKeyUp = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase()
+      keysDown.delete(key)
+      if (keysDown.size === 0 && animId) { cancelAnimationFrame(animId); animId = null }
+    }
+
+    window.addEventListener("keydown", onKeyDown)
+    window.addEventListener("keyup", onKeyUp)
+    return () => {
+      window.removeEventListener("keydown", onKeyDown)
+      window.removeEventListener("keyup", onKeyUp)
+      if (animId) cancelAnimationFrame(animId)
+    }
   }, [])
 
   const startLaser = useCallback((canvas: any) => {
