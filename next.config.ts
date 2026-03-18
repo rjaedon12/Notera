@@ -1,13 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Reduce bundle size by tree-shaking barrel imports
-  modularizeImports: {
-    "lucide-react": {
-      transform: "lucide-react/dist/esm/icons/{{kebabCase member}}",
-    },
-  },
-
   // Experimental optimizations
   experimental: {
     // Optimize package imports for popular libraries
