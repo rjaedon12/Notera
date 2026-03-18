@@ -71,17 +71,18 @@ export interface BoardMeta {
 
 // ─── Liveblocks Types ────────────────────────────────────
 
-export interface Presence {
-  cursor: Point | null
-  selectedTool: ToolType
+export type Presence = {
+  cursor: { x: number; y: number } | null
+  selectedTool: string
   userName: string
   userColor: string
   userId: string
+  [key: string]: unknown
 }
 
-export interface Storage {
+export type Storage = {
   elements: WhiteboardElement[]
-  background: BackgroundType
+  background: string
   bgColor: string
 }
 

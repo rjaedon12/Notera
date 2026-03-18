@@ -267,11 +267,7 @@ export default function WhiteboardBoardPage() {
         userColor: "#1971c2",
         userId: "",
       }}
-      initialStorage={{
-        elements: [],
-        background: "plain",
-        bgColor: "#ffffff",
-      }}
+      initialStorage={{} as Record<string, unknown>}
     >
       <BoardCanvas />
     </RoomProvider>
