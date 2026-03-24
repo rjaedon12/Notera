@@ -139,6 +139,18 @@ function BoardCanvas() {
     }
   }, 2000)
 
+  // Lock body scroll while whiteboard is mounted so fixed toolbar stays in viewport
+  useEffect(() => {
+    const html = document.documentElement
+    const body = document.body
+    html.style.overflow = "hidden"
+    body.style.overflow = "hidden"
+    return () => {
+      html.style.overflow = ""
+      body.style.overflow = ""
+    }
+  }, [])
+
   // Load board on mount
   useEffect(() => {
     async function load() {
@@ -233,7 +245,7 @@ function BoardCanvas() {
   }
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-white dark:bg-zinc-950">
+    <div className="relative h-[100dvh] w-screen overflow-hidden bg-white dark:bg-zinc-950">
       <TopBar
         title={boardTitle}
         onTitleChange={handleTitleChange}

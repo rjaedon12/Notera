@@ -191,7 +191,98 @@
   max-width: 100%;
   height: auto;
   border-radius: 6px;
+  margin: 0;
+  display: block;
+  pointer-events: none;
+}
+
+/* ========================================
+   RESIZABLE IMAGE
+   ======================================== */
+.resizable-image-wrapper {
   margin: 0.5em 0;
+}
+
+.resizable-image-container {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  border-radius: 6px;
+  transition: outline 0.15s;
+  cursor: default;
+}
+
+.resizable-image-container img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 6px;
+}
+
+.resizable-image-container.selected {
+  outline: 2px solid #2383e2;
+  border-radius: 6px;
+}
+
+.resizable-image-container.resizing {
+  outline: 2px solid #2383e2;
+  user-select: none;
+}
+
+/* Resize handles — vertical bars on left/right edges */
+.resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: col-resize;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 2;
+}
+
+.resizable-image-container:hover .resize-handle,
+.resizable-image-container.resizing .resize-handle {
+  opacity: 1;
+}
+
+.resize-handle-left {
+  left: -4px;
+}
+
+.resize-handle-right {
+  right: -4px;
+}
+
+.resize-handle-bar {
+  width: 4px;
+  height: 40px;
+  max-height: 50%;
+  background: rgba(35, 131, 226, 0.7);
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.resize-handle:hover .resize-handle-bar {
+  background: #2383e2;
+}
+
+.resize-width-indicator {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 3;
 }
 
 /* Selected node outline */
@@ -558,6 +649,7 @@
 }
 
 .math-block-render {
+  position: relative;
   padding: 16px;
   border-radius: 8px;
   cursor: pointer;
@@ -573,6 +665,34 @@
 .math-block-render.selected {
   outline: 2px solid #2383e2;
   border-radius: 8px;
+}
+
+.math-block-delete-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  background: var(--muted, rgba(55, 53, 47, 0.08));
+  color: var(--muted-foreground, #9b9a97);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  z-index: 2;
+}
+
+.math-block-render:hover .math-block-delete-btn {
+  opacity: 1;
+}
+
+.math-block-delete-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
 }
 
 .math-block-placeholder {

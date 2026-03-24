@@ -536,11 +536,15 @@ export function useWhiteboardCanvas({
           }
         })
       } else {
-        // Two-finger pan on trackpad
+        // Two-finger pan on trackpad — damped to prevent overshooting
+        const dampening = 0.6
+        const maxDelta = 50
+        const dx = Math.max(-maxDelta, Math.min(maxDelta, e.deltaX)) * dampening
+        const dy = Math.max(-maxDelta, Math.min(maxDelta, e.deltaY)) * dampening
         setCamera((prev) => ({
           ...prev,
-          x: prev.x - e.deltaX,
-          y: prev.y - e.deltaY,
+          x: prev.x - dx,
+          y: prev.y - dy,
         }))
       }
     },
@@ -803,8 +807,8 @@ export function useWhiteboardCanvas({
         ctx.lineWidth = 1
         ctx.stroke()
 
-        // Sticky text
-        if (el.content) {
+        // Sticky text — skip canvas rendering while textarea overlay is active
+        if (el.content && el.id !== editingTextId) {
           ctx.fillStyle = "#1a1a1a"
           ctx.font = "14px Inter, sans-serif"
           const lines = wrapText(ctx, el.content, w - 32)
@@ -1068,6 +1072,19 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   let currentLine = ""
 
   for (const word of words) {
+    // If a single word exceeds maxWidth, break it character-by-character
+    if (ctx.measureText(word).width > maxWidth) {
+      for (const char of word) {
+        const testChar = currentLine ? `${currentLine}${char}` : char
+        if (ctx.measureText(testChar).width > maxWidth && currentLine) {
+          lines.push(currentLine)
+          currentLine = char
+        } else {
+          currentLine = testChar
+        }
+      }
+      continue
+    }
     const testLine = currentLine ? `${currentLine} ${word}` : word
     const metrics = ctx.measureText(testLine)
     if (metrics.width > maxWidth && currentLine) {

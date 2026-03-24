@@ -4,6 +4,7 @@ import { Node, mergeAttributes } from "@tiptap/core"
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react"
 import { useState, useEffect, useRef, useCallback } from "react"
 import katex from "katex"
+import { Trash2 } from "lucide-react"
 
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
@@ -21,7 +22,7 @@ declare module "@tiptap/core" {
    ==================================================================== */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function MathBlockComponent({ node, updateAttributes, selected }: any) {
+function MathBlockComponent({ node, updateAttributes, selected, deleteNode }: any) {
   const [editing, setEditing] = useState(!node.attrs.latex)
   const [latex, setLatex] = useState(node.attrs.latex || "")
   const renderRef = useRef<HTMLDivElement>(null)
@@ -120,6 +121,17 @@ function MathBlockComponent({ node, updateAttributes, selected }: any) {
           onClick={() => setEditing(true)}
           title="Click to edit equation"
         >
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              deleteNode()
+            }}
+            className="math-block-delete-btn"
+            title="Delete equation"
+            type="button"
+          >
+            <Trash2 size={14} />
+          </button>
           {latex ? (
             <div ref={renderRef} />
           ) : (

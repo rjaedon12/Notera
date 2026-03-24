@@ -160,6 +160,10 @@ export function Canvas({
               caretColor: editingElement.type === "sticky" ? "#1a1a1a" : editingElement.style.color,
               // Text area background: transparent for sticky (canvas-rendered bg), slight bg for text
               background: editingElement.type === "sticky" ? "transparent" : "rgba(255,255,255,0.92)",
+              boxSizing: "border-box",
+              overflowWrap: "break-word",
+              wordBreak: "break-word",
+              overflow: "hidden",
             }}
             placeholder={editingElement.type === "sticky" ? "Type here..." : "Type..."}
             autoFocus
