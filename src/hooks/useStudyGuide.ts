@@ -9,7 +9,7 @@ import type {
   GuideNote,
 } from "@/types/studyguide"
 
-const STORAGE_PREFIX = "koda_guide_"
+const STORAGE_PREFIX = "notera_guide_"
 
 // ---------------------------------------------------------------------------
 // Core localStorage helpers

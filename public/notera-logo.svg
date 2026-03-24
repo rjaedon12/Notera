@@ -1,0 +1,35 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sparkGrad" x1="32" y1="32" x2="224" y2="224" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#34AAFF"/>
+      <stop offset="45%" stop-color="#007AFF"/>
+      <stop offset="100%" stop-color="#5856D6"/>
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0C0C16"/>
+      <stop offset="100%" stop-color="#060609"/>
+    </linearGradient>
+    <linearGradient id="specular" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="white" stop-opacity="0.18"/>
+      <stop offset="50%" stop-color="white" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <!-- Background -->
+  <rect width="256" height="256" rx="52" fill="url(#bgGrad)"/>
+  <!-- Subtle outer rim -->
+  <rect width="256" height="256" rx="52" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1.5"/>
+  <!-- Ambient glow behind spark (blurred, low opacity) -->
+  <path d="M128 30 L157 99 L226 128 L157 157 L128 226 L99 157 L30 128 L99 99 Z"
+        fill="url(#sparkGrad)" opacity="0.20" filter="url(#glow)"/>
+  <!-- Main spark mark -->
+  <path d="M128 30 L157 99 L226 128 L157 157 L128 226 L99 157 L30 128 L99 99 Z"
+        fill="url(#sparkGrad)"/>
+  <!-- Upper-left specular highlight for glass depth -->
+  <path d="M128 30 L157 99 L226 128 L157 157 L128 226 L99 157 L30 128 L99 99 Z"
+        fill="url(#specular)"/>
+</svg>

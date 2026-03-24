@@ -205,7 +205,7 @@ export default function SettingsPage() {
               Appearance
             </CardTitle>
             <CardDescription>
-              Customize how Koda looks and feels
+              Customize how Notera looks and feels
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">

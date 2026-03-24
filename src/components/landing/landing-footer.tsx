@@ -16,7 +16,7 @@ export function LandingFooter() {
                   <path d="M16 4 L19.5 12.5 L28 16 L19.5 19.5 L16 28 L12.5 19.5 L4 16 L12.5 12.5 Z" fill="#FAF9F6"/>
                 </svg>
               </div>
-              <span className="font-heading font-bold text-sm" style={{ color: "#1A1A1A" }}>Koda</span>
+              <span className="font-heading font-bold text-sm" style={{ color: "#1A1A1A" }}>Notera</span>
             </div>
             <p className="text-xs leading-relaxed" style={{ color: "#8A8A8A" }}>
               Flashcard app for students who want results.
@@ -48,7 +48,7 @@ export function LandingFooter() {
         {/* Bottom bar */}
         <div className="mt-12 pt-6" style={{ borderTop: "1px solid rgba(0,0,0,0.06)" }}>
           <p className="text-xs" style={{ color: "#8A8A8A" }}>
-            &copy; {new Date().getFullYear()} Koda. All rights reserved.
+            &copy; {new Date().getFullYear()} Notera. All rights reserved.
           </p>
         </div>
       </div>

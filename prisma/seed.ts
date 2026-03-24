@@ -140,12 +140,12 @@ async function main() {
   const hashedAdmin = await bcrypt.hash(adminPassword, 12)
 
   const demoUser = await prisma.user.create({
-    data: { email: "demo@koda.app", name: "Demo User", password: hashedDemo, streak: 3, lastStudied: new Date() },
+    data: { email: "demo@notera.app", name: "Demo User", password: hashedDemo, streak: 3, lastStudied: new Date() },
   })
   console.log(`✅ Created demo user: ${demoUser.email}`)
 
   const adminUser = await prisma.user.create({
-    data: { email: "admin@koda.com", name: "Koda Admin", password: hashedAdmin, role: "ADMIN", streak: 7, lastStudied: new Date() },
+    data: { email: "admin@notera.app", name: "Notera Admin", password: hashedAdmin, role: "ADMIN", streak: 7, lastStudied: new Date() },
   })
   console.log(`✅ Created admin user: ${adminUser.email}`)
 
@@ -265,7 +265,7 @@ async function main() {
   const group = await prisma.group.create({
     data: {
       name: "Study Squad",
-      inviteCode: "KODA01",
+      inviteCode: "NOTERA01",
       ownerId: demoUser.id,
       members: { create: [{ userId: demoUser.id, role: "OWNER" }, { userId: adminUser.id, role: "MEMBER" }] },
       sets: { create: [{ setId: usHistorySet.id }, { setId: worldHistorySet.id }] },
@@ -283,8 +283,8 @@ async function main() {
   console.log(`   📚 ${totalSets} flashcard sets (${3 + csvSetCount} total: 3 built-in + ${csvSetCount} from CSV)`)
   console.log(`   🃏 ${totalCards} flashcards`)
   console.log(`   👥 1 study group`)
-  console.log(`\n   Demo login:  demo@koda.app  / demo1234`)
-  console.log(`   Admin login: admin@koda.com / ${adminPassword}`)
+  console.log(`\n   Demo login:  demo@notera.app  / demo1234`)
+  console.log(`   Admin login: admin@notera.app / ${adminPassword}`)
 
   // ── 6. Seed DBQ prompts ───────────────────────────────
   const { seedDBQ, seedIndustrialRevolutionDBQ, seedImperialismDBQ, seedMongolEmpireDBQ, seedUSImperialismDBQ, seedFrenchRevolutionDBQ } = await import("./seed-dbq")

@@ -43,7 +43,7 @@ export default function SignupPage() {
         toast.error("Account created but failed to sign in. Please try logging in.")
         router.push("/login")
       } else {
-        toast.success("Welcome to Koda!")
+        toast.success("Welcome to Notera!")
         router.push("/library")
         router.refresh()
       }
@@ -71,7 +71,7 @@ export default function SignupPage() {
               </svg>
             </div>
             <span className="font-heading font-bold text-[1.1rem]" style={{ color: "#1A1A1A", letterSpacing: "-0.03em" }}>
-              Koda
+              Notera
             </span>
           </Link>
         </div>
@@ -91,11 +91,11 @@ export default function SignupPage() {
         </div>
 
         <p className="text-xs" style={{ color: "#8A8A8A" }}>
-          &copy; {new Date().getFullYear()} Koda
+          &copy; {new Date().getFullYear()} Notera
         </p>
       </div>
 
-      {/* Right panel — form */}
+      {/* Right panel — form */
       <div className="flex-1 flex items-center justify-center px-6 py-12" style={{ background: "#FAF9F6" }}>
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
@@ -108,7 +108,7 @@ export default function SignupPage() {
                 </svg>
               </div>
               <span className="font-heading font-bold text-[1.1rem]" style={{ color: "#1A1A1A", letterSpacing: "-0.03em" }}>
-                Koda
+                Notera
               </span>
             </Link>
           </div>

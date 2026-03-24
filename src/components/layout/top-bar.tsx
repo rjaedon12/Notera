@@ -75,7 +75,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                 <path d="M16 4 L19.5 12.5 L28 16 L19.5 19.5 L16 28 L12.5 19.5 L4 16 L12.5 12.5 Z" fill="url(#topbar-specular)"/>
               </svg>
             </div>
-            <span className="font-heading font-bold text-[1.15rem] tracking-tight" style={{ color: "var(--foreground)", letterSpacing: "-0.03em" }}>Koda</span>
+            <span className="font-heading font-bold text-[1.15rem] tracking-tight" style={{ color: "var(--foreground)", letterSpacing: "-0.03em" }}>Notera</span>
           </Link>
         </div>
 

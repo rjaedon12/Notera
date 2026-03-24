@@ -55,7 +55,7 @@ export default function LoginPage() {
               </svg>
             </div>
             <span className="font-heading font-bold text-[1.1rem]" style={{ color: "#1A1A1A", letterSpacing: "-0.03em" }}>
-              Koda
+              Notera
             </span>
           </Link>
         </div>
@@ -76,11 +76,11 @@ export default function LoginPage() {
         </div>
 
         <p className="text-xs" style={{ color: "#8A8A8A" }}>
-          &copy; {new Date().getFullYear()} Koda
+          &copy; {new Date().getFullYear()} Notera
         </p>
       </div>
 
-      {/* Right panel — form */}
+      {/* Right panel — form */
       <div className="flex-1 flex items-center justify-center px-6 py-12" style={{ background: "#FAF9F6" }}>
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
@@ -93,7 +93,7 @@ export default function LoginPage() {
                 </svg>
               </div>
               <span className="font-heading font-bold text-[1.1rem]" style={{ color: "#1A1A1A", letterSpacing: "-0.03em" }}>
-                Koda
+                Notera
               </span>
             </Link>
           </div>

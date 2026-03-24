@@ -33,7 +33,7 @@ export function LandingNavbar() {
             </svg>
           </div>
           <span className="font-heading font-bold text-[1.1rem]" style={{ color: "#1A1A1A", letterSpacing: "-0.03em" }}>
-            Koda
+            Notera
           </span>
         </Link>
 

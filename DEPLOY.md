@@ -1,6 +1,6 @@
-# Deploying Koda to Vercel
+# Deploying Notera to Vercel
 
-Step-by-step guide for deploying the Koda study app with a Neon PostgreSQL database.
+Step-by-step guide for deploying the Notera study app with a Neon PostgreSQL database.
 
 ---
 
@@ -33,7 +33,7 @@ npx prisma db seed
 ## 3. Push Code to GitHub
 
 ```bash
-git remote add origin https://github.com/<YOUR_USERNAME>/Koda.git
+git remote add origin https://github.com/<YOUR_USERNAME>/Notera.git
 git branch -M main
 git push -u origin main
 ```
@@ -71,7 +71,7 @@ openssl rand -base64 32
 Set this to your Vercel production URL, e.g.:
 
 ```
-https://koda-app.vercel.app
+https://notera-app.vercel.app
 ```
 
 ## 8. Deploy

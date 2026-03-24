@@ -16,7 +16,7 @@ This guide walks you through deploying your app with a **Neon** PostgreSQL datab
 
 1. Click **"New Project"**.
 2. Fill in the form:
-   - **Project name**: anything you like, e.g. `koda-db`
+   - **Project name**: anything you like, e.g. `notera-db`
    - **Database name**: leave as `neondb` (the default)
    - **Region**: choose the one closest to your users (e.g. *US East – N. Virginia* for the US)
 3. Click **"Create Project"**.

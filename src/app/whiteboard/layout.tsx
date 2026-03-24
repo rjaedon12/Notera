@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Whiteboard — Koda",
+  title: "Whiteboard — Notera",
   description: "Collaborative whiteboard for visual learning",
 }
 

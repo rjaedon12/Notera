@@ -17,7 +17,7 @@ const body = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Koda | Study Smarter",
+  title: "Notera | Study Smarter",
   description: "Create flashcards, study with multiple modes, and track your progress",
   icons: {
     icon: "/favicon.svg",
@@ -68,7 +68,7 @@ export default function RootLayout({
     }
   };
   try{
-    var id=localStorage.getItem('koda-color-theme');
+    var id=localStorage.getItem('notera-color-theme');
     if(!id||!D[id])id='monochrome';
     var isDark=document.documentElement.classList.contains('dark')||(!document.documentElement.classList.contains('light')&&(localStorage.getItem('theme')==='dark'||(!localStorage.getItem('theme')&&window.matchMedia('(prefers-color-scheme:dark)').matches)));
     var v=isDark?D[id].dark:D[id].light;

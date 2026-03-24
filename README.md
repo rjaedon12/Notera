@@ -1,8 +1,8 @@
-# Koda
+# Notera
 
 > Learn smarter. Master anything.
 
-**Koda** is a full-stack, adaptive study platform built with Next.js. It combines flashcard-based learning with interactive math visualizers, rich notes, a collaborative whiteboard, study groups, and detailed progress tracking — all in one place.
+**Notera** is a full-stack, adaptive study platform built with Next.js. It combines flashcard-based learning with interactive math visualizers, rich notes, a collaborative whiteboard, study groups, and detailed progress tracking — all in one place.
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
@@ -89,7 +89,7 @@ An interactive suite for building intuition around math concepts:
 ## 📁 Project Structure
 
 ```
-Koda/
+Notera/
 ├── prisma/               # Database schema, migrations, and seed scripts
 │   ├── schema.prisma
 │   ├── seed.ts
@@ -146,7 +146,7 @@ Koda/
 
 ```bash
 git clone <repository-url>
-cd Koda
+cd Notera
 ```
 
 ### 2. Install dependencies
@@ -253,7 +253,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🔐 Authentication
 
-Koda supports three sign-in methods:
+Notera supports three sign-in methods:
 
 - **Email + Password** — traditional credentials with bcrypt hashing
 - **Google OAuth** — one-click sign in with a Google account
@@ -265,7 +265,7 @@ OAuth providers are optional. The app works with email/password alone.
 
 ## 🗄️ Database
 
-Koda uses **PostgreSQL** hosted on [Neon](https://neon.tech) and accessed via the **Prisma ORM**.
+Notera uses **PostgreSQL** hosted on [Neon](https://neon.tech) and accessed via the **Prisma ORM**.
 
 - `prisma/schema.prisma` — full data model (users, sets, cards, groups, notes, streaks, achievements, …)
 - `prisma/seed.ts` — seeds an admin user and sample data

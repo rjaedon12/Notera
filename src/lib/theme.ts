@@ -1,5 +1,5 @@
 /* ====================================================================
-   KODA — Full Color Theme System
+   NOTERA — Full Color Theme System
    Each theme defines variables for both dark and light modes.
    The applyTheme() function picks the correct variant based on
    the current light/dark class on <html>.
@@ -677,7 +677,7 @@ export const THEMES: Record<string, ThemeDefinition> = {
 export type ThemeId = keyof typeof THEMES;
 export const DEFAULT_THEME: ThemeId = 'monochrome';
 
-const THEME_STORAGE_KEY = 'koda-color-theme';
+const THEME_STORAGE_KEY = 'notera-color-theme';
 
 /** All CSS variable keys to set on each theme switch */
 const CSS_VAR_KEYS: (keyof ThemeVariant)[] = [
