@@ -128,6 +128,7 @@ model User {
   forumReactions   ForumReaction[]
   whiteboardBoards WhiteboardBoard[] @relation("WhiteboardOwner")
   whiteboardMemberships WhiteboardMember[]
+  fsrsProgress  UserFlashcardProgress[]
 }
 
 // ─── Flashcards ──────────────────────────────────────────
@@ -164,8 +165,9 @@ model Flashcard {
   setId String
   set   FlashcardSet @relation(fields: [setId], references: [id], onDelete: Cascade)
 
-  cardProgress CardProgress[]
-  starredBy    StarredCard[]
+  cardProgress  CardProgress[]
+  starredBy     StarredCard[]
+  fsrsProgress  UserFlashcardProgress[]
 }
 
 // ─── Study Progress ──────────────────────────────────────
@@ -206,6 +208,31 @@ model CardProgress {
   flashcard   Flashcard @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
 
   @@unique([userId, flashcardId])
+}
+
+// ─── FSRS Spaced Repetition Progress ─────────────────────
+
+model UserFlashcardProgress {
+  id            String    @id @default(cuid())
+  userId        String
+  flashcardId   String
+
+  // FSRS fields
+  due           DateTime  @default(now())
+  stability     Float     @default(0)
+  difficulty    Float     @default(0)
+  elapsedDays   Int       @default(0)
+  scheduledDays Int       @default(0)
+  reps          Int       @default(0)
+  lapses        Int       @default(0)
+  state         Int       @default(0) // 0=New, 1=Learning, 2=Review, 3=Relearning
+  lastReview    DateTime?
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  flashcard Flashcard @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, flashcardId])
+  @@index([userId, due])
 }
 
 // ─── Groups ──────────────────────────────────────────────
