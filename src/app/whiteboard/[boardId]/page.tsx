@@ -245,7 +245,7 @@ function BoardCanvas() {
   }
 
   return (
-    <div className="relative h-[100dvh] w-screen overflow-hidden bg-white dark:bg-zinc-950">
+    <div className="relative h-[100dvh] w-screen bg-white dark:bg-zinc-950">
       <TopBar
         title={boardTitle}
         onTitleChange={handleTitleChange}
