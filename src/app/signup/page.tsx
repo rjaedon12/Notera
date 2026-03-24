@@ -95,7 +95,7 @@ export default function SignupPage() {
         </p>
       </div>
 
-      {/* Right panel — form */
+      {/* Right panel — form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12" style={{ background: "#FAF9F6" }}>
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
