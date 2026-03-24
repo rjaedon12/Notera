@@ -960,6 +960,53 @@ export function useWhiteboardCanvas({
     [updateElements]
   )
 
+  // ─── Resize any element (called per frame while dragging handle) ──
+
+  const resizeElement = useCallback(
+    (id: string, x: number, y: number, w: number, h: number) => {
+      const updated = elementsRef.current.map((el) => {
+        if (el.id !== id) return el
+        if (el.type === "pen" || el.type === "highlighter") {
+          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+          for (const p of el.points) {
+            minX = Math.min(minX, p.x); minY = Math.min(minY, p.y)
+            maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y)
+          }
+          const origW = (maxX - minX) || 1
+          const origH = (maxY - minY) || 1
+          const scaleX = w / origW
+          const scaleY = h / origH
+          const newPoints = el.points.map((p) => ({
+            ...p,
+            x: x + (p.x - minX) * scaleX,
+            y: y + (p.y - minY) * scaleY,
+          }))
+          const pathData =
+            el.type === "highlighter"
+              ? getHighlighterPath(newPoints, el.style.size)
+              : getSvgPathFromPoints(newPoints, { size: el.style.size })
+          return { ...el, x, y, width: w, height: h, points: newPoints, pathData }
+        }
+        return { ...el, x, y, width: w, height: h }
+      })
+      updateElements(updated)
+    },
+    [updateElements]
+  )
+
+  // ─── Update stroke/shape/text color for selected element ─
+
+  const updateElementColor = useCallback(
+    (id: string, color: string) => {
+      pushHistory()
+      const updated = elementsRef.current.map((el) =>
+        el.id === id ? { ...el, style: { ...el.style, color } } : el
+      )
+      updateElements(updated)
+    },
+    [pushHistory, updateElements]
+  )
+
   return {
     canvasRef,
     canvasCallbackRef,
@@ -995,6 +1042,9 @@ export function useWhiteboardCanvas({
     zoomOut,
     resetZoom,
     updateTextContent,
+    resizeElement,
+    updateElementColor,
+    pushHistory,
     canUndo: undoStack.current.length > 0,
     canRedo: redoStack.current.length > 0,
   }

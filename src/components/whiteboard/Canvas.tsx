@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useCallback, useState } from "react"
 import type { WhiteboardElement, Camera, BackgroundType, ToolType, StrokeStyle } from "@/lib/whiteboard/types"
+import { SelectionOverlay } from "./SelectionOverlay"
 
 interface CanvasProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>
@@ -17,6 +18,12 @@ interface CanvasProps {
   editingTextId?: string | null
   onTextChange?: (elementId: string, content: string) => void
   onTextBlur?: () => void
+  // Selection overlay
+  selectedElementId?: string | null
+  onResizeStart?: () => void
+  onResize?: (id: string, x: number, y: number, w: number, h: number) => void
+  onUpdateColor?: (id: string, color: string) => void
+  onDeleteSelected?: () => void
 }
 
 export function Canvas({
@@ -33,6 +40,11 @@ export function Canvas({
   editingTextId,
   onTextChange,
   onTextBlur,
+  selectedElementId,
+  onResizeStart,
+  onResize,
+  onUpdateColor,
+  onDeleteSelected,
 }: CanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -102,8 +114,14 @@ export function Canvas({
     ? elements.find((el) => el.id === editingTextId)
     : null
 
+  // Find the selected element for the resize/color overlay (only in select mode)
+  const selectedEl =
+    selectedElementId && tool === "select" && !editingTextId
+      ? (elements.find((el) => el.id === selectedElementId) ?? null)
+      : null
+
   return (
-    <div ref={containerRef} className="absolute inset-0 overflow-hidden">
+    <div ref={containerRef} className="absolute inset-0 overflow-visible">
       <canvas
         ref={mergedRef}
         className="absolute inset-0 touch-none"
@@ -169,6 +187,18 @@ export function Canvas({
             autoFocus
           />
         </div>
+      )}
+
+      {/* Selection overlay — resize handles, color picker, delete button */}
+      {selectedEl && onResize && (
+        <SelectionOverlay
+          element={selectedEl}
+          camera={camera}
+          onResizeStart={onResizeStart ?? (() => {})}
+          onResize={onResize}
+          onUpdateColor={onUpdateColor ?? (() => {})}
+          onDelete={onDeleteSelected ?? (() => {})}
+        />
       )}
     </div>
   )

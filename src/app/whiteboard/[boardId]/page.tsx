@@ -59,6 +59,11 @@ function BoardCanvas() {
     setEditingTextId,
     updateTextContent,
     addImage,
+    selectedElementId,
+    deleteSelected,
+    resizeElement,
+    updateElementColor,
+    pushHistory,
   } = useWhiteboardCanvas({
     userId,
     onElementsChange: (newElements) => {
@@ -277,6 +282,11 @@ function BoardCanvas() {
         editingTextId={editingTextId}
         onTextChange={updateTextContent}
         onTextBlur={() => setEditingTextId(null)}
+        selectedElementId={selectedElementId}
+        onResizeStart={pushHistory}
+        onResize={resizeElement}
+        onUpdateColor={updateElementColor}
+        onDeleteSelected={deleteSelected}
       />
 
       <Cursors collaborators={collaborators as Parameters<typeof Cursors>[0]["collaborators"]} camera={camera} />
