@@ -21,6 +21,8 @@ export function AppShell({ children }: AppShellProps) {
   const isLandingPage = pathname === "/" && status !== "loading" && !session?.user
   // Auth pages (login, signup, reset-password) — render without app chrome
   const isAuthPage = pathname === "/login" || pathname === "/signup" || pathname.startsWith("/reset-password")
+  // Whiteboard pages — full-screen canvas, has its own layout, must not be wrapped in transforms
+  const isWhiteboardPage = pathname.startsWith("/whiteboard/")
 
   // Load sidebar state from localStorage
   useEffect(() => {
@@ -54,6 +56,12 @@ export function AppShell({ children }: AppShellProps) {
         {children}
       </div>
     )
+  }
+
+  // Whiteboard — full-screen canvas with its own TopBar/Toolbar; must render bare to
+  // avoid CSS transforms on ancestor elements that would break position:fixed children
+  if (isWhiteboardPage) {
+    return <>{children}</>
   }
 
   return (
