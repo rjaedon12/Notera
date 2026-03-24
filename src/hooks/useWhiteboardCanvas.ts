@@ -25,6 +25,11 @@ export function useWhiteboardCanvas({
   onElementsChange,
 }: UseWhiteboardCanvasOptions) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  // Callback ref: called synchronously when <canvas> mounts/unmounts
+  const canvasCallbackRef = useCallback((node: HTMLCanvasElement | null) => {
+    (canvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = node
+    setCanvasReady(!!node)
+  }, [])
   const [elements, setElements] = useState<WhiteboardElement[]>(initialElements)
   const [tool, setTool] = useState<ToolType>("pen")
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, zoom: DEFAULT_ZOOM })
@@ -42,6 +47,8 @@ export function useWhiteboardCanvas({
   const isPanning = useRef(false)
   const lastPanPoint = useRef<Point>({ x: 0, y: 0 })
   const shapeStart = useRef<Point>({ x: 0, y: 0 })
+  const activeShapeId = useRef<string | null>(null)
+  const [canvasReady, setCanvasReady] = useState(false)
 
   // Select/move drag state
   const isDragging = useRef(false)
@@ -134,7 +141,13 @@ export function useWhiteboardCanvas({
     (e: React.PointerEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current
       if (!canvas) return
-      canvas.setPointerCapture(e.pointerId)
+
+      // Only capture pointer for tools that need drag tracking.
+      // Skip for text/sticky/image so native focus & input handling works.
+      const skipCapture = tool === "text" || tool === "sticky" || tool === "image"
+      if (!skipCapture) {
+        canvas.setPointerCapture(e.pointerId)
+      }
 
       const point = screenToCanvas(e.clientX, e.clientY)
       const pressure = e.pressure || 0.5
@@ -297,6 +310,28 @@ export function useWhiteboardCanvas({
       setIsDrawing(true)
       currentStroke.current = [{ ...point, pressure }]
       shapeStart.current = point
+      activeShapeId.current = null
+
+      // Create shape element immediately (like pen/highlighter) so each new
+      // shape gets its own element and doesn't overwrite previous ones.
+      if (["rectangle", "circle", "line", "arrow"].includes(tool)) {
+        const newShapeId = uuid()
+        activeShapeId.current = newShapeId
+        const newShape: WhiteboardElement = {
+          id: newShapeId,
+          type: tool as ToolType,
+          points: [],
+          style: { ...style },
+          x: point.x,
+          y: point.y,
+          width: 0,
+          height: 0,
+          rotation: 0,
+          createdBy: userId,
+          createdAt: Date.now(),
+        }
+        updateElements([...elementsRef.current, newShape])
+      }
 
       if (tool === "pen" || tool === "highlighter") {
         const pathData =
@@ -428,33 +463,16 @@ export function useWhiteboardCanvas({
         return
       }
 
-      // Shape tools
-      if (["rectangle", "circle", "line", "arrow"].includes(tool)) {
+      // Shape tools — find by tracked activeShapeId (immutable update)
+      if (["rectangle", "circle", "line", "arrow"].includes(tool) && activeShapeId.current) {
         const dx = point.x - shapeStart.current.x
         const dy = point.y - shapeStart.current.y
+        const sid = activeShapeId.current
 
-        const updated = [...elementsRef.current]
-        const last = updated[updated.length - 1]
-        if (last && last.type === tool) {
-          last.width = dx
-          last.height = dy
-          updateElements(updated)
-        } else {
-          const newShape: WhiteboardElement = {
-            id: uuid(),
-            type: tool as ToolType,
-            points: [],
-            style: { ...style },
-            x: shapeStart.current.x,
-            y: shapeStart.current.y,
-            width: dx,
-            height: dy,
-            rotation: 0,
-            createdBy: userId,
-            createdAt: Date.now(),
-          }
-          updateElements([...elementsRef.current, newShape])
-        }
+        const updated = elementsRef.current.map((el) =>
+          el.id === sid ? { ...el, width: dx, height: dy } : el
+        )
+        updateElements(updated)
       }
     },
     [isDrawing, tool, camera.zoom, style, screenToCanvas, updateElements, userId, selectedElementId]
@@ -469,8 +487,29 @@ export function useWhiteboardCanvas({
       isDragging.current = false
       setIsDrawing(false)
       currentStroke.current = []
+      activeShapeId.current = null
     },
     []
+  )
+
+  // ─── Double-click to re-edit text/sticky elements ─────────
+
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      const point = screenToCanvas(e.clientX, e.clientY)
+      // Hit-test in reverse (top-most first)
+      for (let i = elementsRef.current.length - 1; i >= 0; i--) {
+        const el = elementsRef.current[i]
+        if (el.type === "text" || el.type === "sticky") {
+          if (isPointInShape(point, el.x, el.y, el.width || 200, el.height || 200, 8 / camera.zoom)) {
+            setEditingTextId(el.id)
+            setSelectedElementId(el.id)
+            return
+          }
+        }
+      }
+    },
+    [screenToCanvas, camera.zoom]
   )
 
   // ─── Wheel → Zoom (supports trackpad pinch + scroll pan) ─
@@ -572,6 +611,7 @@ export function useWhiteboardCanvas({
   }, [])
 
   // Attach wheel + touch listeners (need passive: false for preventDefault)
+  // canvasReady in deps ensures this re-runs when the <canvas> element actually mounts
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -585,7 +625,7 @@ export function useWhiteboardCanvas({
       canvas.removeEventListener("touchmove", handleTouchMove)
       canvas.removeEventListener("touchend", handleTouchEnd)
     }
-  }, [handleWheel, handleTouchStart, handleTouchMove, handleTouchEnd])
+  }, [handleWheel, handleTouchStart, handleTouchMove, handleTouchEnd, canvasReady])
 
   // ─── Keyboard Shortcuts ─────────────────────────────────
 
@@ -730,10 +770,27 @@ export function useWhiteboardCanvas({
           )
           ctx.stroke()
         }
-      } else if (el.type === "text" && el.content) {
-        ctx.fillStyle = el.style.color
-        ctx.font = "18px Inter, sans-serif"
-        ctx.fillText(el.content, el.x, el.y + 20)
+      } else if (el.type === "text") {
+        if (el.content) {
+          // Only draw canvas text when NOT actively editing this element
+          // (the overlay textarea handles display during editing)
+          if (el.id !== editingTextId) {
+            ctx.fillStyle = el.style.color
+            ctx.font = "18px Inter, sans-serif"
+            ctx.fillText(el.content, el.x, el.y + 20)
+          }
+        } else if (el.id !== editingTextId) {
+          // Placeholder for empty text elements
+          ctx.fillStyle = "rgba(0,0,0,0.25)"
+          ctx.font = "18px Inter, sans-serif"
+          ctx.fillText("Type...", el.x, el.y + 20)
+          // Dashed bounding box so user sees where to double-click
+          ctx.strokeStyle = "rgba(0,0,0,0.15)"
+          ctx.lineWidth = 1
+          ctx.setLineDash([4, 3])
+          ctx.strokeRect(el.x - 2, el.y - 2, (el.width || 200) + 4, (el.height || 30) + 4)
+          ctx.setLineDash([])
+        }
       } else if (el.type === "sticky") {
         // Sticky background
         ctx.fillStyle = el.stickyColor || "#fff3bf"
@@ -901,6 +958,7 @@ export function useWhiteboardCanvas({
 
   return {
     canvasRef,
+    canvasCallbackRef,
     elements,
     setElements: updateElements,
     tool,
@@ -921,6 +979,7 @@ export function useWhiteboardCanvas({
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
+    handleDoubleClick,
     undo,
     redo,
     addText,

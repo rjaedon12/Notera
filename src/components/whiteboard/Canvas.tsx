@@ -5,9 +5,11 @@ import type { WhiteboardElement, Camera, BackgroundType, ToolType, StrokeStyle }
 
 interface CanvasProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>
+  canvasCallbackRef?: (node: HTMLCanvasElement | null) => void
   onPointerDown: (e: React.PointerEvent<HTMLCanvasElement>) => void
   onPointerMove: (e: React.PointerEvent<HTMLCanvasElement>) => void
   onPointerUp: (e: React.PointerEvent<HTMLCanvasElement>) => void
+  onDoubleClick?: (e: React.MouseEvent<HTMLCanvasElement>) => void
   tool: ToolType
   camera: Camera
   onCursorMove?: (x: number, y: number) => void
@@ -19,9 +21,11 @@ interface CanvasProps {
 
 export function Canvas({
   canvasRef,
+  canvasCallbackRef,
   onPointerDown,
   onPointerMove,
   onPointerUp,
+  onDoubleClick,
   tool,
   camera,
   onCursorMove,
@@ -82,6 +86,17 @@ export function Canvas({
     }
   }
 
+  // Merge the stable canvasRef with the callback ref from the hook
+  const mergedRef = useCallback(
+    (node: HTMLCanvasElement | null) => {
+      // Update the forwarded ref object
+      (canvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = node
+      // Notify the hook that the canvas is mounted/unmounted
+      canvasCallbackRef?.(node)
+    },
+    [canvasRef, canvasCallbackRef]
+  )
+
   // Find the element being edited for text overlay positioning
   const editingElement = editingTextId
     ? elements.find((el) => el.id === editingTextId)
@@ -90,12 +105,13 @@ export function Canvas({
   return (
     <div ref={containerRef} className="absolute inset-0 overflow-hidden">
       <canvas
-        ref={canvasRef}
+        ref={mergedRef}
         className="absolute inset-0 touch-none"
         style={{ cursor: getCursor() }}
         onPointerDown={onPointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={onPointerUp}
+        onDoubleClick={onDoubleClick}
         onPointerLeave={() => onCursorMove?.(NaN, NaN)}
       />
 
@@ -121,7 +137,11 @@ export function Canvas({
               }
               e.stopPropagation()
             }}
-            className="pointer-events-auto absolute border-none outline-none resize-none bg-transparent"
+            className={`pointer-events-auto absolute resize-none ${
+              editingElement.type === "sticky"
+                ? "border-none outline-none bg-transparent"
+                : "border border-dashed border-blue-400 outline-none bg-white/90 rounded"
+            }`}
             style={{
               left: editingElement.x * camera.zoom + camera.x,
               top: editingElement.y * camera.zoom + camera.y,
@@ -138,8 +158,8 @@ export function Canvas({
               lineHeight: 1.5,
               zIndex: 50,
               caretColor: editingElement.type === "sticky" ? "#1a1a1a" : editingElement.style.color,
-              // Make text area transparent over the canvas-rendered element
-              background: editingElement.type === "sticky" ? "transparent" : "transparent",
+              // Text area background: transparent for sticky (canvas-rendered bg), slight bg for text
+              background: editingElement.type === "sticky" ? "transparent" : "rgba(255,255,255,0.92)",
             }}
             placeholder={editingElement.type === "sticky" ? "Type here..." : "Type..."}
             autoFocus

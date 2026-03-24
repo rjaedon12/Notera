@@ -31,6 +31,7 @@ function BoardCanvas() {
 
   const {
     canvasRef,
+    canvasCallbackRef,
     elements,
     setElements,
     tool,
@@ -45,6 +46,7 @@ function BoardCanvas() {
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
+    handleDoubleClick,
     undo,
     redo,
     clearAll,
@@ -251,9 +253,11 @@ function BoardCanvas() {
 
       <Canvas
         canvasRef={canvasRef}
+        canvasCallbackRef={canvasCallbackRef}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
+        onDoubleClick={handleDoubleClick}
         tool={tool}
         camera={camera}
         onCursorMove={handleCursorMove}
