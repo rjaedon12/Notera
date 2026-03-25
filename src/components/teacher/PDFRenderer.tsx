@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useRef, useState } from "react"
-import { createRoot } from "react-dom/client"
+import { createPortal } from "react-dom"
 import { Download, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
@@ -15,8 +15,8 @@ interface PDFRendererProps {
 }
 
 /**
- * US-Letter dimensions at 2× device-pixel-ratio.
- * html2canvas renders at native px, then we scale into jsPDF point units.
+ * US-Letter dimensions.
+ * html2canvas renders at native px × SCALE, then we map into jsPDF point units.
  */
 const LETTER_WIDTH_PT = 612
 const LETTER_HEIGHT_PT = 792
@@ -25,7 +25,24 @@ const SCALE = 2 // higher = sharper text in the PDF
 export function PDFRenderer({ config, questions, disabled }: PDFRendererProps) {
   const [generating, setGenerating] = useState(false)
   const [progress, setProgress] = useState<string | null>(null)
-  const containerRef = useRef<HTMLDivElement | null>(null)
+  /** When true we mount the hidden sheet so html2canvas can capture it */
+  const [showHiddenSheet, setShowHiddenSheet] = useState(false)
+  const sheetRef = useRef<HTMLDivElement>(null)
+  const resolveRenderRef = useRef<(() => void) | null>(null)
+
+  /** Called once the hidden HomeworkSheetContent has mounted & painted */
+  const onSheetReady = useCallback((node: HTMLDivElement | null) => {
+    sheetRef.current = node
+    if (node && resolveRenderRef.current) {
+      // Give KaTeX / browser one extra frame to finish painting
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          resolveRenderRef.current?.()
+          resolveRenderRef.current = null
+        })
+      })
+    }
+  }, [])
 
   const handleDownload = useCallback(async () => {
     if (disabled || generating) return
@@ -34,45 +51,36 @@ export function PDFRenderer({ config, questions, disabled }: PDFRendererProps) {
       setGenerating(true)
       setProgress("Preparing worksheet…")
 
-      // ── 1. Render HomeworkSheetContent into a hidden off-screen container ──
-      const wrapper = document.createElement("div")
-      wrapper.style.position = "fixed"
-      wrapper.style.left = "-9999px"
-      wrapper.style.top = "0"
-      wrapper.style.width = `${LETTER_WIDTH_PT}px`
-      wrapper.style.background = "white"
-      wrapper.style.zIndex = "-1"
-      document.body.appendChild(wrapper)
-      containerRef.current = wrapper
-
-      // Use React 18 createRoot to render the shared component
-      const root = createRoot(wrapper)
-      await new Promise<void>((resolve) => {
-        root.render(
-          <HomeworkSheetContent config={config} questions={questions} />
-        )
-        // Give React + KaTeX a tick to paint
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => resolve())
-        })
+      // ── 1. Mount the hidden sheet inside the real React tree ──
+      const rendered = new Promise<void>((resolve) => {
+        resolveRenderRef.current = resolve
+        setShowHiddenSheet(true)
       })
+      await rendered
 
-      // Wait a bit more for KaTeX fonts / images to settle
-      await new Promise((r) => setTimeout(r, 300))
+      // Extra settle time for KaTeX fonts / images
+      await new Promise((r) => setTimeout(r, 400))
+
+      const sheetEl = sheetRef.current
+      if (!sheetEl) throw new Error("Homework sheet element not found")
 
       setProgress("Rendering to image…")
 
       // ── 2. Capture with html2canvas ──
-      const html2canvas = (await import("html2canvas")).default
-      const sheetEl = wrapper.querySelector("#homework-sheet-content") as HTMLElement
-      if (!sheetEl) throw new Error("Homework sheet element not found")
+      const html2canvasModule = await import("html2canvas")
+      // html2canvas v1.x exports CJS – handle both default and direct export
+      const html2canvas =
+        typeof html2canvasModule.default === "function"
+          ? html2canvasModule.default
+          : (html2canvasModule as unknown as { default: typeof import("html2canvas")["default"] }).default ?? (html2canvasModule as any)
 
       const canvas = await html2canvas(sheetEl, {
         scale: SCALE,
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
-        // Ensure the full scrollable height is captured
+        width: LETTER_WIDTH_PT,
+        height: sheetEl.scrollHeight,
         windowWidth: LETTER_WIDTH_PT,
         windowHeight: sheetEl.scrollHeight,
       })
@@ -83,55 +91,38 @@ export function PDFRenderer({ config, questions, disabled }: PDFRendererProps) {
       const { default: jsPDF } = await import("jspdf")
       const doc = new jsPDF({ unit: "pt", format: "letter", orientation: "portrait" })
 
+      // Full image dimensions scaled to letter width
       const imgWidth = LETTER_WIDTH_PT
       const imgHeight = (canvas.height / canvas.width) * imgWidth
 
-      // How much content height fits on one page (with margins)
-      const MARGIN_TOP = 0
       const MARGIN_BOTTOM = 30 // room for page footer
-      const pageContentHeight = LETTER_HEIGHT_PT - MARGIN_TOP - MARGIN_BOTTOM
+      const usablePageH = LETTER_HEIGHT_PT - MARGIN_BOTTOM
 
-      const totalPages = Math.ceil(imgHeight / pageContentHeight)
+      const totalPages = Math.max(1, Math.ceil(imgHeight / usablePageH))
+
+      // Height of one page-slice in source-canvas pixels
+      const sliceHPx = Math.round(canvas.height / totalPages)
 
       for (let page = 0; page < totalPages; page++) {
         if (page > 0) doc.addPage()
 
-        // Slice a horizontal strip from the full canvas for this page
-        const sourceY = page * pageContentHeight * SCALE * (canvas.width / LETTER_WIDTH_PT) / SCALE
-        const sourceYPx = Math.round(page * (pageContentHeight / imgHeight) * canvas.height)
-        const sourceHPx = Math.min(
-          Math.round((pageContentHeight / imgHeight) * canvas.height),
-          canvas.height - sourceYPx
-        )
+        const srcY = page * sliceHPx
+        const srcH = Math.min(sliceHPx, canvas.height - srcY)
+        if (srcH <= 0) break
 
-        if (sourceHPx <= 0) break
-
-        // Create a per-page canvas slice
+        // Create a canvas for this page slice
         const pageCanvas = document.createElement("canvas")
         pageCanvas.width = canvas.width
-        pageCanvas.height = sourceHPx
+        pageCanvas.height = srcH
         const ctx = pageCanvas.getContext("2d")!
         ctx.fillStyle = "#ffffff"
         ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height)
-        ctx.drawImage(
-          canvas,
-          0, sourceYPx, canvas.width, sourceHPx,
-          0, 0, canvas.width, sourceHPx
-        )
+        ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH)
 
         const sliceDataUrl = pageCanvas.toDataURL("image/png")
-        const sliceHeight = (sourceHPx / canvas.width) * LETTER_WIDTH_PT
+        const sliceHeightPt = (srcH / canvas.width) * LETTER_WIDTH_PT
 
-        doc.addImage(
-          sliceDataUrl,
-          "PNG",
-          0,
-          MARGIN_TOP,
-          LETTER_WIDTH_PT,
-          sliceHeight,
-          undefined,
-          "FAST"
-        )
+        doc.addImage(sliceDataUrl, "PNG", 0, 0, imgWidth, sliceHeightPt, undefined, "FAST")
 
         // Page footer
         doc.setFontSize(8)
@@ -161,51 +152,70 @@ export function PDFRenderer({ config, questions, disabled }: PDFRendererProps) {
       URL.revokeObjectURL(url)
 
       toast.success("PDF downloaded!")
-
-      // Cleanup
-      root.unmount()
-      document.body.removeChild(wrapper)
-      containerRef.current = null
     } catch (err) {
       console.error("PDF generation failed:", err)
       toast.error("Failed to generate PDF. Please try again.")
-      // Cleanup on error
-      if (containerRef.current) {
-        try { document.body.removeChild(containerRef.current) } catch { /* already removed */ }
-        containerRef.current = null
-      }
     } finally {
+      setShowHiddenSheet(false)
+      sheetRef.current = null
       setGenerating(false)
       setProgress(null)
     }
   }, [config, questions, disabled, generating])
 
   return (
-    <button
-      onClick={handleDownload}
-      disabled={disabled || generating}
-      className={cn(
-        "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all",
-        disabled || generating
-          ? "opacity-40 cursor-not-allowed"
-          : "hover:opacity-90 hover:shadow-lg"
-      )}
-      style={{
-        background: "linear-gradient(135deg, #3B4FE8, #5B8FFF)",
-        boxShadow: disabled ? "none" : "0 4px 14px rgba(59, 79, 232, 0.35)",
-      }}
-    >
-      {generating ? (
-        <>
-          <Loader2 className="h-4 w-4 animate-spin" />
-          {progress || "Generating…"}
-        </>
-      ) : (
-        <>
-          <Download className="h-4 w-4" />
-          Download PDF
-        </>
-      )}
-    </button>
+    <>
+      <button
+        onClick={handleDownload}
+        disabled={disabled || generating}
+        className={cn(
+          "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all",
+          disabled || generating
+            ? "opacity-40 cursor-not-allowed"
+            : "hover:opacity-90 hover:shadow-lg"
+        )}
+        style={{
+          background: "linear-gradient(135deg, #3B4FE8, #5B8FFF)",
+          boxShadow: disabled ? "none" : "0 4px 14px rgba(59, 79, 232, 0.35)",
+        }}
+      >
+        {generating ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            {progress || "Generating…"}
+          </>
+        ) : (
+          <>
+            <Download className="h-4 w-4" />
+            Download PDF
+          </>
+        )}
+      </button>
+
+      {/* Hidden off-screen sheet rendered inside the real React tree
+          so it inherits all Tailwind styles, KaTeX fonts, etc. */}
+      {showHiddenSheet &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            aria-hidden
+            style={{
+              position: "fixed",
+              left: 0,
+              top: 0,
+              width: `${LETTER_WIDTH_PT}px`,
+              opacity: 0,
+              pointerEvents: "none",
+              zIndex: -9999,
+              overflow: "visible",
+            }}
+          >
+            <div ref={onSheetReady}>
+              <HomeworkSheetContent config={config} questions={questions} />
+            </div>
+          </div>,
+          document.body
+        )}
+    </>
   )
 }
