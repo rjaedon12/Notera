@@ -4,23 +4,40 @@ import { auth } from "@/lib/auth"
 
 export const dynamic = "force-dynamic"
 
-// GET /api/sets — get all public sets + user's own sets (with card count)
-export async function GET() {
+// GET /api/sets — get user's own sets, optionally with search and cards
+export async function GET(request: NextRequest) {
   try {
     const session = await auth()
     if (!session?.user?.id) {
       return Response.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { searchParams } = new URL(request.url)
+    const search = searchParams.get("search") || ""
+    const includeCards = searchParams.get("includeCards") === "true"
+    const limit = Math.min(Number(searchParams.get("limit") || 50), 100)
+
+    const where = {
+      OR: [
+        { userId: session.user.id },
+        { isPublic: true },
+      ],
+      ...(search
+        ? { title: { contains: search, mode: "insensitive" as const } }
+        : {}),
+    }
+
     const sets = await prisma.flashcardSet.findMany({
-      where: {
-        userId: session.user.id,
-      },
+      where,
       include: {
         _count: { select: { cards: true } },
         user: { select: { id: true, name: true, email: true } },
+        ...(includeCards
+          ? { cards: { orderBy: { order: "asc" as const }, select: { id: true, term: true, definition: true } } }
+          : {}),
       },
       orderBy: { updatedAt: "desc" },
+      take: limit,
     })
 
     return Response.json(sets)

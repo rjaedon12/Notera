@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   Shield, Users, BookOpen, Brain, FileText, Ban, Trash2,
   LogOut, Loader2, ChevronRight, UserX, Crown, User, Megaphone,
-  Plus, ToggleLeft, ToggleRight, Clock, Star,
+  Plus, ToggleLeft, ToggleRight, Clock, Star, GraduationCap,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
@@ -253,6 +253,26 @@ export default function AdminDashboard() {
     onError: () => toast.error("Failed to update ban status"),
   })
 
+  // Role change mutation
+  const roleMutation = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+      const res = await fetch("/api/admin/users/role", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, role }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Failed")
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-dash", "users"] })
+      toast.success("Role updated")
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to update role"),
+  })
+
   // Delete set mutation
   const deleteSetMutation = useMutation({
     mutationFn: async (setId: string) => {
@@ -462,6 +482,8 @@ export default function AdminDashboard() {
                         <div className="flex items-center gap-2">
                           {user.role === "ADMIN" ? (
                             <Crown className="h-4 w-4 text-yellow-500" />
+                          ) : user.role === "TEACHER" ? (
+                            <GraduationCap className="h-4 w-4 text-blue-400" />
                           ) : (
                             <User className="h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
                           )}
@@ -470,13 +492,35 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-4 py-3" style={{ color: "var(--muted-foreground)" }}>{user.email}</td>
                       <td className="px-4 py-3">
-                        <span className={cn("px-2 py-0.5 text-xs rounded-full",
-                          user.role === "ADMIN"
-                            ? "bg-yellow-500/15 text-yellow-500"
-                            : "bg-blue-500/15 text-blue-400"
-                        )}>
-                          {user.role}
-                        </span>
+                        <select
+                          value={user.role}
+                          onChange={(e) => {
+                            if (e.target.value !== user.role) {
+                              roleMutation.mutate({ userId: user.id, role: e.target.value })
+                            }
+                          }}
+                          disabled={user.id === session?.user?.id}
+                          className={cn(
+                            "px-2 py-1 text-xs rounded-lg border-0 outline-none cursor-pointer font-medium",
+                            user.id === session?.user?.id && "opacity-50 cursor-not-allowed"
+                          )}
+                          style={{
+                            background: user.role === "ADMIN"
+                              ? "rgba(234, 179, 8, 0.15)"
+                              : user.role === "TEACHER"
+                              ? "rgba(59, 130, 246, 0.15)"
+                              : "rgba(107, 114, 128, 0.15)",
+                            color: user.role === "ADMIN"
+                              ? "#eab308"
+                              : user.role === "TEACHER"
+                              ? "#3b82f6"
+                              : "#6b7280",
+                          }}
+                        >
+                          <option value="USER">User</option>
+                          <option value="TEACHER">Teacher</option>
+                          <option value="ADMIN">Admin</option>
+                        </select>
                       </td>
                       <td className="px-4 py-3" style={{ color: "var(--muted-foreground)" }}>{user._count.sets}</td>
                       <td className="px-4 py-3" style={{ color: "var(--muted-foreground)" }}>{new Date(user.createdAt).toLocaleDateString()}</td>

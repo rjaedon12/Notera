@@ -24,6 +24,8 @@ import { GuideSectionRenderer } from "@/components/studyguide/GuideSectionRender
 import { LessonNav } from "@/components/studyguide/LessonNav"
 import { GuideProgressBar } from "@/components/studyguide/GuideProgressBar"
 import { HighlightsPanel } from "@/components/studyguide/AnnotationTools"
+import { DesmosPanel, DesmosMobileOverlay } from "@/components/studyguide/DesmosPanel"
+import { DesmosToggleButton, shouldShowDesmos } from "@/components/studyguide/DesmosToggleButton"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 
@@ -52,9 +54,11 @@ export default function StudyGuideReaderPage() {
   )
   const [sidePanel, setSidePanel] = useState<SidePanel>("none")
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [desmosOpen, setDesmosOpen] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
 
   const activeLesson = guide?.lessons.find((l) => l.id === activeLessonId)
+  const showDesmos = guide ? shouldShowDesmos(guide.subject) : false
 
   // Mark sections as viewed when scrolling
   useEffect(() => {
@@ -420,8 +424,30 @@ export default function StudyGuideReaderPage() {
               </motion.aside>
             )}
           </AnimatePresence>
+
+          {/* ====== DESMOS CALCULATOR PANEL (desktop) ====== */}
+          <AnimatePresence>
+            {showDesmos && desmosOpen && (
+              <DesmosPanel isOpen={desmosOpen} onClose={() => setDesmosOpen(false)} />
+            )}
+          </AnimatePresence>
         </div>
       </main>
+
+      {/* ====== DESMOS TOGGLE BUTTON ====== */}
+      {showDesmos && (
+        <DesmosToggleButton
+          isOpen={desmosOpen}
+          onClick={() => setDesmosOpen((p) => !p)}
+        />
+      )}
+
+      {/* ====== DESMOS MOBILE OVERLAY ====== */}
+      <AnimatePresence>
+        {showDesmos && desmosOpen && (
+          <DesmosMobileOverlay isOpen={desmosOpen} onClose={() => setDesmosOpen(false)} />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

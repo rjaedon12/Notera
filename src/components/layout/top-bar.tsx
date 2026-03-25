@@ -143,6 +143,11 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                       Admin
                     </span>
                   )}
+                  {session.user?.role === "TEACHER" && (
+                    <span className="inline-block mt-1 px-2 py-0.5 text-xs rounded" style={{ background: "rgba(59, 130, 246, 0.14)", color: "#3b82f6", border: "1px solid rgba(59, 130, 246, 0.22)" }}>
+                      Teacher
+                    </span>
+                  )}
                 </div>
                 <Link 
                   href="/settings" 

@@ -92,7 +92,7 @@ model User {
   streak            Int       @default(0)
   longestStreak     Int       @default(0)
   lastStudied       DateTime?
-  role              String    @default("USER") // USER | ADMIN
+  role              String    @default("USER") // USER | TEACHER | ADMIN
   resetToken        String?
   resetTokenExpiry  DateTime?
 

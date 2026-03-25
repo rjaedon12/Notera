@@ -17,8 +17,28 @@ const body = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Notera | Study Smarter",
-  description: "Create flashcards, study with multiple modes, and track your progress",
+  metadataBase: new URL("https://www.notera.us"),
+  title: {
+    default: "Notera | Study Smarter",
+    template: "%s | Notera",
+  },
+  description:
+    "Create flashcards, study with multiple modes, and track your progress",
+  openGraph: {
+    title: "Notera | Study Smarter",
+    description:
+      "Create flashcards, study with multiple modes, and track your progress",
+    url: "https://www.notera.us",
+    siteName: "Notera",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Notera | Study Smarter",
+    description:
+      "Create flashcards, study with multiple modes, and track your progress",
+  },
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
