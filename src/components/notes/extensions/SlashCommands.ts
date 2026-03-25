@@ -7,6 +7,8 @@ export interface SlashCommandItem {
   description: string
   icon: string
   category: string
+  /** If set, the BlockMenu will invoke a special handler instead of `command` */
+  special?: "link-to-page" | "create-subpage"
   command: (props: { editor: ReturnType<typeof import("@tiptap/react").useEditor>; range: { from: number; to: number } }) => void
 }
 
@@ -136,6 +138,33 @@ export function getSlashCommandItems(): SlashCommandItem[] {
       },
     },
     {
+      title: "Warning callout",
+      description: "Yellow warning block",
+      icon: "⚠️",
+      category: "Basic blocks",
+      command: ({ editor, range }) => {
+        editor?.chain().focus().deleteRange(range).setCallout({ emoji: "⚠️", type: "warning" }).run()
+      },
+    },
+    {
+      title: "Error callout",
+      description: "Red danger block",
+      icon: "🚫",
+      category: "Basic blocks",
+      command: ({ editor, range }) => {
+        editor?.chain().focus().deleteRange(range).setCallout({ emoji: "🚫", type: "error" }).run()
+      },
+    },
+    {
+      title: "Success callout",
+      description: "Green success block",
+      icon: "✅",
+      category: "Basic blocks",
+      command: ({ editor, range }) => {
+        editor?.chain().focus().deleteRange(range).setCallout({ emoji: "✅", type: "success" }).run()
+      },
+    },
+    {
       title: "Divider",
       description: "Horizontal rule",
       icon: "─",
@@ -223,6 +252,29 @@ export function getSlashCommandItems(): SlashCommandItem[] {
       category: "Advanced blocks",
       command: ({ editor, range }) => {
         editor?.chain().focus().deleteRange(range).setCalendarBlock().run()
+      },
+    },
+    // Page linking
+    {
+      title: "Link to page",
+      description: "Link to an existing page",
+      icon: "🔗",
+      category: "Inline",
+      special: "link-to-page",
+      command: ({ editor, range }) => {
+        // Handled by BlockMenu — just clear the slash text
+        editor?.chain().focus().deleteRange(range).run()
+      },
+    },
+    {
+      title: "Create subpage",
+      description: "Create a new child page here",
+      icon: "📄",
+      category: "Inline",
+      special: "create-subpage",
+      command: ({ editor, range }) => {
+        // Handled by BlockMenu — just clear the slash text
+        editor?.chain().focus().deleteRange(range).run()
       },
     },
   ]

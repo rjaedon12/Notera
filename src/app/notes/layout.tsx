@@ -33,22 +33,23 @@ export default function NotesLayout({
 
       {/* Main content */}
       <div className="flex-1 overflow-y-auto relative">
-        {/* Sidebar toggle */}
-        <button
-          onClick={toggleSidebar}
-          className="fixed z-20 flex h-7 w-7 items-center justify-center rounded-md transition-all hover:bg-black/[0.04] dark:hover:bg-white/[0.04]"
-          style={{
-            left: sidebarCollapsed ? "0.5rem" : "248px",
-            top: "calc(3.5rem + 0.5rem)",
-          }}
-          title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {sidebarCollapsed ? (
-            <PanelLeft className="h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
-          ) : (
-            <PanelLeftClose className="h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
-          )}
-        </button>
+        {/* Sidebar toggle — sticky so it scrolls with content viewport */}
+        <div className="sticky top-2 z-20 pointer-events-none" style={{ height: 0 }}>
+          <button
+            onClick={toggleSidebar}
+            className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-md transition-all hover:bg-black/[0.04] dark:hover:bg-white/[0.04]"
+            style={{
+              marginLeft: "0.5rem",
+            }}
+            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {sidebarCollapsed ? (
+              <PanelLeft className="h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
+            ) : (
+              <PanelLeftClose className="h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
+            )}
+          </button>
+        </div>
 
         <div
           className={`transition-opacity duration-300 ${

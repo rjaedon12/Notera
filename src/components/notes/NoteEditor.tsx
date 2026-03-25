@@ -29,8 +29,12 @@ import { ToggleBlock, ToggleSummary, ToggleContent } from "./extensions/ToggleLi
 import { MathBlock, InlineMath } from "./extensions/Mathematics"
 import { TimelineBlock } from "./extensions/TimelineBlock"
 import { CalendarBlock } from "./extensions/CalendarBlock"
+import { PageLink } from "./extensions/PageLink"
 import { BubbleToolbar } from "./BubbleToolbar"
 import { BlockMenu, type BlockMenuHandle } from "./BlockMenu"
+import { PageLinkPicker } from "./PageLinkPicker"
+import { useNotePages, useCreateNotePage, type NotePageMeta } from "@/hooks/useNotePages"
+import { useRouter } from "next/navigation"
 import "katex/dist/katex.min.css"
 import "./NoteEditor.css"
 
@@ -49,8 +53,13 @@ export function NoteEditor({ content, pageId, isFullWidth, onUpdate, editorRef }
   const [slashRange, setSlashRange] = useState<{ from: number; to: number } | null>(null)
   const [cursorRect, setCursorRect] = useState<DOMRect | null>(null)
   const [slashQuery, setSlashQuery] = useState("")
+  const [pageLinkPickerOpen, setPageLinkPickerOpen] = useState(false)
+  const [pageLinkRect, setPageLinkRect] = useState<DOMRect | null>(null)
   const hasInitialized = useRef(false)
   const blockMenuRef = useRef<BlockMenuHandle>(null)
+  const router = useRouter()
+  const { data: allPages = [] } = useNotePages()
+  const createPage = useCreateNotePage()
 
   const editor = useEditor({
     extensions: [
@@ -89,6 +98,7 @@ export function NoteEditor({ content, pageId, isFullWidth, onUpdate, editorRef }
       InlineMath,
       TimelineBlock,
       CalendarBlock,
+      PageLink,
       SlashCommands.configure({
         suggestion: {
           char: "/",
@@ -176,12 +186,81 @@ export function NoteEditor({ content, pageId, isFullWidth, onUpdate, editorRef }
   const handleSlashCommand = useCallback(
     (item: SlashCommandItem) => {
       if (editor && slashRange) {
-        item.command({ editor, range: slashRange })
+        if (item.special === "link-to-page" || item.special === "create-subpage") {
+          // Clear slash text first, then open picker
+          editor.chain().focus().deleteRange(slashRange).run()
+          const coords = editor.view.coordsAtPos(editor.state.selection.from)
+          setPageLinkRect(new DOMRect(coords.left, coords.top, 0, coords.bottom - coords.top))
+          setPageLinkPickerOpen(true)
+        } else {
+          item.command({ editor, range: slashRange })
+        }
       }
       setSlashMenuOpen(false)
     },
     [editor, slashRange]
   )
+
+  const handlePageLinkSelect = useCallback(
+    (page: NotePageMeta) => {
+      if (editor) {
+        editor
+          .chain()
+          .focus()
+          .setPageLink({
+            pageId: page.id,
+            title: page.title || "Untitled",
+            icon: page.icon || "📄",
+          })
+          .run()
+      }
+      setPageLinkPickerOpen(false)
+    },
+    [editor]
+  )
+
+  const handleCreateSubpage = useCallback(
+    async (title: string) => {
+      try {
+        const newPage = await createPage.mutateAsync({
+          title,
+          parentId: pageId,
+        })
+        if (editor) {
+          editor
+            .chain()
+            .focus()
+            .setPageLink({
+              pageId: newPage.id,
+              title: newPage.title || "Untitled",
+              icon: "📄",
+            })
+            .run()
+        }
+      } catch {
+        // silently fail
+      }
+      setPageLinkPickerOpen(false)
+    },
+    [editor, createPage, pageId]
+  )
+
+  // Handle clicks on page-link chips to navigate
+  useEffect(() => {
+    if (!editor) return
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      const chip = target.closest(".page-link-chip")
+      if (chip) {
+        e.preventDefault()
+        const href = chip.getAttribute("href")
+        if (href) router.push(href)
+      }
+    }
+    const editorDom = editor.view.dom
+    editorDom.addEventListener("click", handleClick)
+    return () => editorDom.removeEventListener("click", handleClick)
+  }, [editor, router])
 
   if (!editor) return null
 
@@ -251,6 +330,14 @@ export function NoteEditor({ content, pageId, isFullWidth, onUpdate, editorRef }
         query={slashQuery}
         onClose={() => setSlashMenuOpen(false)}
         command={handleSlashCommand}
+      />
+      <PageLinkPicker
+        isOpen={pageLinkPickerOpen}
+        pages={allPages}
+        cursorRect={pageLinkRect}
+        onSelect={handlePageLinkSelect}
+        onCreateSubpage={handleCreateSubpage}
+        onClose={() => setPageLinkPickerOpen(false)}
       />
     </div>
   )

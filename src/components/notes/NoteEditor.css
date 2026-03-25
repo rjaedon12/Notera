@@ -66,10 +66,41 @@
 .ProseMirror ul,
 .ProseMirror ol {
   padding-left: 1.5em;
+  margin: 2px 0;
+}
+
+.ProseMirror ul {
+  list-style-type: disc;
+}
+
+.ProseMirror ol {
+  list-style-type: decimal;
 }
 
 .ProseMirror li {
   line-height: 1.7;
+  display: list-item;
+}
+
+.ProseMirror li p {
+  margin: 0;
+}
+
+/* Nested list styles */
+.ProseMirror ul ul {
+  list-style-type: circle;
+}
+
+.ProseMirror ul ul ul {
+  list-style-type: square;
+}
+
+.ProseMirror ol ol {
+  list-style-type: lower-alpha;
+}
+
+.ProseMirror ol ol ol {
+  list-style-type: lower-roman;
 }
 
 /* Blockquote */
@@ -154,8 +185,12 @@
 
 /* Task list */
 .ProseMirror ul[data-type="taskList"] {
-  list-style: none;
+  list-style: none !important;
   padding-left: 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li {
+  list-style: none !important;
 }
 
 .ProseMirror ul[data-type="taskList"] li {
@@ -375,7 +410,7 @@
   padding: 4px 6px;
   border-radius: 4px;
   font-weight: 600;
-  list-style: none;
+  list-style: none !important;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -1390,4 +1425,127 @@
 .calendar-detail-add-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* ========================================
+   PAGE LINK CHIP (Mention-style inline node)
+   ======================================== */
+.page-link-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px 1px 4px;
+  border-radius: 4px;
+  background: rgba(35, 131, 226, 0.08);
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-size: inherit;
+  line-height: inherit;
+  vertical-align: baseline;
+  border: none;
+  font-family: inherit;
+}
+
+.page-link-chip:hover {
+  background: rgba(35, 131, 226, 0.16);
+}
+
+.page-link-chip .page-link-icon {
+  font-size: 0.9em;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.page-link-chip .page-link-title {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: rgba(35, 131, 226, 0.4);
+}
+
+.page-link-chip:hover .page-link-title {
+  text-decoration-color: rgba(35, 131, 226, 0.8);
+}
+
+/* ========================================
+   CALLOUT BLOCK ENHANCEMENTS
+   ======================================== */
+.ProseMirror .callout-emoji {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px;
+  transition: background 0.15s;
+}
+
+.ProseMirror .callout-emoji:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.dark .ProseMirror .callout-emoji:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.callout-type-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  position: absolute;
+  top: -32px;
+  left: 0;
+  padding: 3px;
+  border-radius: 8px;
+  background: var(--popover);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+
+.callout-block:hover .callout-type-bar,
+.callout-block:focus-within .callout-type-bar {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.callout-type-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.15s;
+}
+
+.callout-type-btn:hover {
+  background: var(--accent);
+}
+
+.callout-type-btn.active {
+  background: var(--accent);
+}
+
+/* ========================================
+   STYLED QUOTE (enhanced blockquote variant)
+   ======================================== */
+.ProseMirror blockquote {
+  position: relative;
+}
+
+.ProseMirror blockquote::before {
+  content: none;
+}
+
+/* Page link picker overlay */
+.page-link-picker-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
 }
