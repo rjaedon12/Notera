@@ -65,6 +65,7 @@ export const PageLink = Node.create<PageLinkOptions>({
         "data-type": "page-link",
         class: "page-link-chip",
         href: `/notes/${HTMLAttributes["data-page-id"]}`,
+        target: "_self",
       }),
       [
         "span",

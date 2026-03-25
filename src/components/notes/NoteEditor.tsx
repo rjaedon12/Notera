@@ -73,7 +73,7 @@ export function NoteEditor({ content, pageId, isFullWidth, onUpdate, editorRef }
       Underline,
       Link.configure({
         openOnClick: false,
-        HTMLAttributes: { rel: "noopener noreferrer" },
+        HTMLAttributes: { rel: "noopener noreferrer", target: "_self" },
       }),
       ResizableImage,
       TaskList,
