@@ -23,6 +23,8 @@ interface DesmosCalculator {
 }
 
 interface UseDesmosOptions {
+  /** Set to false to defer initialization until the container is visible */
+  enabled?: boolean
   expressions?: boolean
   keypad?: boolean
   settingsMenu?: boolean
@@ -72,6 +74,7 @@ export function useDesmos(
   const [error, setError] = useState<string | null>(null)
 
   const {
+    enabled = true,
     expressions = true,
     keypad = true,
     settingsMenu = false,
@@ -81,6 +84,17 @@ export function useDesmos(
   } = options
 
   useEffect(() => {
+    // Don't initialize until enabled (panel is visible)
+    if (!enabled) {
+      // Destroy any existing instance when disabled
+      if (calculatorRef.current) {
+        calculatorRef.current.destroy()
+        calculatorRef.current = null
+        setIsLoaded(false)
+      }
+      return
+    }
+
     let cancelled = false
 
     async function init() {
@@ -122,7 +136,7 @@ export function useDesmos(
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [containerRef])
+  }, [enabled])
 
   const resize = useCallback(() => {
     calculatorRef.current?.resize()

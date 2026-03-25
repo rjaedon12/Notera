@@ -33,6 +33,7 @@ export function SetSelector({ selectedSetIds, onToggle }: SetSelectorProps) {
       if (debouncedSearch) params.set("search", debouncedSearch)
       params.set("includeCards", "true")
       params.set("limit", "20")
+      params.set("scope", "browse")
 
       // Try fetching from the sets API
       const res = await fetch(`/api/sets?${params}`)

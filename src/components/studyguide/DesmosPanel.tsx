@@ -15,6 +15,7 @@ export function DesmosPanel({ isOpen, onClose }: DesmosPanelProps) {
   const { isLoaded, error, resize } = useDesmos(
     containerRef,
     {
+      enabled: isOpen,
       expressions: true,
       keypad: true,
       settingsMenu: false,
@@ -111,7 +112,7 @@ export function DesmosPanel({ isOpen, onClose }: DesmosPanelProps) {
  */
 export function DesmosMobileOverlay({ isOpen, onClose }: DesmosPanelProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { isLoaded, error, resize } = useDesmos(containerRef)
+  const { isLoaded, error, resize } = useDesmos(containerRef, { enabled: isOpen })
 
   useEffect(() => {
     if (isOpen && isLoaded) {

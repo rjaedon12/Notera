@@ -16,16 +16,29 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || ""
     const includeCards = searchParams.get("includeCards") === "true"
     const limit = Math.min(Number(searchParams.get("limit") || 50), 100)
+    const scope = searchParams.get("scope") || "library"
 
-    const where = {
-      OR: [
-        { userId: session.user.id },
-        { isPublic: true },
-      ],
-      ...(search
-        ? { title: { contains: search, mode: "insensitive" as const } }
-        : {}),
-    }
+    // scope=library (default): user's own sets + sets they have studied
+    // scope=browse: user's own sets + all public sets (for homework builder, search, etc.)
+    const where = scope === "browse"
+      ? {
+          OR: [
+            { userId: session.user.id },
+            { isPublic: true },
+          ],
+          ...(search
+            ? { title: { contains: search, mode: "insensitive" as const } }
+            : {}),
+        }
+      : {
+          OR: [
+            { userId: session.user.id },
+            { progress: { some: { userId: session.user.id } } },
+          ],
+          ...(search
+            ? { title: { contains: search, mode: "insensitive" as const } }
+            : {}),
+        }
 
     const sets = await prisma.flashcardSet.findMany({
       where,
