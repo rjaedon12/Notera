@@ -57,7 +57,7 @@ export function HomeworkPreview({ config, questions, onClose }: HomeworkPreviewP
 
         {/* Preview content — mimics PDF layout */}
         <div className="flex-1 overflow-y-auto p-8 bg-white text-gray-900">
-          <div className="max-w-lg mx-auto space-y-4 font-serif">
+          <div className="max-w-lg mx-auto space-y-4">
             {/* Title */}
             <h1 className="text-xl font-bold text-gray-900">
               {config.title || "Homework Worksheet"}

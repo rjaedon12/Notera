@@ -573,6 +573,7 @@ export async function generateHomeworkPDF(
       y += LINE_HEIGHT
 
       doc.setFontSize(9)
+      let pairIdx = 0
       for (const pair of q.matchPairs) {
         y = checkPageBreak(doc, y, 16)
         const termLabel = `___  `
@@ -581,10 +582,15 @@ export async function generateHomeworkPDF(
         const labelW = doc.getTextWidth(termLabel)
         // Render term (may contain math/unicode)
         const termEndY = renderTextWithMath(pair.term, colA + labelW, y, CONTENT_WIDTH / 2 - 30 - labelW, "normal", 9)
-        // Render definition (may contain math/unicode)
-        const defEndY = renderTextWithMath(pair.definition, colB, y, CONTENT_WIDTH / 2 - 30, "normal", 9)
+        // Render definition with letter prefix (A., B., C...) to match preview
+        const defPrefix = `${String.fromCharCode(65 + pairIdx)}. `
+        smartFont("normal", defPrefix)
+        doc.text(defPrefix, colB, y)
+        const defPrefixW = doc.getTextWidth(defPrefix)
+        const defEndY = renderTextWithMath(pair.definition, colB + defPrefixW, y, CONTENT_WIDTH / 2 - 30 - defPrefixW, "normal", 9)
         y = Math.max(termEndY, defEndY)
         y = Math.max(y, y + 2)
+        pairIdx++
       }
       y += SECTION_GAP
 
@@ -626,9 +632,15 @@ export async function generateHomeworkPDF(
   }
 
   // ── Answer Key ─────────────────
-  if (config.includeAnswerKey) {
-    doc.addPage()
-    y = MARGIN
+  if (config.includeAnswerKey && questions.length > 0) {
+    // Inline divider (matches preview's border-t-2 with pt-6 mt-6 spacing)
+    y += 20
+    y = checkPageBreak(doc, y, 60)
+    doc.setDrawColor(180)
+    doc.setLineWidth(1.5)
+    doc.line(MARGIN, y, PAGE_WIDTH - MARGIN, y)
+    doc.setLineWidth(0.5)
+    y += 16
 
     doc.setFontSize(16)
     smartFont("bold", "Answer Key")
