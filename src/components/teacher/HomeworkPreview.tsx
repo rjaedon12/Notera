@@ -2,12 +2,26 @@
 
 import { X, FileText } from "lucide-react"
 import { motion } from "framer-motion"
+import { LatexRenderer } from "@/components/studyguide/LatexRenderer"
 import type { HomeworkConfig, GeneratedQuestion } from "@/types/homework"
 
 interface HomeworkPreviewProps {
   config: HomeworkConfig
   questions: GeneratedQuestion[]
   onClose: () => void
+}
+
+/**
+ * Render text that may contain LaTeX math ($...$, $$...$$).
+ * If no LaTeX delimiters are detected, returns plain text in a span.
+ * Otherwise, uses the LatexRenderer component for proper math display.
+ */
+function MathText({ text, className }: { text: string; className?: string }) {
+  const hasLatex = /\$\$[\s\S]+?\$\$|\$[^$\n]+?\$/.test(text)
+  if (!hasLatex) {
+    return <span className={className}>{text}</span>
+  }
+  return <LatexRenderer content={text} className={className} />
 }
 
 export function HomeworkPreview({ config, questions, onClose }: HomeworkPreviewProps) {
@@ -96,17 +110,19 @@ export function HomeworkPreview({ config, questions, onClose }: HomeworkPreviewP
                         <p className="text-sm font-bold">
                           {i + 1}. Matching
                         </p>
-                        <p className="text-xs text-gray-500">{q.prompt}</p>
+                        <p className="text-xs text-gray-500">
+                          <MathText text={q.prompt} />
+                        </p>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1 pl-4 pt-1">
                           <p className="text-xs font-bold text-gray-600">Term</p>
                           <p className="text-xs font-bold text-gray-600">Definition</p>
                           {q.matchPairs.map((pair, pi) => (
                             <div key={pi} className="contents">
                               <p className="text-xs text-gray-700">
-                                ___ {pair.term}
+                                ___ <MathText text={pair.term} />
                               </p>
                               <p className="text-xs text-gray-700">
-                                {String.fromCharCode(65 + pi)}. {pair.definition}
+                                {String.fromCharCode(65 + pi)}. <MathText text={pair.definition} />
                               </p>
                             </div>
                           ))}
@@ -114,18 +130,22 @@ export function HomeworkPreview({ config, questions, onClose }: HomeworkPreviewP
                       </>
                     ) : q.type === "multiple-choice" && q.choices ? (
                       <>
-                        <p className="text-sm font-bold">{i + 1}. {q.prompt}</p>
+                        <p className="text-sm font-bold">
+                          {i + 1}. <MathText text={q.prompt} />
+                        </p>
                         <div className="pl-4 space-y-0.5">
                           {q.choices.map((c, ci) => (
                             <p key={ci} className="text-xs text-gray-700">
-                              {String.fromCharCode(97 + ci)}) {c}
+                              {String.fromCharCode(97 + ci)}) <MathText text={c} />
                             </p>
                           ))}
                         </div>
                       </>
                     ) : (
                       <>
-                        <p className="text-sm font-bold">{i + 1}. {q.prompt}</p>
+                        <p className="text-sm font-bold">
+                          {i + 1}. <MathText text={q.prompt} />
+                        </p>
                         <div className="border-b border-gray-300 ml-4 mt-2" />
                       </>
                     )}
@@ -141,7 +161,7 @@ export function HomeworkPreview({ config, questions, onClose }: HomeworkPreviewP
                 <div className="space-y-1">
                   {questions.map((q, i) => (
                     <p key={q.id} className="text-xs text-gray-600">
-                      {i + 1}. {q.answer}
+                      {i + 1}. <MathText text={q.answer} />
                     </p>
                   ))}
                 </div>

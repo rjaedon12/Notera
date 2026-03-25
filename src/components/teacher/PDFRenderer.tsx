@@ -14,12 +14,14 @@ interface PDFRendererProps {
 
 export function PDFRenderer({ config, questions, disabled }: PDFRendererProps) {
   const [generating, setGenerating] = useState(false)
+  const [progress, setProgress] = useState<string | null>(null)
 
   const handleDownload = useCallback(async () => {
     if (disabled || generating) return
 
     try {
       setGenerating(true)
+      setProgress("Loading fonts…")
 
       // Lazy-load PDF generator and CJK font in parallel
       const [{ generateHomeworkPDF, loadCJKFont }] = await Promise.all([
@@ -40,7 +42,12 @@ export function PDFRenderer({ config, questions, disabled }: PDFRendererProps) {
         generatedAt: new Date().toISOString(),
       }
 
-      const pdf = generateHomeworkPDF(document, fontBase64)
+      setProgress("Generating worksheet…")
+
+      // generateHomeworkPDF is now async (renders LaTeX equations)
+      const pdf = await generateHomeworkPDF(document, fontBase64, (rendered, total) => {
+        setProgress(`Rendering equations… ${rendered}/${total}`)
+      })
 
       // Generate filename from title
       const safeName = (config.title || "homework")
@@ -64,6 +71,7 @@ export function PDFRenderer({ config, questions, disabled }: PDFRendererProps) {
       toast.error("Failed to generate PDF. Please try again.")
     } finally {
       setGenerating(false)
+      setProgress(null)
     }
   }, [config, questions, disabled, generating])
 
@@ -85,7 +93,7 @@ export function PDFRenderer({ config, questions, disabled }: PDFRendererProps) {
       {generating ? (
         <>
           <Loader2 className="h-4 w-4 animate-spin" />
-          Generating…
+          {progress || "Generating…"}
         </>
       ) : (
         <>

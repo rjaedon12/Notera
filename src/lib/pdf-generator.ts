@@ -3,23 +3,43 @@ import type {
   HomeworkDocument,
   HomeworkConfig,
   GeneratedQuestion,
-  QuestionType,
   FlashcardForHomework,
 } from "@/types/homework"
+import {
+  containsLatex,
+  splitLatexSegments,
+  preRenderAllLatex,
+  equationCache,
+  type ProgressCallback,
+} from "@/lib/latex-to-image"
 
-// ─── CJK Font Support ───────────────────────────────────
+// Re-export for external callers
+export { preRenderAllLatex, type ProgressCallback }
 
-/** Detect whether a string contains CJK characters */
-function hasCJK(text: string): boolean {
-  return /[\u2E80-\u9FFF\uF900-\uFAFF\uFE30-\uFE4F\u3000-\u303F\uFF00-\uFFEF]/.test(text)
+// ─── Unicode Font Support ────────────────────────────────
+
+/**
+ * Detect whether text contains characters outside the WinAnsi codepage
+ * that Helvetica can handle. This includes:
+ *  - CJK ideographs (U+2E80–U+9FFF, U+F900–U+FAFF, etc.)
+ *  - Latin Extended-A/B (U+0100–U+024F) — covers pinyin diacritics like ā, ē, ī, ǒ, ǚ
+ *  - IPA Extensions (U+0250–U+02AF)
+ *  - Latin Extended Additional (U+1E00–U+1EFF)
+ *  - CJK Symbols, Fullwidth Forms, etc.
+ */
+function needsUnicodeFont(text: string): boolean {
+  return /[\u0100-\u024F\u0250-\u02AF\u1E00-\u1EFF\u2E80-\u9FFF\uF900-\uFAFF\uFE30-\uFE4F\u3000-\u303F\uFF00-\uFFEF]/.test(
+    text
+  )
 }
 
 /** Module-level cache for the CJK font data (base64) */
 let cjkFontCache: string | null = null
 
 /**
- * Fetch the CJK font from /fonts/ and return as base64 string.
- * Cached in memory after the first call.
+ * Fetch the NotoSansSC font from /fonts/ and return as base64 string.
+ * Cached at module level — persists across multiple PDF generations
+ * within the same browser session.
  */
 export async function loadCJKFont(): Promise<string> {
   if (cjkFontCache) return cjkFontCache
@@ -43,7 +63,7 @@ export async function loadCJKFont(): Promise<string> {
 }
 
 /**
- * Register the CJK font with a jsPDF instance.
+ * Register the NotoSansSC font with a jsPDF instance.
  * Must be called after loadCJKFont().
  */
 function registerCJKFont(doc: jsPDF, fontBase64: string) {
@@ -53,16 +73,26 @@ function registerCJKFont(doc: jsPDF, fontBase64: string) {
 }
 
 /**
- * Set the font on the jsPDF doc, auto-selecting CJK font when needed.
+ * Set the font on the jsPDF doc.
+ *
+ * Strategy: When NotoSansSC is loaded, **always prefer it** because
+ * it covers Latin + Latin Extended + CJK — the full Unicode range
+ * we need. Helvetica (WinAnsi) is only used as a fallback when
+ * NotoSansSC failed to load.
+ *
+ * This fixes garbled pinyin diacritics (ā, ē, ī, ǒ, ǚ) and
+ * broken character-width calculations that caused letter-spacing
+ * blowout on mixed Latin/CJK strings.
  */
 function setSmartFont(
   doc: jsPDF,
   style: "normal" | "bold" | "italic",
   text: string,
-  hasCJKFont: boolean
+  hasUnicodeFont: boolean
 ) {
-  if (hasCJKFont && hasCJK(text)) {
-    // NotoSansSC doesn't have a true italic; use normal for italic requests
+  if (hasUnicodeFont) {
+    // NotoSansSC covers Latin + CJK — always use it when available.
+    // It doesn't have a true italic variant, so map italic → normal.
     doc.setFont("NotoSansSC", style === "italic" ? "normal" : style)
   } else {
     doc.setFont("helvetica", style)
@@ -74,7 +104,7 @@ function setSmartFont(
 /**
  * Sanitize text for PDF rendering.
  * Replace smart quotes, em-dashes, and other problematic Unicode chars
- * with safe equivalents. CJK characters are preserved.
+ * with safe equivalents. All other Unicode (CJK, pinyin, etc.) is preserved.
  */
 function sanitizeText(text: string): string {
   return text
@@ -82,19 +112,19 @@ function sanitizeText(text: string): string {
     .replace(/[\u2018\u2019\u201A]/g, "'")
     .replace(/[\u201C\u201D\u201E]/g, '"')
     // Dashes
-    .replace(/[\u2013]/g, "-")   // en-dash
-    .replace(/[\u2014]/g, "--")  // em-dash
+    .replace(/[\u2013]/g, "-") // en-dash
+    .replace(/[\u2014]/g, "--") // em-dash
     // Ellipsis
     .replace(/[\u2026]/g, "...")
     // Spaces
-    .replace(/[\u00A0]/g, " ")   // non-breaking space
+    .replace(/[\u00A0]/g, " ") // non-breaking space
     .replace(/[\u2002\u2003\u2009]/g, " ") // en/em/thin space
     // Bullets and symbols
-    .replace(/[\u2022]/g, "*")   // bullet
+    .replace(/[\u2022]/g, "*") // bullet
     .replace(/[\u2122]/g, "(TM)")
     .replace(/[\u00A9]/g, "(c)")
     .replace(/[\u00AE]/g, "(R)")
-    // NOTE: CJK characters (U+2E80+) are intentionally preserved
+    // NOTE: CJK characters, pinyin diacritics, and other Unicode are preserved
 }
 
 function shuffleArray<T>(arr: T[]): T[] {
@@ -276,27 +306,152 @@ function checkPageBreak(doc: jsPDF, y: number, needed: number): number {
   return y
 }
 
-export function generateHomeworkPDF(
+export async function generateHomeworkPDF(
   document: HomeworkDocument,
-  cjkFontBase64?: string | null
-): jsPDF {
+  cjkFontBase64?: string | null,
+  onLatexProgress?: ProgressCallback
+): Promise<jsPDF> {
   const { config, questions } = document
   const doc = new jsPDF({ unit: "pt", format: "letter" })
 
-  // Register CJK font if available
-  const hasCJKFontAvailable = !!cjkFontBase64
+  // Register NotoSansSC font if available
+  const hasUnicodeFontAvailable = !!cjkFontBase64
   if (cjkFontBase64) {
     registerCJKFont(doc, cjkFontBase64)
   }
 
-  // Helper: sanitize + split text for safe PDF rendering
-  const safeText = (text: string) => sanitizeText(text)
-  const safeSplit = (text: string, maxWidth: number) =>
-    doc.splitTextToSize(sanitizeText(text), maxWidth)
+  // ── Pre-render all LaTeX equations found in questions ──
+  const allTexts = questions.flatMap((q) => {
+    const texts = [q.prompt, q.answer]
+    if (q.choices) texts.push(...q.choices)
+    if (q.matchPairs) {
+      for (const p of q.matchPairs) {
+        texts.push(p.term, p.definition)
+      }
+    }
+    return texts
+  })
+  await preRenderAllLatex(allTexts, onLatexProgress)
 
-  // Helper: set font with automatic CJK detection
+  // Helper: sanitize text for safe PDF rendering
+  const safeText = (text: string) => sanitizeText(text)
+
+  // Helper: set font with automatic Unicode font preference
   const smartFont = (style: "normal" | "bold" | "italic", text: string) =>
-    setSmartFont(doc, style, text, hasCJKFontAvailable)
+    setSmartFont(doc, style, text, hasUnicodeFontAvailable)
+
+  /**
+   * Render a text string that may contain LaTeX math delimiters.
+   * For segments with LaTeX, embeds pre-rendered equation images.
+   * For plain text, uses normal doc.text().
+   * Returns the new Y position after rendering.
+   */
+  const renderTextWithMath = (
+    text: string,
+    x: number,
+    yPos: number,
+    maxWidth: number,
+    style: "normal" | "bold" | "italic" = "normal",
+    fontSize: number = 10
+  ): number => {
+    const sanitized = sanitizeText(text)
+
+    if (!containsLatex(text)) {
+      // No LaTeX — render as plain text
+      doc.setFontSize(fontSize)
+      smartFont(style, sanitized)
+      const lines = doc.splitTextToSize(sanitized, maxWidth)
+      doc.text(lines, x, yPos)
+      return yPos + lines.length * (fontSize * 1.3)
+    }
+
+    // Has LaTeX — split into segments and render inline
+    const segments = splitLatexSegments(text)
+    let curX = x
+    let curY = yPos
+    const lineHeight = fontSize * 1.3
+
+    for (const seg of segments) {
+      if (seg.type === "text") {
+        const cleanText = sanitizeText(seg.content)
+        if (!cleanText.trim()) continue
+
+        doc.setFontSize(fontSize)
+        smartFont(style, cleanText)
+
+        // Check if text fits on current line
+        const textWidth = doc.getTextWidth(cleanText)
+        if (curX + textWidth > x + maxWidth && curX > x) {
+          // Wrap to next line
+          curX = x
+          curY += lineHeight
+        }
+
+        // Split into lines if needed
+        if (textWidth > maxWidth) {
+          const lines = doc.splitTextToSize(cleanText, maxWidth)
+          doc.text(lines, curX, curY)
+          curY += lines.length * lineHeight
+          curX = x
+        } else {
+          doc.text(cleanText, curX, curY)
+          curX += textWidth
+        }
+      } else {
+        // LaTeX segment — embed pre-rendered image
+        const cacheKey = `${seg.displayMode ? "D" : "I"}:${seg.content}`
+        const fbKey = `FB:${seg.displayMode ? "D" : "I"}:${seg.content}`
+        const eq = equationCache.get(cacheKey) || equationCache.get(fbKey)
+
+        if (eq) {
+          // Scale equation to match current font size
+          const scaleFactor = fontSize / 12
+          const eqW = eq.width * scaleFactor
+          const eqH = eq.height * scaleFactor
+
+          if (seg.displayMode) {
+            // Display math: center on its own line
+            curX = x
+            curY += 2
+            const centerX = x + (maxWidth - eqW) / 2
+            doc.addImage(eq.dataUrl, "PNG", centerX, curY - eqH * 0.7, eqW, eqH)
+            curY += eqH + 4
+            curX = x
+          } else {
+            // Inline math: place inline with text
+            if (curX + eqW > x + maxWidth && curX > x) {
+              curX = x
+              curY += lineHeight
+            }
+            // Vertically center the equation with the text baseline
+            const yOffset = eqH * 0.65
+            doc.addImage(eq.dataUrl, "PNG", curX, curY - yOffset, eqW, eqH)
+            curX += eqW + 2
+          }
+        } else {
+          // Fallback: render LaTeX source as italic text
+          const fallbackText = seg.content
+          doc.setFontSize(fontSize - 1)
+          doc.setFont("helvetica", "italic")
+          const tw = doc.getTextWidth(fallbackText)
+          if (curX + tw > x + maxWidth && curX > x) {
+            curX = x
+            curY += lineHeight
+          }
+          doc.text(fallbackText, curX, curY)
+          curX += tw + 2
+          doc.setFontSize(fontSize)
+          smartFont(style, "")
+        }
+      }
+    }
+
+    // Ensure we advance Y past the last line
+    if (curX > x) {
+      curY += lineHeight
+    }
+    return curY
+  }
 
   let y = MARGIN
 
@@ -334,7 +489,7 @@ export function generateHomeworkPDF(
   if (config.includeNameField) {
     y += 6
     doc.setDrawColor(180)
-    doc.setFont("helvetica", "normal")
+    smartFont("normal", "Name: ")
     doc.text("Name: ", MARGIN, y)
     const nameX = MARGIN + doc.getTextWidth("Name: ")
     doc.line(nameX, y + 1, nameX + 200, y + 1)
@@ -363,7 +518,7 @@ export function generateHomeworkPDF(
     const terms = [...new Set(questions.map((q) => q.answer))].sort()
     if (terms.length > 0) {
       doc.setFontSize(10)
-      doc.setFont("helvetica", "bold")
+      smartFont("bold", "Word Bank")
       doc.setTextColor(30)
       doc.text("Word Bank", MARGIN, y)
       y += LINE_HEIGHT
@@ -371,8 +526,8 @@ export function generateHomeworkPDF(
       doc.setFontSize(9)
       doc.setTextColor(60)
 
-      // Draw word bank in a box
-      const bankText = terms.map(t => sanitizeText(t)).join("    *    ")
+      // Draw word bank in a box — filter out LaTeX delimiters for clean display
+      const bankText = terms.map(t => sanitizeText(t)).join("    •    ")
       smartFont("normal", bankText)
       const bankLines = doc.splitTextToSize(bankText, CONTENT_WIDTH - 16)
       const bankH = bankLines.length * 12 + 16
@@ -397,23 +552,21 @@ export function generateHomeworkPDF(
       y = checkPageBreak(doc, y, 40 + q.matchPairs.length * 18)
 
       doc.setFontSize(10)
-      doc.setFont("helvetica", "bold")
+      smartFont("bold", `${qNum}. Matching`)
       doc.text(`${qNum}. Matching`, MARGIN, y)
       y += LINE_HEIGHT
 
       doc.setFontSize(9)
       doc.setTextColor(60)
-      const matchPrompt = safeText(q.prompt)
-      smartFont("normal", matchPrompt)
-      doc.text(matchPrompt, MARGIN + 16, y)
-      y += LINE_HEIGHT + 2
+      y = renderTextWithMath(q.prompt, MARGIN + 16, y, CONTENT_WIDTH - 16, "normal", 9)
+      y += 2
 
       doc.setTextColor(30)
       const colA = MARGIN + 16
       const colB = MARGIN + CONTENT_WIDTH / 2 + 20
 
       // Column headers
-      doc.setFont("helvetica", "bold")
+      smartFont("bold", "Term")
       doc.setFontSize(9)
       doc.text("Term", colA, y)
       doc.text("Definition", colB, y)
@@ -422,37 +575,37 @@ export function generateHomeworkPDF(
       doc.setFontSize(9)
       for (const pair of q.matchPairs) {
         y = checkPageBreak(doc, y, 16)
-        const termText = safeText(`___  ${pair.term}`)
-        smartFont("normal", termText)
-        doc.text(termText, colA, y)
-        const defText = safeText(pair.definition)
-        smartFont("normal", defText)
-        const defLines = doc.splitTextToSize(defText, CONTENT_WIDTH / 2 - 30)
-        doc.text(defLines, colB, y)
-        y += Math.max(defLines.length * 12, 14)
+        const termLabel = `___  `
+        smartFont("normal", termLabel)
+        doc.text(termLabel, colA, y)
+        const labelW = doc.getTextWidth(termLabel)
+        // Render term (may contain math/unicode)
+        const termEndY = renderTextWithMath(pair.term, colA + labelW, y, CONTENT_WIDTH / 2 - 30 - labelW, "normal", 9)
+        // Render definition (may contain math/unicode)
+        const defEndY = renderTextWithMath(pair.definition, colB, y, CONTENT_WIDTH / 2 - 30, "normal", 9)
+        y = Math.max(termEndY, defEndY)
+        y = Math.max(y, y + 2)
       }
       y += SECTION_GAP
 
     } else if (q.type === "multiple-choice" && q.choices) {
       y = checkPageBreak(doc, y, 70)
 
-      doc.setFontSize(10)
       doc.setTextColor(30)
-      const mcPrompt = safeText(`${qNum}. ${q.prompt}`)
-      smartFont("bold", mcPrompt)
-      const promptLines = doc.splitTextToSize(mcPrompt, CONTENT_WIDTH - 16)
-      doc.text(promptLines, MARGIN, y)
-      y += promptLines.length * 13
+      // Render prompt with math support
+      y = renderTextWithMath(`${qNum}. ${q.prompt}`, MARGIN, y, CONTENT_WIDTH - 16, "bold", 10)
 
-      doc.setFontSize(9)
       const letters = ["a", "b", "c", "d"]
       for (let i = 0; i < q.choices.length; i++) {
         y = checkPageBreak(doc, y, 14)
-        const choiceText = safeText(`${letters[i]})  ${q.choices[i]}`)
-        smartFont("normal", choiceText)
-        const choiceLines = doc.splitTextToSize(choiceText, CONTENT_WIDTH - 40)
-        doc.text(choiceLines, MARGIN + 20, y)
-        y += choiceLines.length * 12
+        y = renderTextWithMath(
+          `${letters[i]})  ${q.choices[i]}`,
+          MARGIN + 20,
+          y,
+          CONTENT_WIDTH - 40,
+          "normal",
+          9
+        )
       }
       y += SECTION_GAP
 
@@ -460,13 +613,10 @@ export function generateHomeworkPDF(
       // Short answer / fill-in-blank
       y = checkPageBreak(doc, y, 36)
 
-      doc.setFontSize(10)
       doc.setTextColor(30)
-      const saPrompt = safeText(`${qNum}. ${q.prompt}`)
-      smartFont("bold", saPrompt)
-      const promptLines = doc.splitTextToSize(saPrompt, CONTENT_WIDTH - 16)
-      doc.text(promptLines, MARGIN, y)
-      y += promptLines.length * 13 + 2
+      // Render prompt with math support
+      y = renderTextWithMath(`${qNum}. ${q.prompt}`, MARGIN, y, CONTENT_WIDTH - 16, "bold", 10)
+      y += 2
 
       // Answer line
       doc.setDrawColor(200)
@@ -481,23 +631,17 @@ export function generateHomeworkPDF(
     y = MARGIN
 
     doc.setFontSize(16)
-    doc.setFont("helvetica", "bold")
+    smartFont("bold", "Answer Key")
     doc.setTextColor(30)
     doc.text("Answer Key", MARGIN, y)
     y += 24
-
-    doc.setFontSize(10)
 
     let akNum = 0
     for (const q of questions) {
       akNum++
       y = checkPageBreak(doc, y, 20)
       doc.setTextColor(80)
-      const akText = safeText(`${akNum}. ${q.answer}`)
-      smartFont("normal", akText)
-      const answerLines = doc.splitTextToSize(akText, CONTENT_WIDTH - 16)
-      doc.text(answerLines, MARGIN, y)
-      y += answerLines.length * 13
+      y = renderTextWithMath(`${akNum}. ${q.answer}`, MARGIN, y, CONTENT_WIDTH - 16, "normal", 10)
     }
   }
 
