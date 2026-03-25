@@ -44,6 +44,12 @@ function loadDesmosScript(): Promise<void> {
 
     const existing = document.getElementById(DESMOS_SCRIPT_ID)
     if (existing) {
+      // Script element exists — if Desmos already loaded, resolve immediately.
+      // Otherwise the script is still loading; listen for the events.
+      if (window.Desmos) {
+        resolve()
+        return
+      }
       existing.addEventListener("load", () => resolve())
       existing.addEventListener("error", () => reject(new Error("Failed to load Desmos API")))
       return

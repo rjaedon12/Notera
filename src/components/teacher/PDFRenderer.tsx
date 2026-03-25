@@ -5,7 +5,6 @@ import { Download, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
 import type { HomeworkConfig, GeneratedQuestion, HomeworkDocument } from "@/types/homework"
-import { generateHomeworkPDF } from "@/lib/pdf-generator"
 
 interface PDFRendererProps {
   config: HomeworkConfig
@@ -22,13 +21,26 @@ export function PDFRenderer({ config, questions, disabled }: PDFRendererProps) {
     try {
       setGenerating(true)
 
+      // Lazy-load PDF generator and CJK font in parallel
+      const [{ generateHomeworkPDF, loadCJKFont }] = await Promise.all([
+        import("@/lib/pdf-generator"),
+      ])
+
+      // Load CJK font (cached after first call)
+      let fontBase64: string | null = null
+      try {
+        fontBase64 = await loadCJKFont()
+      } catch (e) {
+        console.warn("CJK font failed to load, falling back to helvetica:", e)
+      }
+
       const document: HomeworkDocument = {
         config,
         questions,
         generatedAt: new Date().toISOString(),
       }
 
-      const pdf = generateHomeworkPDF(document)
+      const pdf = generateHomeworkPDF(document, fontBase64)
 
       // Generate filename from title
       const safeName = (config.title || "homework")

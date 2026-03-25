@@ -25,6 +25,17 @@ const nextConfig: NextConfig = {
 
   // Reduce powered-by header
   poweredByHeader: false,
+
+  // Redirects
+  async redirects() {
+    return [
+      {
+        source: "/teacher/homework",
+        destination: "/library?tab=homework",
+        permanent: true,
+      },
+    ]
+  },
 };
 
 export default nextConfig;
