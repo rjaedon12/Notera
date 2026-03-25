@@ -93,16 +93,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.isBanned = false
         }
       }
-      // Periodically re-check ban status (every token refresh)
+      // Periodically re-check role and ban status (every token refresh)
+      // This ensures admin role changes (e.g. promoting to TEACHER) take effect immediately
       if (token.id && !user) {
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: token.id as string },
-            select: { isBanned: true },
+            select: { role: true, isBanned: true },
           })
+          token.role = dbUser?.role ?? token.role ?? "USER"
           token.isBanned = dbUser?.isBanned ?? false
         } catch {
-          // Keep existing ban status on DB error
+          // Keep existing role/ban status on DB error
         }
       }
       return token

@@ -18,19 +18,24 @@ import {
   Trash2, 
   MoreVertical,
   FolderPlus,
-  Star
+  Star,
+  FileText
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { cn } from "@/lib/utils"
+import { HomeworkBuilder } from "@/components/teacher/HomeworkBuilder"
 
-type Tab = "my-sets" | "saved" | "folders"
+type Tab = "my-sets" | "saved" | "folders" | "homework"
 
 export default function LibraryPage() {
-  const { status } = useSession()
+  const { data: session, status } = useSession()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<Tab>("my-sets")
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false)
   const [newFolderName, setNewFolderName] = useState("")
+
+  const isTeacherOrAdmin =
+    session?.user?.role === "TEACHER" || session?.user?.role === "ADMIN"
 
   const { data: mySets, isLoading: loadingSets } = useStudySets()
   const { data: savedSets, isLoading: loadingSaved } = useSavedSets()
@@ -108,6 +113,9 @@ export default function LibraryPage() {
     { id: "my-sets" as Tab, label: "My Sets", icon: BookOpen },
     { id: "saved" as Tab, label: "Saved", icon: Bookmark },
     { id: "folders" as Tab, label: "Folders", icon: Folder },
+    ...(isTeacherOrAdmin
+      ? [{ id: "homework" as Tab, label: "Homework Creator", icon: FileText }]
+      : []),
   ]
 
   return (
@@ -314,6 +322,17 @@ export default function LibraryPage() {
             </Button>
           </Card>
         )
+      )}
+
+      {/* Homework Creator Tab (Teachers & Admins only) */}
+      {activeTab === "homework" && isTeacherOrAdmin && (
+        <div className="max-w-5xl mx-auto">
+          <p className="text-sm mb-6" style={{ color: "var(--muted-foreground)" }}>
+            Create printable PDF worksheets from your flashcard study sets.
+            Select sets, choose question formats, and download a ready-to-print homework.
+          </p>
+          <HomeworkBuilder />
+        </div>
       )}
 
       {/* New Folder Dialog */}

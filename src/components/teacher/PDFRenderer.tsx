@@ -36,7 +36,16 @@ export function PDFRenderer({ config, questions, disabled }: PDFRendererProps) {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "")
 
-      pdf.save(`${safeName}.pdf`)
+      // Use manual blob download for reliable PDF output
+      const blob = pdf.output("blob")
+      const url = URL.createObjectURL(blob)
+      const link = window.document.createElement("a")
+      link.href = url
+      link.download = `${safeName}.pdf`
+      window.document.body.appendChild(link)
+      link.click()
+      window.document.body.removeChild(link)
+      URL.revokeObjectURL(url)
       toast.success("PDF downloaded!")
     } catch (err) {
       console.error("PDF generation failed:", err)

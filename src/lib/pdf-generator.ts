@@ -9,6 +9,34 @@ import type {
 
 // ─── Utility ─────────────────────────────────────────────
 
+/**
+ * Sanitize text for jsPDF which only supports WinAnsiEncoding (Latin-1).
+ * Replace smart quotes, em-dashes, and other common Unicode chars with
+ * their ASCII equivalents so the PDF renders cleanly.
+ */
+function sanitizeText(text: string): string {
+  return text
+    // Smart quotes → straight quotes
+    .replace(/[\u2018\u2019\u201A]/g, "'")
+    .replace(/[\u201C\u201D\u201E]/g, '"')
+    // Dashes
+    .replace(/[\u2013]/g, "-")   // en-dash
+    .replace(/[\u2014]/g, "--")  // em-dash
+    // Ellipsis
+    .replace(/[\u2026]/g, "...")
+    // Spaces
+    .replace(/[\u00A0]/g, " ")   // non-breaking space
+    .replace(/[\u2002\u2003\u2009]/g, " ") // en/em/thin space
+    // Bullets and symbols
+    .replace(/[\u2022]/g, "*")   // bullet
+    .replace(/[\u2122]/g, "(TM)")
+    .replace(/[\u00A9]/g, "(c)")
+    .replace(/[\u00AE]/g, "(R)")
+    // Strip any remaining non-Latin1 characters (above 0xFF)
+    // eslint-disable-next-line no-control-regex
+    .replace(/[^\x00-\xFF]/g, "?")
+}
+
 function shuffleArray<T>(arr: T[]): T[] {
   const a = [...arr]
   for (let i = a.length - 1; i > 0; i--) {
@@ -192,13 +220,18 @@ export function generateHomeworkPDF(document: HomeworkDocument): jsPDF {
   const { config, questions } = document
   const doc = new jsPDF({ unit: "pt", format: "letter" })
 
+  // Helper: sanitize + split text for safe PDF rendering
+  const safeText = (text: string) => sanitizeText(text)
+  const safeSplit = (text: string, maxWidth: number) =>
+    doc.splitTextToSize(sanitizeText(text), maxWidth)
+
   let y = MARGIN
 
   // ── Header ─────────────────────
   doc.setFontSize(18)
   doc.setFont("helvetica", "bold")
   doc.setTextColor(30)
-  doc.text(config.title || "Homework Worksheet", MARGIN, y)
+  doc.text(safeText(config.title || "Homework Worksheet"), MARGIN, y)
   y += 24
 
   doc.setFontSize(10)
@@ -206,15 +239,15 @@ export function generateHomeworkPDF(document: HomeworkDocument): jsPDF {
   doc.setTextColor(80)
 
   if (config.teacherName) {
-    doc.text(`Teacher: ${config.teacherName}`, MARGIN, y)
+    doc.text(safeText(`Teacher: ${config.teacherName}`), MARGIN, y)
     y += LINE_HEIGHT
   }
   if (config.className) {
-    doc.text(`Class: ${config.className}`, MARGIN, y)
+    doc.text(safeText(`Class: ${config.className}`), MARGIN, y)
     y += LINE_HEIGHT
   }
   if (config.date) {
-    doc.text(`Date: ${config.date}`, MARGIN, y)
+    doc.text(safeText(`Date: ${config.date}`), MARGIN, y)
     y += LINE_HEIGHT
   }
 
@@ -239,7 +272,7 @@ export function generateHomeworkPDF(document: HomeworkDocument): jsPDF {
     doc.setFontSize(9)
     doc.setFont("helvetica", "italic")
     doc.setTextColor(100)
-    const lines = doc.splitTextToSize(config.instructions, CONTENT_WIDTH)
+    const lines = safeSplit(config.instructions, CONTENT_WIDTH)
     doc.text(lines, MARGIN, y)
     y += lines.length * 12 + SECTION_GAP
   }
@@ -259,7 +292,7 @@ export function generateHomeworkPDF(document: HomeworkDocument): jsPDF {
       doc.setTextColor(60)
 
       // Draw word bank in a box
-      const bankText = terms.join("    •    ")
+      const bankText = terms.map(t => sanitizeText(t)).join("    *    ")
       const bankLines = doc.splitTextToSize(bankText, CONTENT_WIDTH - 16)
       const bankH = bankLines.length * 12 + 16
 
@@ -290,7 +323,7 @@ export function generateHomeworkPDF(document: HomeworkDocument): jsPDF {
       doc.setFontSize(9)
       doc.setFont("helvetica", "normal")
       doc.setTextColor(60)
-      doc.text(q.prompt, MARGIN + 16, y)
+      doc.text(safeText(q.prompt), MARGIN + 16, y)
       y += LINE_HEIGHT + 2
 
       doc.setTextColor(30)
@@ -308,8 +341,8 @@ export function generateHomeworkPDF(document: HomeworkDocument): jsPDF {
       doc.setFontSize(9)
       for (const pair of q.matchPairs) {
         y = checkPageBreak(doc, y, 16)
-        doc.text(`___  ${pair.term}`, colA, y)
-        const defLines = doc.splitTextToSize(pair.definition, CONTENT_WIDTH / 2 - 30)
+        doc.text(safeText(`___  ${pair.term}`), colA, y)
+        const defLines = safeSplit(pair.definition, CONTENT_WIDTH / 2 - 30)
         doc.text(defLines, colB, y)
         y += Math.max(defLines.length * 12, 14)
       }
@@ -321,7 +354,7 @@ export function generateHomeworkPDF(document: HomeworkDocument): jsPDF {
       doc.setFontSize(10)
       doc.setFont("helvetica", "bold")
       doc.setTextColor(30)
-      const promptLines = doc.splitTextToSize(`${qNum}. ${q.prompt}`, CONTENT_WIDTH - 16)
+      const promptLines = safeSplit(`${qNum}. ${q.prompt}`, CONTENT_WIDTH - 16)
       doc.text(promptLines, MARGIN, y)
       y += promptLines.length * 13
 
@@ -330,7 +363,7 @@ export function generateHomeworkPDF(document: HomeworkDocument): jsPDF {
       const letters = ["a", "b", "c", "d"]
       for (let i = 0; i < q.choices.length; i++) {
         y = checkPageBreak(doc, y, 14)
-        const choiceLines = doc.splitTextToSize(
+        const choiceLines = safeSplit(
           `${letters[i]})  ${q.choices[i]}`,
           CONTENT_WIDTH - 40
         )
@@ -346,7 +379,7 @@ export function generateHomeworkPDF(document: HomeworkDocument): jsPDF {
       doc.setFontSize(10)
       doc.setFont("helvetica", "bold")
       doc.setTextColor(30)
-      const promptLines = doc.splitTextToSize(`${qNum}. ${q.prompt}`, CONTENT_WIDTH - 16)
+      const promptLines = safeSplit(`${qNum}. ${q.prompt}`, CONTENT_WIDTH - 16)
       doc.text(promptLines, MARGIN, y)
       y += promptLines.length * 13 + 2
 
@@ -376,7 +409,7 @@ export function generateHomeworkPDF(document: HomeworkDocument): jsPDF {
       akNum++
       y = checkPageBreak(doc, y, 20)
       doc.setTextColor(80)
-      const answerLines = doc.splitTextToSize(`${akNum}. ${q.answer}`, CONTENT_WIDTH - 16)
+      const answerLines = safeSplit(`${akNum}. ${q.answer}`, CONTENT_WIDTH - 16)
       doc.text(answerLines, MARGIN, y)
       y += answerLines.length * 13
     }

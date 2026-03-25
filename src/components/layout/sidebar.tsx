@@ -52,7 +52,6 @@ const navItems: NavItem[] = [
 ]
 
 const bottomItems: NavItem[] = [
-  { href: "/teacher/homework", label: "Homework Creator", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h8"/><path d="M8 9h2"/></svg></NavIcon>, requiresAuth: true, requiresTeacher: true },
   { href: "/create", label: "Create", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></NavIcon>, requiresAuth: true },
   { href: "/settings", label: "Settings", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" strokeWidth="1.5"/></svg></NavIcon>, requiresAuth: true },
   { href: "/admin", label: "Admin", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l7 4v5c0 5.25-3.5 9.74-7 11-3.5-1.26-7-5.75-7-11V6z"/></svg></NavIcon>, requiresAuth: true, requiresAdmin: true },
