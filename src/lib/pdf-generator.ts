@@ -287,6 +287,9 @@ const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2
 const LINE_HEIGHT = 14
 const SECTION_GAP = 8
 
+/** Bottom of the printable area (leaving room for page footer) */
+const PAGE_BOTTOM = PAGE_HEIGHT - MARGIN - 24
+
 function addPageFooter(doc: jsPDF, pageNum: number, totalPages: number) {
   doc.setFontSize(8)
   doc.setTextColor(150)
@@ -298,12 +301,52 @@ function addPageFooter(doc: jsPDF, pageNum: number, totalPages: number) {
   )
 }
 
-function checkPageBreak(doc: jsPDF, y: number, needed: number): number {
-  if (y + needed > PAGE_HEIGHT - MARGIN - 20) {
+/**
+ * Intelligent page-break helper.
+ *
+ * Instead of blindly slicing at equal intervals, `fitBlock` checks
+ * whether the next content block (estimated at `neededPt` points tall)
+ * fits on the current page.  If it doesn't, a new page is added
+ * **before** any part of the block is rendered, so questions, matching
+ * tables, and answer-key entries are never cut in half.
+ *
+ * A small `cushion` is subtracted from the usable area so that
+ * content doesn't crowd the footer.
+ */
+function fitBlock(doc: jsPDF, y: number, neededPt: number, cushion = 12): number {
+  if (y + neededPt + cushion > PAGE_BOTTOM) {
     doc.addPage()
-    return MARGIN + 20
+    return MARGIN + 20 // restart near top of new page
   }
   return y
+}
+
+/**
+ * Estimate the rendered height (in pt) of a question so `fitBlock`
+ * can decide whether to break **before** it.  The estimates are
+ * intentionally generous — it's better to leave a bit of extra
+ * whitespace at the bottom of a page than to clip content.
+ */
+function estimateQuestionHeight(
+  q: GeneratedQuestion,
+  doc: jsPDF,
+  contentWidth: number
+): number {
+  const BASE = 28 // prompt line + spacing
+
+  if (q.type === "matching" && q.matchPairs) {
+    // Header row + one row per pair + spacing
+    return BASE + 18 + q.matchPairs.length * 20
+  }
+
+  if (q.type === "multiple-choice" && q.choices) {
+    return BASE + q.choices.length * 16
+  }
+
+  // Short-answer / fill-in-blank — prompt text may wrap
+  doc.setFontSize(10)
+  const lines = doc.splitTextToSize(sanitizeText(q.prompt), contentWidth - 16)
+  return BASE + (Array.isArray(lines) ? lines.length : 1) * LINE_HEIGHT + 22
 }
 
 export async function generateHomeworkPDF(
@@ -547,10 +590,11 @@ export async function generateHomeworkPDF(
   for (const q of questions) {
     qNum++
 
-    if (q.type === "matching" && q.matchPairs) {
-      // Matching section needs more space
-      y = checkPageBreak(doc, y, 40 + q.matchPairs.length * 18)
+    // ── Intelligent page-break: estimate entire question height first ──
+    const estimatedH = estimateQuestionHeight(q, doc, CONTENT_WIDTH)
+    y = fitBlock(doc, y, estimatedH)
 
+    if (q.type === "matching" && q.matchPairs) {
       doc.setFontSize(10)
       smartFont("bold", `${qNum}. Matching`)
       doc.text(`${qNum}. Matching`, MARGIN, y)
@@ -575,7 +619,10 @@ export async function generateHomeworkPDF(
       doc.setFontSize(9)
       let pairIdx = 0
       for (const pair of q.matchPairs) {
-        y = checkPageBreak(doc, y, 16)
+        // For individual rows within a matching block, use a smaller
+        // fitBlock so a very long matching table can still break
+        // between rows (but never mid-row).
+        y = fitBlock(doc, y, 18)
         const termLabel = `___  `
         smartFont("normal", termLabel)
         doc.text(termLabel, colA, y)
@@ -595,15 +642,13 @@ export async function generateHomeworkPDF(
       y += SECTION_GAP
 
     } else if (q.type === "multiple-choice" && q.choices) {
-      y = checkPageBreak(doc, y, 70)
-
       doc.setTextColor(30)
       // Render prompt with math support
       y = renderTextWithMath(`${qNum}. ${q.prompt}`, MARGIN, y, CONTENT_WIDTH - 16, "bold", 10)
 
       const letters = ["a", "b", "c", "d"]
       for (let i = 0; i < q.choices.length; i++) {
-        y = checkPageBreak(doc, y, 14)
+        y = fitBlock(doc, y, 16)
         y = renderTextWithMath(
           `${letters[i]})  ${q.choices[i]}`,
           MARGIN + 20,
@@ -617,8 +662,6 @@ export async function generateHomeworkPDF(
 
     } else {
       // Short answer / fill-in-blank
-      y = checkPageBreak(doc, y, 36)
-
       doc.setTextColor(30)
       // Render prompt with math support
       y = renderTextWithMath(`${qNum}. ${q.prompt}`, MARGIN, y, CONTENT_WIDTH - 16, "bold", 10)
@@ -633,9 +676,11 @@ export async function generateHomeworkPDF(
 
   // ── Answer Key ─────────────────
   if (config.includeAnswerKey && questions.length > 0) {
-    // Inline divider (matches preview's border-t-2 with pt-6 mt-6 spacing)
+    // Estimate answer key total height — header + one line per question
+    const akHeaderH = 60
     y += 20
-    y = checkPageBreak(doc, y, 60)
+    y = fitBlock(doc, y, akHeaderH)
+
     doc.setDrawColor(180)
     doc.setLineWidth(1.5)
     doc.line(MARGIN, y, PAGE_WIDTH - MARGIN, y)
@@ -651,7 +696,7 @@ export async function generateHomeworkPDF(
     let akNum = 0
     for (const q of questions) {
       akNum++
-      y = checkPageBreak(doc, y, 20)
+      y = fitBlock(doc, y, 20)
       doc.setTextColor(80)
       y = renderTextWithMath(`${akNum}. ${q.answer}`, MARGIN, y, CONTENT_WIDTH - 16, "normal", 10)
     }

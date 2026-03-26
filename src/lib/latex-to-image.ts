@@ -314,3 +314,66 @@ async function ensureKatexCss(): Promise<void> {
     document.head.appendChild(link)
   })
 }
+
+// ─── KaTeX Font Loader ───────────────────────────────────
+
+/**
+ * The list of KaTeX font families used in math rendering.
+ * We check all of these to ensure equations render with correct
+ * glyph metrics before capturing / generating the PDF.
+ */
+const KATEX_FONT_FAMILIES = [
+  "KaTeX_Main",
+  "KaTeX_Math",
+  "KaTeX_Size1",
+  "KaTeX_Size2",
+  "KaTeX_Size3",
+  "KaTeX_Size4",
+  "KaTeX_AMS",
+  "KaTeX_Caligraphic",
+  "KaTeX_Fraktur",
+  "KaTeX_SansSerif",
+  "KaTeX_Script",
+  "KaTeX_Typewriter",
+]
+
+/**
+ * Wait until all KaTeX web-fonts have finished loading.
+ *
+ * Uses the `document.fonts` API (Font Loading API, supported in all
+ * modern browsers) to check each KaTeX family.  Falls back to a
+ * generous timeout if the API is unavailable.
+ *
+ * This replaces the fragile `setTimeout(…, 300)` approach that
+ * could race against slow network conditions.
+ *
+ * @param timeoutMs  Maximum time to wait before proceeding anyway.
+ *                   Defaults to 5 000 ms.
+ */
+export async function waitForKatexFonts(timeoutMs = 5000): Promise<void> {
+  if (typeof document === "undefined") return
+
+  // Ensure the KaTeX stylesheet is loaded first
+  await ensureKatexCss()
+
+  // If the Font Loading API is available, use it
+  if (document.fonts && typeof document.fonts.ready !== "undefined") {
+    // Wait for all fonts in the stylesheet to settle
+    const timeout = new Promise<void>((resolve) => setTimeout(resolve, timeoutMs))
+    const fontsReady = document.fonts.ready.then(() => {
+      // Double-check by explicitly loading each KaTeX family
+      const checks = KATEX_FONT_FAMILIES.map((family) =>
+        document.fonts.load(`16px "${family}"`).catch(() => {
+          // Swallow individual failures — the font may not be used
+        })
+      )
+      return Promise.all(checks)
+    }).then(() => {})
+
+    await Promise.race([fontsReady, timeout])
+    return
+  }
+
+  // Fallback: no Font Loading API — use a generous delay
+  await new Promise((resolve) => setTimeout(resolve, 1500))
+}
