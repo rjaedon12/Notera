@@ -28,7 +28,10 @@ export { preRenderAllLatex, type ProgressCallback }
  *  - CJK Symbols, Fullwidth Forms, etc.
  */
 function needsUnicodeFont(text: string): boolean {
-  return /[\u0100-\u024F\u0250-\u02AF\u1E00-\u1EFF\u2E80-\u9FFF\uF900-\uFAFF\uFE30-\uFE4F\u3000-\u303F\uFF00-\uFFEF]/.test(
+  // Covers: Latin-1 Supplement accented (à, á, è, é, etc.), Latin Extended-A/B
+  // (ā, ǎ, ě, ǐ, ǒ, ǔ, ǚ), IPA Extensions, Combining Diacritical Marks
+  // (for decomposed pinyin), Latin Extended Additional, and all CJK ranges.
+  return /[\u00C0-\u00FF\u0100-\u024F\u0250-\u02AF\u0300-\u036F\u1E00-\u1EFF\u2E80-\u9FFF\uF900-\uFAFF\uFE30-\uFE4F\u3000-\u303F\uFF00-\uFFEF]/.test(
     text
   )
 }
@@ -108,6 +111,12 @@ function setSmartFont(
  */
 function sanitizeText(text: string): string {
   return text
+    // ── Normalize to NFC (precomposed) form ──
+    // Pinyin tone marks (especially 3rd-tone caron: ǎ, ě, ǐ, ǒ, ǔ) can be
+    // stored as decomposed Unicode (base letter + combining caron U+030C).
+    // jsPDF cannot render combining diacritical marks — it needs the single
+    // precomposed codepoint. macOS is especially prone to using NFD form.
+    .normalize("NFC")
     // Smart quotes → straight quotes
     .replace(/[\u2018\u2019\u201A]/g, "'")
     .replace(/[\u201C\u201D\u201E]/g, '"')
@@ -473,9 +482,9 @@ export async function generateHomeworkPDF(
           }
         } else {
           // Fallback: render LaTeX source as italic text
-          const fallbackText = seg.content
+          const fallbackText = sanitizeText(seg.content)
           doc.setFontSize(fontSize - 1)
-          doc.setFont("helvetica", "italic")
+          smartFont("italic", fallbackText)
           const tw = doc.getTextWidth(fallbackText)
           if (curX + tw > x + maxWidth && curX > x) {
             curX = x
