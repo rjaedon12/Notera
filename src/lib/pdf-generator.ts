@@ -19,41 +19,20 @@ export { preRenderAllLatex, type ProgressCallback }
 // ─── Unicode Font Support ────────────────────────────────
 
 /**
- * Detect whether text contains characters outside the WinAnsi codepage
- * that Helvetica can handle. This includes:
- *  - CJK ideographs (U+2E80–U+9FFF, U+F900–U+FAFF, etc.)
- *  - Latin Extended-A/B (U+0100–U+024F) — covers pinyin diacritics like ā, ē, ī, ǒ, ǚ
- *  - IPA Extensions (U+0250–U+02AF)
- *  - Latin Extended Additional (U+1E00–U+1EFF)
- *  - CJK Symbols, Fullwidth Forms, etc.
+ * Detect whether text contains CJK characters that need NotoSansSC.
  */
-function needsUnicodeFont(text: string): boolean {
-  // Covers: Latin-1 Supplement accented (à, á, è, é, etc.), Latin Extended-A/B
-  // (ā, ǎ, ě, ǐ, ǒ, ǔ, ǚ), IPA Extensions, Combining Diacritical Marks
-  // (for decomposed pinyin), Latin Extended Additional, and all CJK ranges.
-  return /[\u00C0-\u00FF\u0100-\u024F\u0250-\u02AF\u0300-\u036F\u1E00-\u1EFF\u2E80-\u9FFF\uF900-\uFAFF\uFE30-\uFE4F\u3000-\u303F\uFF00-\uFFEF]/.test(
+function needsCJKFont(text: string): boolean {
+  return /[\u2E80-\u9FFF\uF900-\uFAFF\uFE30-\uFE4F\u3000-\u303F\uFF00-\uFFEF]/.test(
     text
   )
 }
 
-/** Module-level cache for the CJK font data (base64) */
+/** Module-level cache for font data (base64) */
 let cjkFontCache: string | null = null
+let latinFontCache: string | null = null
 
-/**
- * Fetch the NotoSansSC font from /fonts/ and return as base64 string.
- * Cached at module level — persists across multiple PDF generations
- * within the same browser session.
- */
-export async function loadCJKFont(): Promise<string> {
-  if (cjkFontCache) return cjkFontCache
-
-  const response = await fetch("/fonts/NotoSansSC-Regular.ttf")
-  if (!response.ok) {
-    throw new Error(`Failed to load CJK font: ${response.status}`)
-  }
-
-  const buffer = await response.arrayBuffer()
-  // Convert ArrayBuffer to base64
+/** Convert an ArrayBuffer to a base64 string */
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer)
   let binary = ""
   const chunkSize = 8192
@@ -61,42 +40,99 @@ export async function loadCJKFont(): Promise<string> {
     const chunk = bytes.subarray(i, i + chunkSize)
     binary += String.fromCharCode(...chunk)
   }
-  cjkFontCache = btoa(binary)
-  return cjkFontCache
+  return btoa(binary)
 }
 
 /**
- * Register the NotoSansSC font with a jsPDF instance.
- * Must be called after loadCJKFont().
+ * Fetch a font file and return as base64 string.
  */
-function registerCJKFont(doc: jsPDF, fontBase64: string) {
-  doc.addFileToVFS("NotoSansSC-Regular.ttf", fontBase64)
+async function fetchFontAsBase64(url: string): Promise<string> {
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`Failed to load font ${url}: ${response.status}`)
+  }
+  const buffer = await response.arrayBuffer()
+  return arrayBufferToBase64(buffer)
+}
+
+/**
+ * Load both NotoSans (Latin Extended — accented vowels like ā, ǎ, ī, ǒ, ǚ)
+ * and NotoSansSC (CJK ideographs) fonts.
+ *
+ * Returns an object with both font base64 strings.
+ * Cached at module level — persists across PDF generations within a session.
+ */
+export async function loadCJKFont(): Promise<string> {
+  // Load both fonts in parallel
+  const [, cjk] = await Promise.all([
+    latinFontCache
+      ? Promise.resolve(latinFontCache)
+      : fetchFontAsBase64("/fonts/NotoSans-Regular.ttf").then((b64) => {
+          latinFontCache = b64
+          return b64
+        }),
+    cjkFontCache
+      ? Promise.resolve(cjkFontCache)
+      : fetchFontAsBase64("/fonts/NotoSansSC-Regular.ttf").then((b64) => {
+          cjkFontCache = b64
+          return b64
+        }),
+  ])
+
+  // Return CJK font for backwards compat — the actual font selection
+  // now happens inside generateHomeworkPDF via the registered fonts.
+  return cjk
+}
+
+/**
+ * Register both NotoSans and NotoSansSC fonts with a jsPDF instance.
+ * NotoSans: covers Latin, Latin Extended-A/B (pinyin diacritics: ā, ǎ, ě, ǐ, ǒ, ǔ, ǚ, etc.)
+ * NotoSansSC: covers CJK ideographs (Chinese characters)
+ */
+function registerFonts(doc: jsPDF, cjkBase64: string, latinBase64: string | null) {
+  // Always register the CJK font
+  doc.addFileToVFS("NotoSansSC-Regular.ttf", cjkBase64)
   doc.addFont("NotoSansSC-Regular.ttf", "NotoSansSC", "normal")
   doc.addFont("NotoSansSC-Regular.ttf", "NotoSansSC", "bold")
+
+  // Register NotoSans for Latin Extended (accented vowels)
+  if (latinBase64) {
+    doc.addFileToVFS("NotoSans-Regular.ttf", latinBase64)
+    doc.addFont("NotoSans-Regular.ttf", "NotoSans", "normal")
+    doc.addFont("NotoSans-Regular.ttf", "NotoSans", "bold")
+  }
 }
 
 /**
  * Set the font on the jsPDF doc.
  *
- * Strategy: When NotoSansSC is loaded, **always prefer it** because
- * it covers Latin + Latin Extended + CJK — the full Unicode range
- * we need. Helvetica (WinAnsi) is only used as a fallback when
- * NotoSansSC failed to load.
+ * Strategy:
+ *  1. Text with CJK characters → NotoSansSC (has CJK + basic Latin)
+ *  2. Text with Latin Extended chars (ā, ǎ, ǐ, ǒ, ǚ, etc.) → NotoSans
+ *     (full Latin Extended-A/B coverage for pinyin diacritics & macrons)
+ *  3. Plain ASCII / WinAnsi text → NotoSans if available, else Helvetica
  *
- * This fixes garbled pinyin diacritics (ā, ē, ī, ǒ, ǚ) and
- * broken character-width calculations that caused letter-spacing
- * blowout on mixed Latin/CJK strings.
+ * This ensures pinyin diacritics (ā, ǎ, ě, ǐ, ǒ, ǔ, ǚ), Latin macrons
+ * (ā, ē, ī, ō, ū), and CJK characters all render correctly.
  */
 function setSmartFont(
   doc: jsPDF,
   style: "normal" | "bold" | "italic",
   text: string,
-  hasUnicodeFont: boolean
+  hasUnicodeFont: boolean,
+  hasLatinFont: boolean = false
 ) {
-  if (hasUnicodeFont) {
-    // NotoSansSC covers Latin + CJK — always use it when available.
-    // It doesn't have a true italic variant, so map italic → normal.
-    doc.setFont("NotoSansSC", style === "italic" ? "normal" : style)
+  const mappedStyle = style === "italic" ? "normal" : style
+
+  if (hasUnicodeFont && needsCJKFont(text)) {
+    // CJK text → must use NotoSansSC
+    doc.setFont("NotoSansSC", mappedStyle)
+  } else if (hasLatinFont) {
+    // Latin Extended or plain text → NotoSans has full coverage
+    doc.setFont("NotoSans", mappedStyle)
+  } else if (hasUnicodeFont) {
+    // Fallback to NotoSansSC if NotoSans didn't load
+    doc.setFont("NotoSansSC", mappedStyle)
   } else {
     doc.setFont("helvetica", style)
   }
@@ -366,10 +402,16 @@ export async function generateHomeworkPDF(
   const { config, questions } = document
   const doc = new jsPDF({ unit: "pt", format: "letter" })
 
-  // Register NotoSansSC font if available
+  // Register fonts — NotoSans for Latin Extended, NotoSansSC for CJK
   const hasUnicodeFontAvailable = !!cjkFontBase64
+  const hasLatinFontAvailable = !!latinFontCache
   if (cjkFontBase64) {
-    registerCJKFont(doc, cjkFontBase64)
+    registerFonts(doc, cjkFontBase64, latinFontCache)
+  } else if (latinFontCache) {
+    // Even if CJK failed, register NotoSans for Latin Extended
+    doc.addFileToVFS("NotoSans-Regular.ttf", latinFontCache)
+    doc.addFont("NotoSans-Regular.ttf", "NotoSans", "normal")
+    doc.addFont("NotoSans-Regular.ttf", "NotoSans", "bold")
   }
 
   // ── Pre-render all LaTeX equations found in questions ──
@@ -390,7 +432,7 @@ export async function generateHomeworkPDF(
 
   // Helper: set font with automatic Unicode font preference
   const smartFont = (style: "normal" | "bold" | "italic", text: string) =>
-    setSmartFont(doc, style, text, hasUnicodeFontAvailable)
+    setSmartFont(doc, style, text, hasUnicodeFontAvailable, hasLatinFontAvailable)
 
   /**
    * Render a text string that may contain LaTeX math delimiters.
