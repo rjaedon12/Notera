@@ -30,10 +30,10 @@ export function DesmosToggleButton({ isOpen, onClick }: DesmosToggleButtonProps)
       style={{
         background: isOpen
           ? "linear-gradient(135deg, #10b981, #059669)"
-          : "linear-gradient(135deg, #3B4FE8, #5B8FFF)",
+          : "linear-gradient(135deg, #1D4ED8, #60A5FA)",
         boxShadow: isOpen
           ? "0 4px 20px rgba(16, 185, 129, 0.4)"
-          : "0 4px 20px rgba(59, 79, 232, 0.4)",
+          : "0 4px 20px rgba(29, 78, 216, 0.4)",
       }}
       title={isOpen ? "Close Calculator" : "Open Graphing Calculator"}
       aria-label={isOpen ? "Close graphing calculator" : "Open graphing calculator"}

@@ -9,7 +9,7 @@ export function CTASection() {
         <h2
           className="font-heading font-bold leading-[1.1] mb-5"
           style={{
-            color: "#1A1A1A",
+            color: "var(--landing-fg)",
             fontSize: "clamp(1.75rem, 4vw, 2.75rem)",
             letterSpacing: "-0.03em",
           }}
@@ -18,7 +18,7 @@ export function CTASection() {
         </h2>
         <p
           className="text-[0.938rem] leading-relaxed max-w-md mx-auto mb-10"
-          style={{ color: "#6B6B6B" }}
+          style={{ color: "var(--landing-muted)" }}
         >
           Create an account in seconds. No setup, no friction.
         </p>

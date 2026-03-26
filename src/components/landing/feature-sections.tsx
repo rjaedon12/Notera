@@ -34,13 +34,13 @@ export function FeatureSections() {
       <div className="mb-16">
         <p
           className="text-xs font-semibold uppercase tracking-widest mb-4"
-          style={{ color: "#6B6B6B", letterSpacing: "0.12em" }}
+          style={{ color: "var(--landing-muted)", letterSpacing: "0.12em" }}
         >
           Features
         </p>
         <h2
           className="font-heading font-bold leading-[1.1] max-w-md"
-          style={{ color: "#1A1A1A", fontSize: "clamp(1.75rem, 4vw, 2.5rem)", letterSpacing: "-0.03em" }}
+          style={{ color: "var(--landing-fg)", fontSize: "clamp(1.75rem, 4vw, 2.5rem)", letterSpacing: "-0.03em" }}
         >
           Everything you need to study effectively
         </h2>
@@ -52,19 +52,19 @@ export function FeatureSections() {
           <div key={f.label}>
             <p
               className="text-xs font-semibold uppercase mb-3"
-              style={{ color: "#8A8A8A", letterSpacing: "0.12em" }}
+              style={{ color: "var(--landing-subtle)", letterSpacing: "0.12em" }}
             >
               {f.label}
             </p>
             <h3
               className="font-heading font-semibold text-lg mb-2"
-              style={{ color: "#1A1A1A", letterSpacing: "-0.02em" }}
+              style={{ color: "var(--landing-fg)", letterSpacing: "-0.02em" }}
             >
               {f.title}
             </h3>
             <p
               className="text-[0.938rem] leading-relaxed"
-              style={{ color: "#6B6B6B" }}
+              style={{ color: "var(--landing-muted)" }}
             >
               {f.description}
             </p>

@@ -10,7 +10,7 @@ export function HeroSection() {
         <h1
           className="font-heading font-bold leading-[1.06] mb-6"
           style={{
-            color: "#1A1A1A",
+            color: "var(--landing-fg)",
             letterSpacing: "-0.035em",
             fontSize: "clamp(2.75rem, 7vw, 4.5rem)",
           }}
@@ -24,7 +24,7 @@ export function HeroSection() {
         <p
           className="font-heading leading-relaxed mb-12 max-w-lg mx-auto"
           style={{
-            color: "#6B6B6B",
+            color: "var(--landing-muted)",
             fontWeight: 300,
             fontSize: "clamp(1.05rem, 2vw, 1.25rem)",
             letterSpacing: "-0.01em",

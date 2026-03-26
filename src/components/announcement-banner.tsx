@@ -30,7 +30,7 @@ const typeConfig: Record<
     icon: <Info className="h-4 w-4" />,
     gradient: "linear-gradient(135deg, rgba(59,130,246,0.12), rgba(59,130,246,0.04))",
     borderColor: "rgba(59,130,246,0.25)",
-    iconColor: "#3b82f6",
+    iconColor: "var(--accent-color)",
   },
   WARNING: {
     icon: <AlertTriangle className="h-4 w-4" />,

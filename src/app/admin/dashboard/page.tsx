@@ -400,7 +400,7 @@ export default function AdminDashboard() {
                 : "hover:bg-[var(--glass-fill)]"
             )}
             style={activePanel === p.key ? {
-              background: "linear-gradient(135deg, #3B4FE8, #5B8FFF)",
+              background: "linear-gradient(135deg, #1D4ED8, #60A5FA)",
             } : { color: "var(--muted-foreground)" }}
           >
             {p.icon}
@@ -508,12 +508,12 @@ export default function AdminDashboard() {
                             background: user.role === "ADMIN"
                               ? "rgba(234, 179, 8, 0.15)"
                               : user.role === "TEACHER"
-                              ? "rgba(59, 130, 246, 0.15)"
+                              ? "color-mix(in srgb, var(--accent-color) 15%, transparent)"
                               : "rgba(107, 114, 128, 0.15)",
                             color: user.role === "ADMIN"
                               ? "#eab308"
                               : user.role === "TEACHER"
-                              ? "#3b82f6"
+                              ? "var(--accent-color)"
                               : "#6b7280",
                           }}
                         >
@@ -827,7 +827,7 @@ export default function AdminDashboard() {
                     onClick={() => createAnnouncementMutation.mutate()}
                     disabled={!annTitle.trim() || !annMessage.trim() || createAnnouncementMutation.isPending}
                     className="ml-auto px-4 py-2 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-40"
-                    style={{ background: "linear-gradient(135deg, #3B4FE8, #5B8FFF)" }}
+                    style={{ background: "linear-gradient(135deg, #1D4ED8, #60A5FA)" }}
                   >
                     {createAnnouncementMutation.isPending ? "Creating..." : "Publish"}
                   </button>

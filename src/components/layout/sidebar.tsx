@@ -196,11 +196,11 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                   "hover:bg-[var(--glass-fill)]"
                 )}
                 style={isOnExperimentalPage ? {
-                  background: "rgba(167,139,250,0.12)",
+                  background: "color-mix(in srgb, var(--accent) 12%, transparent)",
                 } : {}}
                 title="Experimental Features"
               >
-                <span style={{ color: "#a78bfa" }}><NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg></NavIcon></span>
+                <span style={{ color: "var(--accent)" }}><NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg></NavIcon></span>
               </div>
             </Link>
           ) : (
@@ -210,8 +210,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                 onClick={toggleExperimental}
                 className="relative inline-flex items-center gap-3 whitespace-nowrap rounded-[10px] text-sm font-medium transition-all w-full h-9 px-3 hover:bg-[var(--glass-fill)]"
               >
-                <span style={{ color: "#a78bfa" }}><NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg></NavIcon></span>
-                <span className="flex-1 text-left" style={{ color: "#a78bfa" }}>Experimental</span>
+                <span style={{ color: "var(--accent)" }}><NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg></NavIcon></span>
+                <span className="flex-1 text-left" style={{ color: "var(--accent)" }}>Experimental</span>
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -223,7 +223,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                     "h-3.5 w-3.5 transition-transform duration-200",
                     experimentalOpen && "rotate-180"
                   )}
-                  style={{ color: "#a78bfa" }}
+                  style={{ color: "var(--accent)" }}
                 >
                   <path d="M6 9l6 6 6-6"/>
                 </svg>

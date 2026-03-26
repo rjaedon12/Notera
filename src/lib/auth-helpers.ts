@@ -40,7 +40,7 @@ export function getRoleBadgeStyle(role: string): { bg: string; text: string } {
     case "ADMIN":
       return { bg: "rgba(234, 179, 8, 0.15)", text: "#eab308" }
     case "TEACHER":
-      return { bg: "rgba(59, 130, 246, 0.15)", text: "#3b82f6" }
+      return { bg: "color-mix(in srgb, var(--accent-color) 15%, transparent)", text: "var(--accent-color)" }
     default:
       return { bg: "rgba(107, 114, 128, 0.15)", text: "#6b7280" }
   }

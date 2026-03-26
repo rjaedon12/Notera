@@ -196,7 +196,7 @@ export function HomeworkBuilder() {
           {totalCards > 0 && (
             <span
               className="ml-auto text-xs px-2 py-0.5 rounded-full"
-              style={{ background: "rgba(59, 130, 246, 0.12)", color: "#3b82f6" }}
+              style={{ background: "color-mix(in srgb, var(--accent-color) 12%, transparent)", color: "var(--accent-color)" }}
             >
               {selectedSets.length} set{selectedSets.length !== 1 ? "s" : ""} · {totalCards} cards
             </span>

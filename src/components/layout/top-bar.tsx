@@ -59,9 +59,9 @@ export function TopBar({ onMenuClick }: TopBarProps) {
               <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-8">
                 <defs>
                   <linearGradient id="topbar-spark" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stopColor="#34AAFF"/>
-                    <stop offset="45%" stopColor="#007AFF"/>
-                    <stop offset="100%" stopColor="#5856D6"/>
+                    <stop offset="0%" stopColor="#60A5FA"/>
+                    <stop offset="45%" stopColor="#1D4ED8"/>
+                    <stop offset="100%" stopColor="#7C3AED"/>
                   </linearGradient>
                   <linearGradient id="topbar-specular" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
                     <stop offset="0%" stopColor="white" stopOpacity={0.22}/>
@@ -69,7 +69,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                     <stop offset="100%" stopColor="white" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <rect width="32" height="32" rx="7" fill="#080810"/>
+                <rect width="32" height="32" rx="7" fill="#070E1C"/>
                 <rect width="32" height="32" rx="7" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={0.75}/>
                 <path d="M16 4 L19.5 12.5 L28 16 L19.5 19.5 L16 28 L12.5 19.5 L4 16 L12.5 12.5 Z" fill="url(#topbar-spark)"/>
                 <path d="M16 4 L19.5 12.5 L28 16 L19.5 19.5 L16 28 L12.5 19.5 L4 16 L12.5 12.5 Z" fill="url(#topbar-specular)"/>
@@ -144,7 +144,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                     </span>
                   )}
                   {session.user?.role === "TEACHER" && (
-                    <span className="inline-block mt-1 px-2 py-0.5 text-xs rounded" style={{ background: "rgba(59, 130, 246, 0.14)", color: "#3b82f6", border: "1px solid rgba(59, 130, 246, 0.22)" }}>
+                    <span className="inline-block mt-1 px-2 py-0.5 text-xs rounded" style={{ background: "color-mix(in srgb, var(--accent-color) 14%, transparent)", color: "var(--accent-color)", border: "1px solid color-mix(in srgb, var(--accent-color) 22%, transparent)" }}>
                       Teacher
                     </span>
                   )}

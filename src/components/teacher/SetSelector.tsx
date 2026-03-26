@@ -89,8 +89,8 @@ export function SetSelector({ selectedSetIds, onToggle }: SetSelectorProps) {
                 key={s.id}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium"
                 style={{
-                  background: "rgba(59, 130, 246, 0.12)",
-                  color: "#3b82f6",
+                  background: "color-mix(in srgb, var(--accent-color) 12%, transparent)",
+                  color: "var(--accent-color)",
                 }}
               >
                 {s.title}
@@ -134,9 +134,9 @@ export function SetSelector({ selectedSetIds, onToggle }: SetSelectorProps) {
                     : "hover:border-[var(--accent-color)]/40"
                 )}
                 style={{
-                  borderColor: isSelected ? "#3b82f6" : "var(--glass-border)",
+                  borderColor: isSelected ? "var(--accent-color)" : "var(--glass-border)",
                   background: isSelected
-                    ? "rgba(59, 130, 246, 0.06)"
+                    ? "color-mix(in srgb, var(--accent-color) 6%, transparent)"
                     : "transparent",
                 }}
               >
@@ -144,7 +144,7 @@ export function SetSelector({ selectedSetIds, onToggle }: SetSelectorProps) {
                 {isSelected && (
                   <div
                     className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
-                    style={{ background: "#3b82f6" }}
+                    style={{ background: "var(--accent-color)" }}
                   >
                     <Check className="h-3 w-3 text-white" />
                   </div>

@@ -26,7 +26,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center gap-4">
       <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl"
-        style={{ background: "linear-gradient(135deg, #3B4FE8, #5B8FFF)" }}>
+        style={{ background: "linear-gradient(135deg, #1D4ED8, #60A5FA)" }}>
         <Shield className="h-8 w-8 text-white" />
       </div>
       <Loader2 className="h-6 w-6 animate-spin text-[var(--primary)]" />

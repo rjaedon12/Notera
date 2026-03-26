@@ -75,8 +75,8 @@ export function PDFRenderer({ config, questions, disabled }: PDFRendererProps) {
           : "hover:opacity-90 hover:shadow-lg"
       )}
       style={{
-        background: "linear-gradient(135deg, #3B4FE8, #5B8FFF)",
-        boxShadow: disabled ? "none" : "0 4px 14px rgba(59, 79, 232, 0.35)",
+        background: "linear-gradient(135deg, #1D4ED8, #60A5FA)",
+        boxShadow: disabled ? "none" : "0 4px 14px rgba(29, 78, 216, 0.35)",
       }}
     >
       {generating ? (

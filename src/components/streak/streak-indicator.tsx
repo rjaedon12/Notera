@@ -33,9 +33,9 @@ export function StreakIndicator() {
         "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-sm font-medium backdrop-blur-sm transition-all"
       )}
       style={{
-        background: streakData.studiedToday ? "rgba(79,142,247,0.15)" : "var(--glass-fill)",
-        border: "1px solid " + (streakData.studiedToday ? "rgba(79,142,247,0.2)" : "var(--glass-border)"),
-        color: streakData.studiedToday ? "var(--primary)" : "var(--muted-foreground)",
+        background: streakData.studiedToday ? "color-mix(in srgb, var(--playful) 15%, transparent)" : "var(--glass-fill)",
+        border: "1px solid " + (streakData.studiedToday ? "color-mix(in srgb, var(--playful) 25%, transparent)" : "var(--glass-border)"),
+        color: streakData.studiedToday ? "var(--playful)" : "var(--muted-foreground)",
       }}
       title={`Current streak: ${streakData.currentStreak} days\nBest streak: ${streakData.longestStreak} days`}
     >

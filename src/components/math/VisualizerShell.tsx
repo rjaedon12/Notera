@@ -15,7 +15,7 @@ interface VisualizerShellProps {
 }
 
 const difficultyConfig = {
-  "high-school": { label: "High School", bg: "rgba(0,122,255,0.12)", text: "#007AFF" },
+  "high-school": { label: "High School", bg: "color-mix(in srgb, var(--accent-color) 12%, transparent)", text: "var(--accent-color)" },
   college: { label: "College", bg: "rgba(160,80,220,0.12)", text: "#a050dc" },
   both: { label: "HS + College", bg: "rgba(48,209,88,0.12)", text: "#30d158" },
 }
