@@ -1,13 +1,354 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
-import { createPortal } from "react-dom"
+import { useCallback, useState } from "react"
 import { Download, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
+import jsPDF from "jspdf"
 import type { HomeworkConfig, GeneratedQuestion } from "@/types/homework"
-import { HomeworkSheetContent } from "./HomeworkSheetContent"
-import { waitForKatexFonts } from "@/lib/latex-to-image"
+
+// ─── PDF Layout Constants (US Letter, points) ───────────
+
+const PW = 612 // page width
+const PH = 792 // page height
+const M = 54 // margin
+const CW = PW - M * 2 // content width
+const FOOTER_Y = PH - 28
+const PAGE_BOTTOM = PH - M - 16 // lowest Y before we force a new page
+
+// ─── Helpers ─────────────────────────────────────────────
+
+/** Strip LaTeX $ delimiters so raw math is still readable in the PDF. */
+function stripLatex(text: string): string {
+  return text
+    .replace(/\$\$([\s\S]*?)\$\$/g, "$1")
+    .replace(/\$([^$\n]+?)\$/g, "$1")
+}
+
+/** Sanitize smart-quotes / special unicode → safe PDF chars. */
+function clean(text: string): string {
+  return stripLatex(text)
+    .replace(/[\u2018\u2019\u201A]/g, "'")
+    .replace(/[\u201C\u201D\u201E]/g, '"')
+    .replace(/[\u2013]/g, "\u2013")
+    .replace(/[\u2014]/g, "\u2014")
+    .replace(/[\u2026]/g, "...")
+    .replace(/[\u00A0\u2002\u2003\u2009]/g, " ")
+}
+
+/**
+ * Word-wrap `text` to `maxW` points, render at (x, y), return new Y.
+ * Uses jsPDF's built-in splitTextToSize for accurate measurement.
+ */
+function drawWrapped(
+  doc: jsPDF,
+  text: string,
+  x: number,
+  y: number,
+  maxW: number,
+  lineH: number,
+): number {
+  const lines: string[] = doc.splitTextToSize(clean(text), maxW)
+  for (const line of lines) {
+    doc.text(line, x, y)
+    y += lineH
+  }
+  return y
+}
+
+/** Ensure enough room for `needed` pt; if not, add a page & return new Y. */
+function ensureSpace(doc: jsPDF, y: number, needed: number): number {
+  if (y + needed > PAGE_BOTTOM) {
+    doc.addPage()
+    return M + 12
+  }
+  return y
+}
+
+// ─── PDF Builder ─────────────────────────────────────────
+
+function buildPDF(config: HomeworkConfig, questions: GeneratedQuestion[]): jsPDF {
+  const doc = new jsPDF({ unit: "pt", format: "letter" })
+  let y = M
+
+  // ── Title ──
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(20)
+  doc.setTextColor(20, 20, 20)
+  const title = clean(config.title || "Homework Worksheet")
+  doc.text(title, M, y)
+  y += 26
+
+  // Accent line under title
+  doc.setDrawColor(55, 65, 220)
+  doc.setLineWidth(2.5)
+  doc.line(M, y, M + Math.min(doc.getTextWidth(title) + 8, CW), y)
+  doc.setLineWidth(0.5)
+  y += 14
+
+  // ── Meta info ──
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(9)
+  doc.setTextColor(100, 100, 100)
+  const metaParts: string[] = []
+  if (config.teacherName) metaParts.push(`Teacher: ${config.teacherName}`)
+  if (config.className) metaParts.push(`Class: ${config.className}`)
+  if (config.date) metaParts.push(`Date: ${config.date}`)
+  if (metaParts.length) {
+    doc.text(metaParts.join("    |    "), M, y)
+    y += 14
+  }
+
+  // ── Name field ──
+  if (config.includeNameField) {
+    y += 4
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(10)
+    doc.setTextColor(50, 50, 50)
+    doc.text("Name:", M, y)
+    const nameX = M + doc.getTextWidth("Name:  ")
+    doc.setDrawColor(180, 180, 180)
+    doc.line(nameX, y + 1, M + CW * 0.55, y + 1)
+
+    doc.text("Date:", M + CW * 0.6, y)
+    const dateX = M + CW * 0.6 + doc.getTextWidth("Date:  ")
+    doc.line(dateX, y + 1, M + CW, y + 1)
+    y += 18
+  }
+
+  // ── Divider ──
+  y += 2
+  doc.setDrawColor(210, 210, 210)
+  doc.line(M, y, PW - M, y)
+  y += 10
+
+  // ── Instructions ──
+  if (config.instructions) {
+    doc.setFont("helvetica", "italic")
+    doc.setFontSize(8.5)
+    doc.setTextColor(120, 120, 120)
+    y = drawWrapped(doc, config.instructions, M, y, CW, 11)
+    y += 6
+  }
+
+  // ── Word Bank ──
+  if (config.includeWordBank && questions.length > 0) {
+    const terms = [...new Set(questions.map((q) => clean(q.answer)))].sort()
+    if (terms.length > 0) {
+      y = ensureSpace(doc, y, 50)
+
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(9)
+      doc.setTextColor(60, 60, 60)
+      doc.text("WORD BANK", M + 8, y + 12)
+
+      doc.setFont("helvetica", "normal")
+      doc.setFontSize(8.5)
+      doc.setTextColor(80, 80, 80)
+      const bankText = terms.join("   \u2022   ")
+      const bankLines: string[] = doc.splitTextToSize(bankText, CW - 20)
+      const boxH = 20 + bankLines.length * 11 + 8
+
+      // Draw box
+      doc.setDrawColor(200, 200, 200)
+      doc.setFillColor(249, 249, 249)
+      doc.roundedRect(M, y, CW, boxH, 4, 4, "FD")
+
+      let bankY = y + 24
+      for (const line of bankLines) {
+        doc.text(line, M + 10, bankY)
+        bankY += 11
+      }
+      y += boxH + 10
+    }
+  }
+
+  // ── Questions ──
+  doc.setTextColor(30, 30, 30)
+
+  for (let i = 0; i < questions.length; i++) {
+    const q = questions[i]
+    const num = `${i + 1}.  `
+
+    if (q.type === "matching" && q.matchPairs) {
+      // ── MATCHING ──
+      const neededH = 30 + q.matchPairs.length * 18
+      y = ensureSpace(doc, y, neededH)
+
+      // Section label
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(10)
+      doc.setTextColor(30, 30, 30)
+      doc.text(`${num}Matching`, M, y)
+      y += 13
+
+      doc.setFont("helvetica", "italic")
+      doc.setFontSize(8.5)
+      doc.setTextColor(100, 100, 100)
+      y = drawWrapped(doc, q.prompt, M + 16, y, CW - 16, 11)
+      y += 4
+
+      // Column headers
+      const colA = M + 16
+      const colB = M + CW / 2 + 16
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(8)
+      doc.setTextColor(100, 100, 100)
+      doc.text("TERM", colA, y)
+      doc.text("DEFINITION", colB, y)
+      y += 12
+
+      // Rows
+      doc.setFont("helvetica", "normal")
+      doc.setFontSize(9)
+      doc.setTextColor(40, 40, 40)
+      for (let pi = 0; pi < q.matchPairs.length; pi++) {
+        y = ensureSpace(doc, y, 16)
+        const pair = q.matchPairs[pi]
+        const termText = clean(pair.term)
+        const defText = `${String.fromCharCode(65 + pi)}.  ${clean(pair.definition)}`
+
+        doc.text(`___   ${termText}`, colA, y)
+
+        // Wrap definition if long
+        const defLines: string[] = doc.splitTextToSize(defText, CW / 2 - 24)
+        for (const dl of defLines) {
+          doc.text(dl, colB, y)
+          y += 13
+        }
+        if (defLines.length <= 1) y += 13
+      }
+      y += 8
+
+    } else if (q.type === "multiple-choice" && q.choices) {
+      // ── MULTIPLE CHOICE ──
+      const neededH = 24 + q.choices.length * 15
+      y = ensureSpace(doc, y, neededH)
+
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(10)
+      doc.setTextColor(30, 30, 30)
+      y = drawWrapped(doc, `${num}${q.prompt}`, M, y, CW, 13)
+      y += 3
+
+      doc.setFont("helvetica", "normal")
+      doc.setFontSize(9)
+      doc.setTextColor(50, 50, 50)
+      const letters = ["a", "b", "c", "d"]
+      for (let ci = 0; ci < q.choices.length; ci++) {
+        y = ensureSpace(doc, y, 14)
+        const choiceText = `${letters[ci]})   ${clean(q.choices[ci])}`
+        const choiceLines: string[] = doc.splitTextToSize(choiceText, CW - 32)
+        for (const cl of choiceLines) {
+          doc.text(cl, M + 20, y)
+          y += 12
+        }
+      }
+      y += 8
+
+    } else if (q.type === "fill-in-blank") {
+      // ── FILL IN THE BLANK ──
+      y = ensureSpace(doc, y, 40)
+
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(10)
+      doc.setTextColor(30, 30, 30)
+      y = drawWrapped(doc, `${num}${q.prompt}`, M, y, CW, 13)
+      y += 14
+
+    } else {
+      // ── SHORT ANSWER (term-to-def / def-to-term) ──
+      y = ensureSpace(doc, y, 44)
+
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(10)
+      doc.setTextColor(30, 30, 30)
+      y = drawWrapped(doc, `${num}${q.prompt}`, M, y, CW, 13)
+      y += 4
+
+      // Answer line
+      doc.setDrawColor(200, 200, 200)
+      doc.line(M + 16, y + 4, M + CW - 16, y + 4)
+      y += 18
+    }
+  }
+
+  // ── Answer Key ──
+  if (config.includeAnswerKey && questions.length > 0) {
+    y += 12
+    y = ensureSpace(doc, y, 60)
+
+    // Thick divider
+    doc.setDrawColor(55, 65, 220)
+    doc.setLineWidth(2)
+    doc.line(M, y, PW - M, y)
+    doc.setLineWidth(0.5)
+    y += 18
+
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(14)
+    doc.setTextColor(30, 30, 30)
+    doc.text("Answer Key", M, y)
+    y += 20
+
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(9)
+    doc.setTextColor(80, 80, 80)
+
+    // Two-column answer key for compactness
+    const colW = CW / 2 - 8
+    const col1X = M
+    const col2X = M + CW / 2 + 8
+    const half = Math.ceil(questions.length / 2)
+
+    for (let i = 0; i < half; i++) {
+      y = ensureSpace(doc, y, 14)
+
+      // Left column
+      const q1 = questions[i]
+      const a1 = `${i + 1}.  ${clean(q1.answer)}`
+      const a1Lines: string[] = doc.splitTextToSize(a1, colW)
+      let maxH = a1Lines.length * 12
+
+      // Right column
+      const i2 = i + half
+      let a2Lines: string[] = []
+      if (i2 < questions.length) {
+        const q2 = questions[i2]
+        const a2 = `${i2 + 1}.  ${clean(q2.answer)}`
+        a2Lines = doc.splitTextToSize(a2, colW)
+        maxH = Math.max(maxH, a2Lines.length * 12)
+      }
+
+      for (const line of a1Lines) {
+        doc.text(line, col1X, y)
+        y += 12
+      }
+      // Reset Y for right column
+      y -= a1Lines.length * 12
+      for (const line of a2Lines) {
+        doc.text(line, col2X, y)
+        y += 12
+      }
+      y -= Math.min(a1Lines.length, a2Lines.length) * 12
+      y += maxH + 2
+    }
+  }
+
+  // ── Page numbers ──
+  const totalPages = doc.getNumberOfPages()
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p)
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(8)
+    doc.setTextColor(160, 160, 160)
+    doc.text(`Page ${p} of ${totalPages}`, PW / 2, FOOTER_Y, { align: "center" })
+  }
+
+  return doc
+}
+
+// ─── React Component ─────────────────────────────────────
 
 interface PDFRendererProps {
   config: HomeworkConfig
@@ -15,313 +356,61 @@ interface PDFRendererProps {
   disabled?: boolean
 }
 
-/**
- * US-Letter dimensions.
- * html2canvas renders at native px × SCALE, then we map into jsPDF point units.
- */
-const LETTER_WIDTH_PT = 612
-const LETTER_HEIGHT_PT = 792
-const SCALE = 2 // higher = sharper text in the PDF
-const PAGE_MARGIN_BOTTOM = 30 // room for page number footer
-
-/**
- * Scan a horizontal row of pixels in `canvas` and return true if the
- * entire row is white (rgb ≥ 250 each channel). We use this to find
- * natural gaps between questions so we can split pages cleanly.
- */
-function isRowWhite(ctx: CanvasRenderingContext2D, y: number, width: number): boolean {
-  const row = ctx.getImageData(0, y, width, 1).data
-  for (let i = 0; i < row.length; i += 4) {
-    // r, g, b — allow near-white (250+) to tolerate anti-aliasing
-    if (row[i] < 250 || row[i + 1] < 250 || row[i + 2] < 250) return false
-  }
-  return true
-}
-
-/**
- * Find the best Y coordinate in the canvas (in pixels) to break a page.
- *
- * Starting from the ideal break point (one page-height down), scan
- * upward looking for a fully-white row. If we find a gap of ≥3
- * consecutive white rows we break there — this avoids cutting through
- * text, borders, or KaTeX glyphs.
- *
- * Falls back to the ideal point if no gap is found within a generous
- * search window (25% of page height).
- */
-function findSmartBreak(
-  ctx: CanvasRenderingContext2D,
-  idealY: number,
-  canvasWidth: number,
-  canvasHeight: number,
-  searchRange: number,
-): number {
-  const minY = Math.max(0, idealY - searchRange)
-  const maxY = Math.min(canvasHeight - 1, idealY)
-
-  // Scan upward from idealY looking for a run of white rows
-  for (let y = maxY; y >= minY; y--) {
-    if (
-      isRowWhite(ctx, y, canvasWidth) &&
-      (y - 1 < 0 || isRowWhite(ctx, y - 1, canvasWidth)) &&
-      (y - 2 < 0 || isRowWhite(ctx, y - 2, canvasWidth))
-    ) {
-      return y
-    }
-  }
-
-  // Nothing found — also try scanning a bit *below* idealY
-  const maxBelow = Math.min(canvasHeight - 1, idealY + Math.round(searchRange * 0.3))
-  for (let y = idealY + 1; y <= maxBelow; y++) {
-    if (
-      isRowWhite(ctx, y, canvasWidth) &&
-      (y - 1 < 0 || isRowWhite(ctx, y - 1, canvasWidth)) &&
-      (y - 2 < 0 || isRowWhite(ctx, y - 2, canvasWidth))
-    ) {
-      return y
-    }
-  }
-
-  return idealY // last resort
-}
-
 export function PDFRenderer({ config, questions, disabled }: PDFRendererProps) {
   const [generating, setGenerating] = useState(false)
-  const [progress, setProgress] = useState<string | null>(null)
-  /** When true we mount the hidden sheet so html2canvas can capture it */
-  const [showHiddenSheet, setShowHiddenSheet] = useState(false)
-  const sheetRef = useRef<HTMLDivElement>(null)
-  const resolveRenderRef = useRef<(() => void) | null>(null)
-
-  /** Called once the hidden HomeworkSheetContent has mounted & painted */
-  const onSheetReady = useCallback((node: HTMLDivElement | null) => {
-    sheetRef.current = node
-    if (node && resolveRenderRef.current) {
-      // Give the browser one extra frame to finish painting
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          resolveRenderRef.current?.()
-          resolveRenderRef.current = null
-        })
-      })
-    }
-  }, [])
 
   const handleDownload = useCallback(async () => {
     if (disabled || generating) return
 
     try {
       setGenerating(true)
-      setProgress("Loading fonts…")
 
-      // ── 0. Wait for KaTeX fonts via Font Loading API ──
-      await waitForKatexFonts()
+      // Small delay to let button state update
+      await new Promise((r) => setTimeout(r, 50))
 
-      setProgress("Preparing worksheet…")
+      const doc = buildPDF(config, questions)
 
-      // ── 1. Mount the hidden sheet inside the real React tree ──
-      const rendered = new Promise<void>((resolve) => {
-        resolveRenderRef.current = resolve
-        setShowHiddenSheet(true)
-      })
-      await rendered
-
-      // Extra settle for any remaining async images / fonts
-      await new Promise((r) => setTimeout(r, 150))
-
-      const sheetEl = sheetRef.current
-      if (!sheetEl) throw new Error("Homework sheet element not found")
-
-      setProgress("Rendering to image…")
-
-      // ── 2. Capture with html2canvas ──
-      const html2canvasModule = await import("html2canvas")
-      const html2canvas =
-        typeof html2canvasModule.default === "function"
-          ? html2canvasModule.default
-          : (html2canvasModule as unknown as { default: typeof import("html2canvas")["default"] }).default
-
-      if (typeof html2canvas !== "function") {
-        throw new Error("html2canvas failed to load — module export is not a function")
-      }
-
-      const canvas = await html2canvas(sheetEl, {
-        scale: SCALE,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        width: LETTER_WIDTH_PT,
-        height: sheetEl.scrollHeight,
-        windowWidth: LETTER_WIDTH_PT,
-        windowHeight: sheetEl.scrollHeight,
-      })
-
-      setProgress("Building PDF…")
-
-      // ── 3. Smart-slice the canvas into pages ──
-      const { default: jsPDF } = await import("jspdf")
-      const doc = new jsPDF({ unit: "pt", format: "letter", orientation: "portrait" })
-
-      const imgWidth = LETTER_WIDTH_PT
-      const imgHeight = (canvas.height / canvas.width) * imgWidth
-      const usablePageH = LETTER_HEIGHT_PT - PAGE_MARGIN_BOTTOM
-
-      // Pixels-per-point ratio so we can convert page-height to canvas pixels
-      const pxPerPt = canvas.width / LETTER_WIDTH_PT
-      const sliceTargetPx = Math.round(usablePageH * pxPerPt)
-      const searchRange = Math.round(sliceTargetPx * 0.25) // scan ±25% of page height
-
-      // Get a 2D context for pixel scanning (smart break detection)
-      const scanCtx = canvas.getContext("2d")!
-
-      let srcY = 0
-      let page = 0
-
-      while (srcY < canvas.height) {
-        if (page > 0) doc.addPage()
-
-        // Figure out where this page should end
-        const idealEnd = srcY + sliceTargetPx
-        let endY: number
-
-        if (idealEnd >= canvas.height) {
-          // Last page — take whatever is left
-          endY = canvas.height
-        } else {
-          // Find a clean white-space break near the ideal point
-          endY = findSmartBreak(scanCtx, idealEnd, canvas.width, canvas.height, searchRange)
-        }
-
-        const srcH = endY - srcY
-        if (srcH <= 0) break
-
-        // Create a canvas for this page slice
-        const pageCanvas = document.createElement("canvas")
-        pageCanvas.width = canvas.width
-        pageCanvas.height = srcH
-        const ctx = pageCanvas.getContext("2d")!
-        ctx.fillStyle = "#ffffff"
-        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height)
-        ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH)
-
-        const sliceDataUrl = pageCanvas.toDataURL("image/png")
-        const sliceHeightPt = (srcH / canvas.width) * LETTER_WIDTH_PT
-
-        doc.addImage(sliceDataUrl, "PNG", 0, 0, imgWidth, sliceHeightPt, undefined, "FAST")
-
-        // Page footer
-        doc.setFontSize(8)
-        doc.setTextColor(150, 150, 150)
-        doc.text(
-          `Page ${page + 1}`,
-          LETTER_WIDTH_PT / 2,
-          LETTER_HEIGHT_PT - 14,
-          { align: "center" }
-        )
-
-        srcY = endY
-        page++
-      }
-
-      // Go back and update footers with total page count
-      const totalPages = doc.getNumberOfPages()
-      for (let i = 1; i <= totalPages; i++) {
-        doc.setPage(i)
-        // White-out the old footer text
-        doc.setFillColor(255, 255, 255)
-        doc.rect(LETTER_WIDTH_PT / 2 - 40, LETTER_HEIGHT_PT - 22, 80, 14, "F")
-        doc.setFontSize(8)
-        doc.setTextColor(150, 150, 150)
-        doc.text(
-          `Page ${i} of ${totalPages}`,
-          LETTER_WIDTH_PT / 2,
-          LETTER_HEIGHT_PT - 14,
-          { align: "center" }
-        )
-      }
-
-      // ── 4. Download ──
       const safeName = (config.title || "homework")
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "")
 
-      const blob = doc.output("blob")
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement("a")
-      link.href = url
-      link.download = `${safeName}.pdf`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-
+      doc.save(`${safeName}.pdf`)
       toast.success("PDF downloaded!")
     } catch (err) {
       console.error("PDF generation failed:", err)
       toast.error("Failed to generate PDF. Please try again.")
     } finally {
-      setShowHiddenSheet(false)
-      sheetRef.current = null
       setGenerating(false)
-      setProgress(null)
     }
   }, [config, questions, disabled, generating])
 
   return (
-    <>
-      <button
-        onClick={handleDownload}
-        disabled={disabled || generating}
-        className={cn(
-          "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all",
-          disabled || generating
-            ? "opacity-40 cursor-not-allowed"
-            : "hover:opacity-90 hover:shadow-lg"
-        )}
-        style={{
-          background: "linear-gradient(135deg, #3B4FE8, #5B8FFF)",
-          boxShadow: disabled ? "none" : "0 4px 14px rgba(59, 79, 232, 0.35)",
-        }}
-      >
-        {generating ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {progress || "Generating…"}
-          </>
-        ) : (
-          <>
-            <Download className="h-4 w-4" />
-            Download PDF
-          </>
-        )}
-      </button>
-
-      {/* Hidden OFF-SCREEN sheet (not opacity:0!) rendered in the real
-          React tree so it inherits all Tailwind styles, KaTeX fonts, etc.
-          Using left:-9999px keeps content visible to html2canvas while
-          being invisible to the user. */}
-      {showHiddenSheet &&
-        typeof window !== "undefined" &&
-        createPortal(
-          <div
-            aria-hidden
-            style={{
-              position: "fixed",
-              left: "-9999px",
-              top: 0,
-              width: `${LETTER_WIDTH_PT}px`,
-              pointerEvents: "none",
-              zIndex: -9999,
-              overflow: "visible",
-            }}
-          >
-            <div ref={onSheetReady}>
-              <HomeworkSheetContent config={config} questions={questions} />
-            </div>
-          </div>,
-          document.body
-        )}
-    </>
+    <button
+      onClick={handleDownload}
+      disabled={disabled || generating}
+      className={cn(
+        "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all",
+        disabled || generating
+          ? "opacity-40 cursor-not-allowed"
+          : "hover:opacity-90 hover:shadow-lg"
+      )}
+      style={{
+        background: "linear-gradient(135deg, #3B4FE8, #5B8FFF)",
+        boxShadow: disabled ? "none" : "0 4px 14px rgba(59, 79, 232, 0.35)",
+      }}
+    >
+      {generating ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Generating…
+        </>
+      ) : (
+        <>
+          <Download className="h-4 w-4" />
+          Download PDF
+        </>
+      )}
+    </button>
   )
 }
