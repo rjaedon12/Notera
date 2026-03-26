@@ -14,6 +14,7 @@ import { Plus, Trash2, Upload, Download, GripVertical, Loader2 } from "lucide-re
 import toast from "react-hot-toast"
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd"
 import { TagSelector } from "@/components/tag-selector"
+import { parseCSVContent } from "@/lib/csv-parser"
 
 interface CardData {
   id: string
@@ -80,15 +81,12 @@ export default function CreatePage() {
     const reader = new FileReader()
     reader.onload = (event) => {
       const text = event.target?.result as string
-      const lines = text.split("\n").filter((line) => line.trim())
-      const newCards: CardData[] = lines.map((line, index) => {
-        const [term, definition] = line.split(",").map((s) => s.trim().replace(/^"|"$/g, ""))
-        return {
-          id: `import-${index}-${Date.now()}`,
-          term: term || "",
-          definition: definition || "",
-        }
-      }).filter((c) => c.term || c.definition)
+      const parsed = parseCSVContent(text)
+      const newCards: CardData[] = parsed.map((card, index) => ({
+        id: `import-${index}-${Date.now()}`,
+        term: card.term,
+        definition: card.definition,
+      })).filter((c) => c.term || c.definition)
 
       if (newCards.length > 0) {
         setCards(newCards)

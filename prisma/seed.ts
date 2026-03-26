@@ -7,44 +7,56 @@ const prisma = new PrismaClient()
 
 // ── CSV helpers ──────────────────────────────────────────
 
+/** RFC 4180-compliant CSV line parser — handles quoted fields with commas */
+function parseCSVLine(line: string): string[] {
+  const fields: string[] = []
+  let i = 0
+  const len = line.length
+
+  while (i < len) {
+    while (i < len && (line[i] === " " || line[i] === "\t")) i++
+    if (i >= len) { fields.push(""); break }
+
+    if (line[i] === '"') {
+      i++
+      let value = ""
+      while (i < len) {
+        if (line[i] === '"') {
+          if (i + 1 < len && line[i + 1] === '"') { value += '"'; i += 2 }
+          else { i++; break }
+        } else { value += line[i]; i++ }
+      }
+      fields.push(value)
+      while (i < len && line[i] !== ",") i++
+      if (i < len) i++
+    } else {
+      let value = ""
+      while (i < len && line[i] !== ",") { value += line[i]; i++ }
+      fields.push(value.trim())
+      if (i < len) i++
+    }
+  }
+  return fields
+}
+
 function parseCSV(filePath: string): { term: string; definition: string }[] {
   const raw = fs.readFileSync(filePath, "utf-8").trim()
-  const lines = raw.split("\n").filter((l) => l.trim())
+  const lines = raw.split(/\r?\n/).filter((l) => l.trim())
 
   // Detect & skip header row
   const firstLine = lines[0].toLowerCase()
-  const isHeader =
-    firstLine.includes("english") ||
-    firstLine.includes("chinese") ||
-    firstLine.includes("pinyin") ||
-    firstLine.includes("term") ||
-    firstLine.includes("definition")
+  const headerWords = ["english", "chinese", "pinyin", "term", "definition", "latin", "front", "back"]
+  const isHeader = headerWords.some((w) => firstLine.includes(w))
 
   const dataLines = isHeader ? lines.slice(1) : lines
   const cards: { term: string; definition: string }[] = []
 
   for (const line of dataLines) {
-    let term: string
-    let definition: string
-    if (line.includes(',"')) {
-      const firstComma = line.indexOf(',"')
-      term = line.slice(0, firstComma).trim().replace(/^"|"$/g, "")
-      definition = line.slice(firstComma + 1).trim().replace(/^"|"$/g, "")
-    } else if (line.startsWith('"')) {
-      const match = line.match(/^"([^"]+)",(.+)$/)
-      if (match) {
-        term = match[1].trim()
-        definition = match[2].trim().replace(/^"|"$/g, "")
-      } else {
-        const parts = line.split(",")
-        term = parts[0].trim().replace(/^"|"$/g, "")
-        definition = parts.slice(1).join(",").trim().replace(/^"|"$/g, "")
-      }
-    } else {
-      const parts = line.split(",")
-      term = parts[0].trim()
-      definition = parts.slice(1).join(",").trim().replace(/^"|"$/g, "")
-    }
+    const fields = parseCSVLine(line)
+    if (fields.length < 2) continue
+
+    const term = fields[0].trim()
+    const definition = fields.slice(1).join(", ").trim()
 
     if (term && definition) {
       cards.push({ term, definition })
@@ -58,6 +70,7 @@ interface SetMeta { title: string; description: string; tags: string[] }
 function getSetMeta(filename: string): SetMeta {
   const map: Record<string, SetMeta> = {
     "latin_1_vocab.csv": { title: "Latin Vocabulary I", description: "First-year Latin vocabulary — nouns, verbs, and adjectives with declension/conjugation info", tags: ["latin", "vocabulary", "language"] },
+    "latin_deponents.csv": { title: "Latin Deponent Verbs", description: "Latin deponent verbs — passive in form, active in meaning — with principal parts", tags: ["latin", "vocabulary", "verbs", "language"] },
     "ap_mandarin_vocabulary_2_columns.csv": { title: "AP Mandarin — Full Vocabulary", description: "Comprehensive AP Chinese vocabulary list with pinyin and English translations", tags: ["mandarin", "chinese", "ap", "vocabulary"] },
     "basic_01_school_education.csv": { title: "Chinese Basics — School & Education", description: "Essential Chinese vocabulary for school and education topics", tags: ["mandarin", "chinese", "school", "basics"] },
     "basic_02_body_health.csv": { title: "Chinese Basics — Body & Health", description: "Essential Chinese vocabulary for body parts and health topics", tags: ["mandarin", "chinese", "health", "basics"] },

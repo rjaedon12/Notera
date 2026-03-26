@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import { parseCSVLine } from "@/lib/csv-parser"
 
 // POST /api/sets/import — import cards from TSV/CSV text
 export async function POST(request: NextRequest) {
@@ -15,19 +16,23 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Title and content are required" }, { status: 400 })
     }
 
-    const delimiter = format === "tsv" ? "\t" : ","
-    const lines = content.split("\n").filter((l: string) => l.trim())
+    const lines = content.split(/\r?\n/).filter((l: string) => l.trim())
     
     // Skip header row if it looks like one
-    const startIdx = lines[0]?.toLowerCase().includes("term") ? 1 : 0
+    const first = lines[0]?.toLowerCase() ?? ""
+    const headerWords = ["term", "definition", "english", "chinese", "pinyin", "latin", "front", "back"]
+    const startIdx = headerWords.some((w) => first.includes(w)) ? 1 : 0
     
     const cards: { term: string; definition: string }[] = []
     for (let i = startIdx; i < lines.length; i++) {
-      const parts = lines[i].split(delimiter)
-      if (parts.length >= 2) {
+      // TSV is simple split; CSV needs quoted-field awareness
+      const fields = format === "tsv"
+        ? lines[i].split("\t")
+        : parseCSVLine(lines[i])
+      if (fields.length >= 2) {
         cards.push({
-          term: parts[0].replace(/^"|"$/g, "").trim(),
-          definition: parts.slice(1).join(delimiter).replace(/^"|"$/g, "").trim(),
+          term: fields[0].trim(),
+          definition: fields.slice(1).join(", ").trim(),
         })
       }
     }

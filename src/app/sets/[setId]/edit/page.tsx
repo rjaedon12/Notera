@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd"
 import { Plus, GripVertical, Trash2, Save, Download, Upload, ArrowLeft } from "lucide-react"
 import toast from "react-hot-toast"
+import { parseCSVContent } from "@/lib/csv-parser"
 
 interface PageProps {
   params: Promise<{ setId: string }>
@@ -189,20 +190,16 @@ export default function EditSetPage({ params }: PageProps) {
     const reader = new FileReader()
     reader.onload = (event) => {
       const text = event.target?.result as string
-      const lines = text.split("\n").filter((line) => line.trim())
       const newCards: EditableCard[] = []
 
-      for (const line of lines) {
-        // Parse CSV (simple parser for quoted values)
-        const match = line.match(/^"?([^"]*)"?\s*[,\t]\s*"?([^"]*)"?$/)
-        if (match) {
-          newCards.push({
-            id: `new-${Date.now()}-${Math.random()}`,
-            term: match[1].replace(/""/g, '"'),
-            definition: match[2].replace(/""/g, '"'),
-            isNew: true,
-          })
-        }
+      const parsed = parseCSVContent(text)
+      for (const card of parsed) {
+        newCards.push({
+          id: `new-${Date.now()}-${Math.random()}`,
+          term: card.term,
+          definition: card.definition,
+          isNew: true,
+        })
       }
 
       if (newCards.length > 0) {
