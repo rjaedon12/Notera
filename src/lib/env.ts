@@ -8,6 +8,8 @@ import { z } from "zod"
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   AUTH_SECRET: z.string().min(1, "AUTH_SECRET is required"),
+  // Admin password recovery encryption key (32 bytes as hex)
+  ADMIN_PASSWORD_ENCRYPTION_KEY: z.string().length(64).optional(),
   // Optional OAuth providers
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),

@@ -96,7 +96,9 @@ model User {
   resetToken        String?
   resetTokenExpiry  DateTime?
 
-  isBanned         Boolean   @default(false)
+  isBanned              Boolean   @default(false)
+  forcePasswordChange   Boolean   @default(false)
+  encryptedPassword     String?   // AES-256-GCM encrypted password for admin recovery
 
   // Relations
   sets             FlashcardSet[]
@@ -129,6 +131,26 @@ model User {
   whiteboardBoards WhiteboardBoard[] @relation("WhiteboardOwner")
   whiteboardMemberships WhiteboardMember[]
   fsrsProgress  UserFlashcardProgress[]
+  adminAuditLogs AdminAuditLog[] @relation("AuditTarget")
+  adminActions   AdminAuditLog[] @relation("AuditAdmin")
+}
+
+// ─── Admin Audit Log ─────────────────────────────────────
+
+model AdminAuditLog {
+  id           String   @id @default(cuid())
+  adminId      String
+  targetUserId String
+  action       String   // PASSWORD_SET | PASSWORD_VIEWED | RESET_LINK_GENERATED
+  ipAddress    String?
+  createdAt    DateTime @default(now())
+
+  admin      User @relation("AuditAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+  targetUser User @relation("AuditTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([targetUserId])
+  @@index([createdAt])
 }
 
 // ─── Flashcards ──────────────────────────────────────────

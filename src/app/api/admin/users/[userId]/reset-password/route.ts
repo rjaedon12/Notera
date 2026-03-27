@@ -62,6 +62,20 @@ export async function POST(
       }
     })
 
+    // Audit log
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      request.headers.get("x-real-ip") ??
+      "unknown"
+    await prisma.adminAuditLog.create({
+      data: {
+        adminId: session.user.id,
+        targetUserId: userId,
+        action: "RESET_LINK_GENERATED",
+        ipAddress: ip,
+      },
+    })
+
     // Return the reset link (token is shown only once)
     // In production, this URL should use the actual domain
     const resetLink = `/reset-password?token=${resetToken}`

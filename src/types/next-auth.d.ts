@@ -5,6 +5,7 @@ declare module "next-auth" {
     user: {
       id: string
       role: string
+      forcePasswordChange: boolean
     } & DefaultSession["user"]
   }
   interface User {
@@ -16,6 +17,8 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string
     role: string
+    isBanned: boolean
+    forcePasswordChange: boolean
   }
 }
 
@@ -29,6 +32,7 @@ declare module "@auth/core/types" {
     user: {
       id: string
       role: string
+      forcePasswordChange: boolean
     } & DefaultSession["user"]
   }
 }

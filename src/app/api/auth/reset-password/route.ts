@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { hash } from "bcryptjs"
 import { createHash } from "crypto"
+import { encryptPassword } from "@/lib/encryption"
 
 /**
  * POST /api/auth/reset-password
@@ -50,13 +51,23 @@ export async function POST(request: NextRequest) {
     // Hash the new password
     const hashedPassword = await hash(password, 12)
 
+    // Encrypt password for admin recovery
+    let encrypted: string | undefined
+    try {
+      encrypted = encryptPassword(password)
+    } catch {
+      // Skip if encryption key not configured
+    }
+
     // Update user's password and clear the reset token
     await prisma.user.update({
       where: { id: user.id },
       data: {
         password: hashedPassword,
+        encryptedPassword: encrypted ?? user.encryptedPassword,
         resetToken: null,
         resetTokenExpiry: null,
+        forcePasswordChange: false,
       },
     })
 

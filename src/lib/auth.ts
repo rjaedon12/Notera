@@ -83,14 +83,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: user.id as string },
-            select: { role: true, isBanned: true },
+            select: { role: true, isBanned: true, forcePasswordChange: true },
           })
           token.role = dbUser?.role ?? "USER"
           token.isBanned = dbUser?.isBanned ?? false
+          token.forcePasswordChange = dbUser?.forcePasswordChange ?? false
         } catch (error) {
           console.error("JWT callback: failed to fetch user role", error)
           token.role = "USER"
           token.isBanned = false
+          token.forcePasswordChange = false
         }
       }
       // Periodically re-check role and ban status (every token refresh)
@@ -99,10 +101,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: token.id as string },
-            select: { role: true, isBanned: true },
+            select: { role: true, isBanned: true, forcePasswordChange: true },
           })
           token.role = dbUser?.role ?? token.role ?? "USER"
           token.isBanned = dbUser?.isBanned ?? false
+          token.forcePasswordChange = dbUser?.forcePasswordChange ?? false
         } catch {
           // Keep existing role/ban status on DB error
         }
@@ -117,6 +120,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user && token.id) {
         session.user.id = token.id as string
         session.user.role = (token.role as string) ?? "USER"
+        session.user.forcePasswordChange = (token.forcePasswordChange as boolean) ?? false
       }
       return session
     },
