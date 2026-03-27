@@ -33,6 +33,30 @@ import {
   RotationalMotionDiagram,
   TorqueDiagram,
 } from "./diagrams/PhysicsDiagrams"
+import {
+  CoulombForceDiagram,
+  ConductorInsulatorDiagram,
+  PointChargeFieldDiagram,
+  DipoleDiagram,
+  ParallelPlateFieldDiagram,
+  GaussianSphereDiagram,
+  GaussianCylinderDiagram,
+  EquipotentialDiagram,
+  PotentialGradientDiagram,
+  CapacitorDielectricDiagram,
+  CapacitorCircuitDiagram,
+  SimpleCircuitDiagram,
+  KirchhoffDiagram,
+  RCCircuitDiagram,
+  LorentzForceDiagram,
+  CyclotronMotionDiagram,
+  WireFieldDiagram,
+  SolenoidDiagram,
+  FaradayDiagram,
+  RLCircuitDiagram,
+  EMWaveDiagram,
+  DisplacementCurrentDiagram,
+} from "./diagrams/ElectricityDiagrams"
 import { LatexRenderer } from "./LatexRenderer"
 
 // Map string names to actual diagram components
@@ -59,6 +83,29 @@ const diagramMap: Record<string, React.ReactNode> = {
   CollisionTypesDiagram: <CollisionTypesDiagram className="w-full h-auto" />,
   RotationalMotionDiagram: <RotationalMotionDiagram className="w-full h-auto" />,
   TorqueDiagram: <TorqueDiagram className="w-full h-auto" />,
+  // Physics — Electricity & Magnetism
+  CoulombForceDiagram: <CoulombForceDiagram className="w-full h-auto" />,
+  ConductorInsulatorDiagram: <ConductorInsulatorDiagram className="w-full h-auto" />,
+  PointChargeFieldDiagram: <PointChargeFieldDiagram className="w-full h-auto" />,
+  DipoleDiagram: <DipoleDiagram className="w-full h-auto" />,
+  ParallelPlateFieldDiagram: <ParallelPlateFieldDiagram className="w-full h-auto" />,
+  GaussianSphereDiagram: <GaussianSphereDiagram className="w-full h-auto" />,
+  GaussianCylinderDiagram: <GaussianCylinderDiagram className="w-full h-auto" />,
+  EquipotentialDiagram: <EquipotentialDiagram className="w-full h-auto" />,
+  PotentialGradientDiagram: <PotentialGradientDiagram className="w-full h-auto" />,
+  CapacitorDielectricDiagram: <CapacitorDielectricDiagram className="w-full h-auto" />,
+  CapacitorCircuitDiagram: <CapacitorCircuitDiagram className="w-full h-auto" />,
+  SimpleCircuitDiagram: <SimpleCircuitDiagram className="w-full h-auto" />,
+  KirchhoffDiagram: <KirchhoffDiagram className="w-full h-auto" />,
+  RCCircuitDiagram: <RCCircuitDiagram className="w-full h-auto" />,
+  LorentzForceDiagram: <LorentzForceDiagram className="w-full h-auto" />,
+  CyclotronMotionDiagram: <CyclotronMotionDiagram className="w-full h-auto" />,
+  WireFieldDiagram: <WireFieldDiagram className="w-full h-auto" />,
+  SolenoidDiagram: <SolenoidDiagram className="w-full h-auto" />,
+  FaradayDiagram: <FaradayDiagram className="w-full h-auto" />,
+  RLCircuitDiagram: <RLCircuitDiagram className="w-full h-auto" />,
+  EMWaveDiagram: <EMWaveDiagram className="w-full h-auto" />,
+  DisplacementCurrentDiagram: <DisplacementCurrentDiagram className="w-full h-auto" />,
 }
 
 interface GuideSectionRendererProps {

@@ -978,9 +978,10 @@ export const chapter10Circles: StudyGuide = {
 import { physicsMechanics } from "./physics-mechanics";
 import { calculus } from "./calculus";
 import { numberTheory } from "./number-theory";
+import { physicsEM } from "./physics-em";
 
 /** All available study guides */
-export const studyGuides: StudyGuide[] = [chapter10Circles, physicsMechanics, calculus, numberTheory];
+export const studyGuides: StudyGuide[] = [chapter10Circles, physicsMechanics, calculus, numberTheory, physicsEM];
 
 /** Lookup a guide by ID */
 export function getStudyGuideById(id: string): StudyGuide | undefined {
