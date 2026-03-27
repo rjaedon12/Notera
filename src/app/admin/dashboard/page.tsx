@@ -224,7 +224,12 @@ export default function AdminDashboard() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["admin-dash", "audit-log"] })
+      queryClient.invalidateQueries({ queryKey: ["admin-dash", "users"] })
       setNewPassword("")
+      // Update selected user state to reflect recoverable status
+      if (selectedPwUser) {
+        setSelectedPwUser({ ...selectedPwUser, hasRecoverablePassword: true })
+      }
       toast.success(data.message || "Password updated")
     },
     onError: (err: Error) => toast.error(err.message),
@@ -248,6 +253,7 @@ export default function AdminDashboard() {
       setViewedPassword(data.password)
       setAdminVerifyPassword("")
       queryClient.invalidateQueries({ queryKey: ["admin-dash", "audit-log"] })
+      queryClient.invalidateQueries({ queryKey: ["admin-dash", "users"] })
     },
     onError: (err: Error) => {
       toast.error(err.message)
@@ -315,6 +321,41 @@ export default function AdminDashboard() {
     a.download = `temporary-passwords-${new Date().toISOString().split("T")[0]}.csv`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  // Individual password initialization
+  const [initLoadingUserId, setInitLoadingUserId] = useState<string | null>(null)
+  const [initResult, setInitResult] = useState<{ email: string; tempPassword: string } | null>(null)
+
+  const handleInitializePassword = async (user: AdminUser) => {
+    if (!confirm(
+      `Generate a temporary password for ${user.email}?\n\nThey will be required to change it on next login.`
+    )) return
+
+    setInitLoadingUserId(user.id)
+    setInitResult(null)
+    try {
+      const res = await fetch("/api/admin/users/backfill-passwords", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed")
+      if (data.affected && data.affected.length > 0) {
+        setInitResult({ email: data.affected[0].email, tempPassword: data.affected[0].tempPassword })
+        setSelectedPwUser({ ...user, hasRecoverablePassword: true })
+        toast.success(`Temporary password generated for ${user.email}`)
+      } else {
+        toast.success("User already has a recoverable password.")
+      }
+      queryClient.invalidateQueries({ queryKey: ["admin-dash", "users"] })
+      queryClient.invalidateQueries({ queryKey: ["admin-dash", "audit-log"] })
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to initialize password")
+    } finally {
+      setInitLoadingUserId(null)
+    }
   }
 
   // Announcement form state
@@ -1210,6 +1251,7 @@ export default function AdminDashboard() {
                         setNewPassword("")
                         setAdminVerifyPassword("")
                         setShowViewedPw(false)
+                        setInitResult(null)
                       }}
                       className={cn(
                         "w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all",
@@ -1264,6 +1306,63 @@ export default function AdminDashboard() {
                         </span>
                       </div>
                     </div>
+
+                    {/* Individual Init: No recoverable password warning */}
+                    {!selectedPwUser.hasRecoverablePassword && (
+                      <div className="rounded-xl border p-4 flex items-start gap-3"
+                        style={{ borderColor: "rgba(239, 68, 68, 0.3)", background: "rgba(239, 68, 68, 0.08)" }}>
+                        <ShieldX className="h-5 w-5 shrink-0 text-red-400 mt-0.5" />
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-red-400 mb-1">No recoverable password</div>
+                          <p className="text-xs text-red-400/80 mb-3">
+                            This user was created before password recovery was enabled. Generate a temporary password to make their account recoverable.
+                          </p>
+                          <button
+                            onClick={() => handleInitializePassword(selectedPwUser)}
+                            disabled={initLoadingUserId === selectedPwUser.id}
+                            className="px-4 py-2 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-50 flex items-center gap-2"
+                            style={{ background: "linear-gradient(135deg, #dc2626, #ef4444)" }}
+                          >
+                            {initLoadingUserId === selectedPwUser.id ? (
+                              <><Loader2 className="h-4 w-4 animate-spin" /> Generating...</>
+                            ) : (
+                              <><RefreshCw className="h-4 w-4" /> Initialize Password</>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Show temp password result for individual init */}
+                    {initResult && selectedPwUser.email === initResult.email && (
+                      <div className="rounded-xl border p-4"
+                        style={{ borderColor: "rgba(34, 197, 94, 0.3)", background: "rgba(34, 197, 94, 0.06)" }}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <CheckCircle2 className="h-4 w-4 text-green-400" />
+                          <span className="text-sm font-semibold text-green-400">Temporary password generated</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 px-3 py-2 rounded-lg text-sm font-mono border"
+                            style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}>
+                            {initResult.tempPassword}
+                          </code>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(initResult.tempPassword)
+                              toast.success("Copied to clipboard")
+                            }}
+                            className="p-2 rounded-lg hover:bg-[var(--glass-fill)] transition-colors"
+                            style={{ color: "var(--muted-foreground)" }}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <p className="text-xs text-yellow-500 mt-2 flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3 shrink-0" />
+                          User will be required to change this password on next login.
+                        </p>
+                      </div>
+                    )}
 
                     {/* Action: Set Password */}
                     <div className="rounded-xl border p-4" style={{ borderColor: "var(--glass-border)" }}>

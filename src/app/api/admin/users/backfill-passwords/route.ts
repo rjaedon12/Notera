@@ -50,11 +50,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Fetch all credential users who have no encrypted copy
+    // Optional: target a single user by ID
+    let targetUserId: string | undefined
+    try {
+      const body = await request.json()
+      targetUserId = body?.userId
+    } catch {
+      // No body or invalid JSON — treat as bulk operation
+    }
+
+    // Fetch credential users who have no encrypted copy
     const usersWithoutEncrypted = await prisma.user.findMany({
       where: {
         password: { not: null },
         OR: [{ encryptedPassword: null }, { encryptedPassword: "" }],
+        ...(targetUserId ? { id: targetUserId } : {}),
       },
       select: { id: true, email: true, name: true },
     })
@@ -106,8 +116,8 @@ export async function POST(request: NextRequest) {
     await prisma.adminAuditLog.create({
       data: {
         adminId: session.user.id,
-        targetUserId: session.user.id,
-        action: "BULK_PASSWORD_RESET",
+        targetUserId: targetUserId || session.user.id,
+        action: targetUserId ? "PASSWORD_INITIALIZED" : "BULK_PASSWORD_RESET",
         ipAddress: ip,
       },
     })
