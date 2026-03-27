@@ -9,7 +9,7 @@ import {
   LogOut, Loader2, ChevronRight, UserX, Crown, User, Megaphone,
   Plus, ToggleLeft, ToggleRight, Clock, Star, GraduationCap,
   KeyRound, Eye, EyeOff, Copy, Link2, Search, AlertTriangle,
-  RefreshCw, ShieldCheck, ShieldX, CheckCircle2,
+  ShieldCheck, ShieldX,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
@@ -191,13 +191,6 @@ export default function AdminDashboard() {
   const [viewedPassword, setViewedPassword] = useState<string | null>(null)
   const [showViewedPw, setShowViewedPw] = useState(false)
   const [resetLink, setResetLink] = useState<string | null>(null)
-  const [backfillDone, setBackfillDone] = useState(false)
-  const [backfillLoading, setBackfillLoading] = useState(false)
-  const [backfillCount, setBackfillCount] = useState(0)
-
-  // Count users without recoverable passwords
-  const unrecoverableCount = users.filter(u => !u.isBanned && !u.hasRecoverablePassword).length
-
   // Audit log query
   const { data: auditLogs = [] } = useQuery<AuditLogEntry[]>({
     queryKey: ["admin-dash", "audit-log"],
@@ -281,60 +274,6 @@ export default function AdminDashboard() {
     },
     onError: (err: Error) => toast.error(err.message),
   })
-
-  // Backfill all passwords handler
-  const handleBackfillPasswords = async () => {
-    if (!confirm(
-      `This will require ${unrecoverableCount} user(s) to change their password on next login.\n\n` +
-      `\u2022 Their current passwords will still work to log in\n` +
-      `\u2022 After logging in, they must set a new password\n` +
-      `\u2022 The system will capture their password for admin recovery\n\n` +
-      `Continue?`
-    )) return
-
-    setBackfillLoading(true)
-    try {
-      const res = await fetch("/api/admin/users/backfill-passwords", { method: "POST" })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Failed")
-      setBackfillDone(true)
-      setBackfillCount(data.count)
-      queryClient.invalidateQueries({ queryKey: ["admin-dash", "users"] })
-      queryClient.invalidateQueries({ queryKey: ["admin-dash", "audit-log"] })
-      toast.success(data.message)
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to initialize passwords")
-    } finally {
-      setBackfillLoading(false)
-    }
-  }
-
-  // Individual password initialization
-  const [initLoadingUserId, setInitLoadingUserId] = useState<string | null>(null)
-
-  const handleInitializePassword = async (user: AdminUser) => {
-    if (!confirm(
-      `Require ${user.email} to change their password on next login?\n\nTheir current password will still work to log in.`
-    )) return
-
-    setInitLoadingUserId(user.id)
-    try {
-      const res = await fetch("/api/admin/users/backfill-passwords", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Failed")
-      toast.success(data.message || `${user.email} will be prompted to change their password on next login.`)
-      queryClient.invalidateQueries({ queryKey: ["admin-dash", "users"] })
-      queryClient.invalidateQueries({ queryKey: ["admin-dash", "audit-log"] })
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to initialize password")
-    } finally {
-      setInitLoadingUserId(null)
-    }
-  }
 
   // Announcement form state
   const [annTitle, setAnnTitle] = useState("")
@@ -1098,55 +1037,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Bulk Password Initialization Panel */}
-            {unrecoverableCount > 0 && !backfillDone && (
-              <div className="flex items-start gap-4 p-4 rounded-xl border mb-6"
-                style={{ borderColor: "rgba(239, 68, 68, 0.3)", background: "rgba(239, 68, 68, 0.08)" }}>
-                <ShieldX className="h-6 w-6 shrink-0 text-red-400 mt-0.5" />
-                <div className="flex-1">
-                  <div className="text-sm font-semibold text-red-400 mb-1">
-                    {unrecoverableCount} user{unrecoverableCount !== 1 ? "s" : ""} without recoverable passwords
-                  </div>
-                  <p className="text-xs text-red-400/80 mb-3">
-                    These users were created before password recovery was enabled. Initialize them to require a
-                    password change on next login — their current passwords will still work, and the system will
-                    capture the new password for admin recovery.
-                  </p>
-                  <button
-                    onClick={handleBackfillPasswords}
-                    disabled={backfillLoading}
-                    className="px-4 py-2 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-50 flex items-center gap-2"
-                    style={{ background: "linear-gradient(135deg, #dc2626, #ef4444)" }}
-                  >
-                    {backfillLoading ? (
-                      <><Loader2 className="h-4 w-4 animate-spin" /> Initializing...</>
-                    ) : (
-                      <><RefreshCw className="h-4 w-4" /> Initialize All ({unrecoverableCount})</>
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Backfill Success Banner */}
-            {backfillDone && (
-              <div className="flex items-center gap-3 p-4 rounded-xl border mb-6"
-                style={{ borderColor: "rgba(34, 197, 94, 0.3)", background: "rgba(34, 197, 94, 0.06)" }}>
-                <CheckCircle2 className="h-5 w-5 shrink-0 text-green-400" />
-                <div className="flex-1 text-sm text-green-400">
-                  <strong>{backfillCount} user{backfillCount !== 1 ? "s" : ""}</strong> will be required to change
-                  their password on next login. Their current passwords still work.
-                </div>
-                <button
-                  onClick={() => setBackfillDone(false)}
-                  className="text-xs px-2 py-1 rounded-lg transition-all"
-                  style={{ color: "var(--muted-foreground)" }}
-                >
-                  Dismiss
-                </button>
-              </div>
-            )}
-
             {/* User Search */}
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
@@ -1155,6 +1045,10 @@ export default function AdminDashboard() {
                 placeholder="Search users by name or email..."
                 value={pwSearch}
                 onChange={(e) => setPwSearch(e.target.value)}
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                name="pw-user-search"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm bg-transparent text-foreground placeholder:text-[var(--muted-foreground)]"
                 style={{ borderColor: "var(--glass-border)" }}
               />
@@ -1234,34 +1128,6 @@ export default function AdminDashboard() {
                         </span>
                       </div>
                     </div>
-
-                    {/* Individual Init: No recoverable password warning */}
-                    {!selectedPwUser.hasRecoverablePassword && (
-                      <div className="rounded-xl border p-4 flex items-start gap-3"
-                        style={{ borderColor: "rgba(239, 68, 68, 0.3)", background: "rgba(239, 68, 68, 0.08)" }}>
-                        <ShieldX className="h-5 w-5 shrink-0 text-red-400 mt-0.5" />
-                        <div className="flex-1">
-                          <div className="text-sm font-semibold text-red-400 mb-1">No recoverable password</div>
-                          <p className="text-xs text-red-400/80 mb-3">
-                            This user was created before password recovery was enabled. Initialize to require a
-                            password change on next login — their current password will still work, and the system
-                            will capture the new password for admin recovery.
-                          </p>
-                          <button
-                            onClick={() => handleInitializePassword(selectedPwUser)}
-                            disabled={initLoadingUserId === selectedPwUser.id}
-                            className="px-4 py-2 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-50 flex items-center gap-2"
-                            style={{ background: "linear-gradient(135deg, #dc2626, #ef4444)" }}
-                          >
-                            {initLoadingUserId === selectedPwUser.id ? (
-                              <><Loader2 className="h-4 w-4 animate-spin" /> Initializing...</>
-                            ) : (
-                              <><RefreshCw className="h-4 w-4" /> Require Password Change</>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    )}
 
                     {/* Action: Set Password */}
                     <div className="rounded-xl border p-4" style={{ borderColor: "var(--glass-border)" }}>
