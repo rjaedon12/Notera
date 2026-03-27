@@ -9,7 +9,7 @@ import {
   LogOut, Loader2, ChevronRight, UserX, Crown, User, Megaphone,
   Plus, ToggleLeft, ToggleRight, Clock, Star, GraduationCap,
   KeyRound, Eye, EyeOff, Copy, Link2, Search, AlertTriangle,
-  RefreshCw, Download, ShieldCheck, ShieldX, CheckCircle2,
+  RefreshCw, ShieldCheck, ShieldX, CheckCircle2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
@@ -191,8 +191,9 @@ export default function AdminDashboard() {
   const [viewedPassword, setViewedPassword] = useState<string | null>(null)
   const [showViewedPw, setShowViewedPw] = useState(false)
   const [resetLink, setResetLink] = useState<string | null>(null)
-  const [backfillResults, setBackfillResults] = useState<{ id: string; email: string; name: string | null; tempPassword: string }[] | null>(null)
+  const [backfillDone, setBackfillDone] = useState(false)
   const [backfillLoading, setBackfillLoading] = useState(false)
+  const [backfillCount, setBackfillCount] = useState(0)
 
   // Count users without recoverable passwords
   const unrecoverableCount = users.filter(u => !u.isBanned && !u.hasRecoverablePassword).length
@@ -284,10 +285,10 @@ export default function AdminDashboard() {
   // Backfill all passwords handler
   const handleBackfillPasswords = async () => {
     if (!confirm(
-      `This will generate temporary passwords for ${unrecoverableCount} user(s) without recoverable passwords.\n\n` +
-      `\u2022 Each user will get a new temporary password\n` +
-      `\u2022 They will be required to change it on next login\n` +
-      `\u2022 You will see all temporary passwords to distribute\n\n` +
+      `This will require ${unrecoverableCount} user(s) to change their password on next login.\n\n` +
+      `\u2022 Their current passwords will still work to log in\n` +
+      `\u2022 After logging in, they must set a new password\n` +
+      `\u2022 The system will capture their password for admin recovery\n\n` +
       `Continue?`
     )) return
 
@@ -296,44 +297,27 @@ export default function AdminDashboard() {
       const res = await fetch("/api/admin/users/backfill-passwords", { method: "POST" })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed")
-      setBackfillResults(data.affected)
+      setBackfillDone(true)
+      setBackfillCount(data.count)
       queryClient.invalidateQueries({ queryKey: ["admin-dash", "users"] })
       queryClient.invalidateQueries({ queryKey: ["admin-dash", "audit-log"] })
       toast.success(data.message)
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to backfill passwords")
+      toast.error(err instanceof Error ? err.message : "Failed to initialize passwords")
     } finally {
       setBackfillLoading(false)
     }
   }
 
-  // Download backfill results as CSV
-  const downloadBackfillCSV = () => {
-    if (!backfillResults) return
-    const header = "Email,Name,Temporary Password\n"
-    const rows = backfillResults
-      .map(r => `"${r.email}","${r.name || ""}","${r.tempPassword}"`)
-      .join("\n")
-    const blob = new Blob([header + rows], { type: "text/csv" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `temporary-passwords-${new Date().toISOString().split("T")[0]}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
   // Individual password initialization
   const [initLoadingUserId, setInitLoadingUserId] = useState<string | null>(null)
-  const [initResult, setInitResult] = useState<{ email: string; tempPassword: string } | null>(null)
 
   const handleInitializePassword = async (user: AdminUser) => {
     if (!confirm(
-      `Generate a temporary password for ${user.email}?\n\nThey will be required to change it on next login.`
+      `Require ${user.email} to change their password on next login?\n\nTheir current password will still work to log in.`
     )) return
 
     setInitLoadingUserId(user.id)
-    setInitResult(null)
     try {
       const res = await fetch("/api/admin/users/backfill-passwords", {
         method: "POST",
@@ -342,13 +326,7 @@ export default function AdminDashboard() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed")
-      if (data.affected && data.affected.length > 0) {
-        setInitResult({ email: data.affected[0].email, tempPassword: data.affected[0].tempPassword })
-        setSelectedPwUser({ ...user, hasRecoverablePassword: true })
-        toast.success(`Temporary password generated for ${user.email}`)
-      } else {
-        toast.success("User already has a recoverable password.")
-      }
+      toast.success(data.message || `${user.email} will be prompted to change their password on next login.`)
       queryClient.invalidateQueries({ queryKey: ["admin-dash", "users"] })
       queryClient.invalidateQueries({ queryKey: ["admin-dash", "audit-log"] })
     } catch (err: unknown) {
@@ -1121,7 +1099,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Bulk Password Initialization Panel */}
-            {unrecoverableCount > 0 && !backfillResults && (
+            {unrecoverableCount > 0 && !backfillDone && (
               <div className="flex items-start gap-4 p-4 rounded-xl border mb-6"
                 style={{ borderColor: "rgba(239, 68, 68, 0.3)", background: "rgba(239, 68, 68, 0.08)" }}>
                 <ShieldX className="h-6 w-6 shrink-0 text-red-400 mt-0.5" />
@@ -1130,8 +1108,9 @@ export default function AdminDashboard() {
                     {unrecoverableCount} user{unrecoverableCount !== 1 ? "s" : ""} without recoverable passwords
                   </div>
                   <p className="text-xs text-red-400/80 mb-3">
-                    These users were created before password recovery was enabled. Click below to generate
-                    temporary passwords for all of them. Each user will be required to change their password on next login.
+                    These users were created before password recovery was enabled. Initialize them to require a
+                    password change on next login — their current passwords will still work, and the system will
+                    capture the new password for admin recovery.
                   </p>
                   <button
                     onClick={handleBackfillPasswords}
@@ -1140,81 +1119,31 @@ export default function AdminDashboard() {
                     style={{ background: "linear-gradient(135deg, #dc2626, #ef4444)" }}
                   >
                     {backfillLoading ? (
-                      <><Loader2 className="h-4 w-4 animate-spin" /> Generating...</>
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Initializing...</>
                     ) : (
-                      <><RefreshCw className="h-4 w-4" /> Initialize All Passwords ({unrecoverableCount})</>
+                      <><RefreshCw className="h-4 w-4" /> Initialize All ({unrecoverableCount})</>
                     )}
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Backfill Results Panel */}
-            {backfillResults && backfillResults.length > 0 && (
-              <div className="rounded-xl border mb-6 overflow-hidden"
+            {/* Backfill Success Banner */}
+            {backfillDone && (
+              <div className="flex items-center gap-3 p-4 rounded-xl border mb-6"
                 style={{ borderColor: "rgba(34, 197, 94, 0.3)", background: "rgba(34, 197, 94, 0.06)" }}>
-                <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: "rgba(34, 197, 94, 0.2)" }}>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-green-400" />
-                    <span className="text-sm font-semibold text-green-400">
-                      Temporary passwords generated for {backfillResults.length} user(s)
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={downloadBackfillCSV}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium text-white flex items-center gap-1.5 transition-all"
-                      style={{ background: "linear-gradient(135deg, #1D4ED8, #60A5FA)" }}
-                    >
-                      <Download className="h-3.5 w-3.5" /> Download CSV
-                    </button>
-                    <button
-                      onClick={() => setBackfillResults(null)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                      style={{ color: "var(--muted-foreground)" }}
-                    >
-                      Dismiss
-                    </button>
-                  </div>
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-green-400" />
+                <div className="flex-1 text-sm text-green-400">
+                  <strong>{backfillCount} user{backfillCount !== 1 ? "s" : ""}</strong> will be required to change
+                  their password on next login. Their current passwords still work.
                 </div>
-                <div className="max-h-[300px] overflow-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr style={{ background: "var(--glass-fill)" }}>
-                        <th className="text-left px-4 py-2 font-medium" style={{ color: "var(--muted-foreground)" }}>User</th>
-                        <th className="text-left px-4 py-2 font-medium" style={{ color: "var(--muted-foreground)" }}>Email</th>
-                        <th className="text-left px-4 py-2 font-medium" style={{ color: "var(--muted-foreground)" }}>Temporary Password</th>
-                        <th className="text-left px-4 py-2 font-medium" style={{ color: "var(--muted-foreground)" }}></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {backfillResults.map((r) => (
-                        <tr key={r.id} className="border-t" style={{ borderColor: "var(--glass-border)" }}>
-                          <td className="px-4 py-2 text-foreground">{r.name || "Unnamed"}</td>
-                          <td className="px-4 py-2" style={{ color: "var(--muted-foreground)" }}>{r.email}</td>
-                          <td className="px-4 py-2 font-mono text-xs text-foreground">{r.tempPassword}</td>
-                          <td className="px-4 py-2">
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(r.tempPassword)
-                                toast.success(`Copied password for ${r.email}`)
-                              }}
-                              className="p-1 rounded hover:bg-[var(--glass-fill)] transition-colors"
-                              style={{ color: "var(--muted-foreground)" }}
-                            >
-                              <Copy className="h-3.5 w-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="p-3 border-t text-xs text-yellow-500 flex items-center gap-2"
-                  style={{ borderColor: "rgba(34, 197, 94, 0.2)" }}>
-                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                  Save or download these passwords now. They will not be shown again (but you can always view them from the password manager).
-                </div>
+                <button
+                  onClick={() => setBackfillDone(false)}
+                  className="text-xs px-2 py-1 rounded-lg transition-all"
+                  style={{ color: "var(--muted-foreground)" }}
+                >
+                  Dismiss
+                </button>
               </div>
             )}
 
@@ -1251,7 +1180,6 @@ export default function AdminDashboard() {
                         setNewPassword("")
                         setAdminVerifyPassword("")
                         setShowViewedPw(false)
-                        setInitResult(null)
                       }}
                       className={cn(
                         "w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all",
@@ -1315,7 +1243,9 @@ export default function AdminDashboard() {
                         <div className="flex-1">
                           <div className="text-sm font-semibold text-red-400 mb-1">No recoverable password</div>
                           <p className="text-xs text-red-400/80 mb-3">
-                            This user was created before password recovery was enabled. Generate a temporary password to make their account recoverable.
+                            This user was created before password recovery was enabled. Initialize to require a
+                            password change on next login — their current password will still work, and the system
+                            will capture the new password for admin recovery.
                           </p>
                           <button
                             onClick={() => handleInitializePassword(selectedPwUser)}
@@ -1324,43 +1254,12 @@ export default function AdminDashboard() {
                             style={{ background: "linear-gradient(135deg, #dc2626, #ef4444)" }}
                           >
                             {initLoadingUserId === selectedPwUser.id ? (
-                              <><Loader2 className="h-4 w-4 animate-spin" /> Generating...</>
+                              <><Loader2 className="h-4 w-4 animate-spin" /> Initializing...</>
                             ) : (
-                              <><RefreshCw className="h-4 w-4" /> Initialize Password</>
+                              <><RefreshCw className="h-4 w-4" /> Require Password Change</>
                             )}
                           </button>
                         </div>
-                      </div>
-                    )}
-
-                    {/* Show temp password result for individual init */}
-                    {initResult && selectedPwUser.email === initResult.email && (
-                      <div className="rounded-xl border p-4"
-                        style={{ borderColor: "rgba(34, 197, 94, 0.3)", background: "rgba(34, 197, 94, 0.06)" }}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-400" />
-                          <span className="text-sm font-semibold text-green-400">Temporary password generated</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <code className="flex-1 px-3 py-2 rounded-lg text-sm font-mono border"
-                            style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}>
-                            {initResult.tempPassword}
-                          </code>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(initResult.tempPassword)
-                              toast.success("Copied to clipboard")
-                            }}
-                            className="p-2 rounded-lg hover:bg-[var(--glass-fill)] transition-colors"
-                            style={{ color: "var(--muted-foreground)" }}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </button>
-                        </div>
-                        <p className="text-xs text-yellow-500 mt-2 flex items-center gap-1">
-                          <AlertTriangle className="h-3 w-3 shrink-0" />
-                          User will be required to change this password on next login.
-                        </p>
                       </div>
                     )}
 

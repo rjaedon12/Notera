@@ -1,53 +1,25 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import bcrypt from "bcryptjs"
-import { encryptPassword } from "@/lib/encryption"
-import { randomBytes } from "crypto"
 
 /**
  * POST /api/admin/users/backfill-passwords
  *
- * Generates secure temporary passwords for ALL users who do not yet
- * have an encrypted (recoverable) password stored. Each user gets:
- *   • A new bcrypt hash (for authentication)
- *   • An AES-256-GCM encrypted copy (for admin recovery)
- *   • forcePasswordChange = true (so they must reset on next login)
+ * Flags users without recoverable passwords so they are forced to
+ * change their password on next login.  The user keeps their existing
+ * password — when they log in the auth callback will capture and
+ * encrypt the plaintext automatically, and after the forced password
+ * change the new password is also encrypted.
  *
- * Returns the list of affected users and their temporary passwords
- * so the admin can distribute them.
+ * Accepts optional { userId } in the body for single-user init.
+ * Without a body it processes ALL unrecoverable users (bulk).
  */
-
-function generateTempPassword(): string {
-  // 12-char alphanumeric — easy to share, ambiguous chars removed
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"
-  const bytes = randomBytes(12)
-  let pw = ""
-  for (let i = 0; i < 12; i++) {
-    pw += chars[bytes[i] % chars.length]
-  }
-  return pw
-}
 
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
     if (!session?.user || session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
-    }
-
-    // Verify encryption is configured before proceeding
-    try {
-      encryptPassword("test")
-    } catch (err) {
-      console.error("Encryption key not configured:", err)
-      return NextResponse.json(
-        {
-          error:
-            "ADMIN_PASSWORD_ENCRYPTION_KEY is not configured. Add this environment variable before using this feature.",
-        },
-        { status: 500 }
-      )
     }
 
     // Optional: target a single user by ID
@@ -60,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch credential users who have no encrypted copy
-    const usersWithoutEncrypted = await prisma.user.findMany({
+    const usersToInit = await prisma.user.findMany({
       where: {
         password: { not: null },
         OR: [{ encryptedPassword: null }, { encryptedPassword: "" }],
@@ -69,43 +41,23 @@ export async function POST(request: NextRequest) {
       select: { id: true, email: true, name: true },
     })
 
-    if (usersWithoutEncrypted.length === 0) {
+    if (usersToInit.length === 0) {
       return NextResponse.json({
         success: true,
-        message: "All users already have recoverable passwords.",
+        message: targetUserId
+          ? "This user already has a recoverable password."
+          : "All users already have recoverable passwords.",
         affected: [],
         count: 0,
       })
     }
 
-    const affected: {
-      id: string
-      email: string
-      name: string | null
-      tempPassword: string
-    }[] = []
-
-    for (const user of usersWithoutEncrypted) {
-      const tempPassword = generateTempPassword()
-      const hash = await bcrypt.hash(tempPassword, 12)
-      const encrypted = encryptPassword(tempPassword)
-
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          password: hash,
-          encryptedPassword: encrypted,
-          forcePasswordChange: true,
-        },
-      })
-
-      affected.push({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        tempPassword,
-      })
-    }
+    // Flag each user to force password change on next login
+    const affectedIds = usersToInit.map(u => u.id)
+    await prisma.user.updateMany({
+      where: { id: { in: affectedIds } },
+      data: { forcePasswordChange: true },
+    })
 
     // Audit log
     const ip =
@@ -117,14 +69,22 @@ export async function POST(request: NextRequest) {
       data: {
         adminId: session.user.id,
         targetUserId: targetUserId || session.user.id,
-        action: targetUserId ? "PASSWORD_INITIALIZED" : "BULK_PASSWORD_RESET",
+        action: targetUserId ? "PASSWORD_INITIALIZED" : "BULK_PASSWORD_INIT",
         ipAddress: ip,
       },
     })
 
+    const affected = usersToInit.map(u => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+    }))
+
     return NextResponse.json({
       success: true,
-      message: `Generated temporary passwords for ${affected.length} user(s). They will be required to change their password on next login.`,
+      message: targetUserId
+        ? `${usersToInit[0].email} will be required to change their password on next login. Their current password still works.`
+        : `${affected.length} user(s) will be required to change their password on next login. Their current passwords still work.`,
       affected,
       count: affected.length,
     })
