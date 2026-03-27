@@ -69,7 +69,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "No recoverable password stored for this user. They may use OAuth or their password was set before this feature was enabled.",
+            "No recoverable password stored yet. The user needs to log in once for their password to be captured, or you can set a new password for them using the \"Set New Password\" option above.",
         },
         { status: 404 }
       )

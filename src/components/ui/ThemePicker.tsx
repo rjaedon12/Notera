@@ -28,12 +28,11 @@ export function ThemePicker() {
               outlineOffset: '1px',
             }}
           >
-            {/* 3-color swatch strip */}
-            <div className="flex w-full h-5 rounded-md overflow-hidden border border-[var(--glass-border)]">
-              <div className="flex-1" style={{ background: variant['--bg-base'] }} />
-              <div className="flex-1" style={{ background: variant['--accent-color'] }} />
-              <div className="flex-1" style={{ background: variant['--text-primary'] }} />
-            </div>
+            {/* Gradient preview card */}
+            <div
+              className="w-full h-5 rounded-md border border-[var(--glass-border)]"
+              style={{ background: `linear-gradient(135deg, ${t.gradient.from}, ${t.gradient.to})` }}
+            />
 
             {/* Label */}
             <span

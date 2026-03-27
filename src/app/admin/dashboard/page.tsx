@@ -1199,11 +1199,20 @@ export default function AdminDashboard() {
                           <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
                             Enter your admin password to verify your identity before viewing.
                           </p>
+                          {/* Hidden dummy fields to absorb browser autofill */}
+                          <input type="text" name="prevent_autofill" id="prevent_autofill" style={{ display: 'none' }} tabIndex={-1} />
+                          <input type="password" name="prevent_autofill_pw" id="prevent_autofill_pw" style={{ display: 'none' }} tabIndex={-1} />
                           <input
                             type="password"
                             placeholder="Enter YOUR admin password"
                             value={adminVerifyPassword}
                             onChange={(e) => setAdminVerifyPassword(e.target.value)}
+                            name="admin-verify-pw"
+                            id="admin-verify-pw"
+                            autoComplete="new-password"
+                            autoCorrect="off"
+                            autoCapitalize="off"
+                            spellCheck={false}
                             className="w-full px-3 py-2 rounded-lg border text-sm bg-transparent text-foreground placeholder:text-[var(--muted-foreground)]"
                             style={{ borderColor: "var(--glass-border)" }}
                           />

@@ -39,8 +39,8 @@ export async function POST(request: NextRequest) {
     let encrypted: string | undefined
     try {
       encrypted = encryptPassword(password)
-    } catch {
-      // Skip if encryption key not configured
+    } catch (err) {
+      console.error("Failed to encrypt password for admin recovery:", err)
     }
 
     await prisma.user.update({

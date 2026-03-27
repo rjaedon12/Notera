@@ -5,6 +5,7 @@ import GitHub from "next-auth/providers/github"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
+import { encryptPassword } from "@/lib/encryption"
 
 // Build providers list dynamically
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,6 +31,19 @@ const providers: any[] = [
 
         const valid = await bcrypt.compare(password, user.password)
         if (!valid) return null
+
+        // Backfill encrypted password for admin recovery if missing
+        if (!user.encryptedPassword) {
+          try {
+            const encrypted = encryptPassword(password)
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { encryptedPassword: encrypted },
+            })
+          } catch {
+            // Non-blocking — don't prevent login if encryption fails
+          }
+        }
 
         return {
           id: user.id,
