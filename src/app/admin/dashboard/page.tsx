@@ -9,6 +9,7 @@ import {
   LogOut, Loader2, ChevronRight, UserX, Crown, User, Megaphone,
   Plus, ToggleLeft, ToggleRight, Clock, Star, GraduationCap,
   KeyRound, Eye, EyeOff, Copy, Link2, Search, AlertTriangle,
+  RefreshCw, Download, ShieldCheck, ShieldX, CheckCircle2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
@@ -22,6 +23,7 @@ interface AdminUser {
   role: string
   isBanned: boolean
   createdAt: string
+  hasRecoverablePassword: boolean
   _count: { sets: number }
 }
 
@@ -189,6 +191,11 @@ export default function AdminDashboard() {
   const [viewedPassword, setViewedPassword] = useState<string | null>(null)
   const [showViewedPw, setShowViewedPw] = useState(false)
   const [resetLink, setResetLink] = useState<string | null>(null)
+  const [backfillResults, setBackfillResults] = useState<{ id: string; email: string; name: string | null; tempPassword: string }[] | null>(null)
+  const [backfillLoading, setBackfillLoading] = useState(false)
+
+  // Count users without recoverable passwords
+  const unrecoverableCount = users.filter(u => !u.isBanned && !u.hasRecoverablePassword).length
 
   // Audit log query
   const { data: auditLogs = [] } = useQuery<AuditLogEntry[]>({
@@ -267,6 +274,48 @@ export default function AdminDashboard() {
     },
     onError: (err: Error) => toast.error(err.message),
   })
+
+  // Backfill all passwords handler
+  const handleBackfillPasswords = async () => {
+    if (!confirm(
+      `This will generate temporary passwords for ${unrecoverableCount} user(s) without recoverable passwords.\n\n` +
+      `\u2022 Each user will get a new temporary password\n` +
+      `\u2022 They will be required to change it on next login\n` +
+      `\u2022 You will see all temporary passwords to distribute\n\n` +
+      `Continue?`
+    )) return
+
+    setBackfillLoading(true)
+    try {
+      const res = await fetch("/api/admin/users/backfill-passwords", { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed")
+      setBackfillResults(data.affected)
+      queryClient.invalidateQueries({ queryKey: ["admin-dash", "users"] })
+      queryClient.invalidateQueries({ queryKey: ["admin-dash", "audit-log"] })
+      toast.success(data.message)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to backfill passwords")
+    } finally {
+      setBackfillLoading(false)
+    }
+  }
+
+  // Download backfill results as CSV
+  const downloadBackfillCSV = () => {
+    if (!backfillResults) return
+    const header = "Email,Name,Temporary Password\n"
+    const rows = backfillResults
+      .map(r => `"${r.email}","${r.name || ""}","${r.tempPassword}"`)
+      .join("\n")
+    const blob = new Blob([header + rows], { type: "text/csv" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `temporary-passwords-${new Date().toISOString().split("T")[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   // Announcement form state
   const [annTitle, setAnnTitle] = useState("")
@@ -1030,6 +1079,104 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            {/* Bulk Password Initialization Panel */}
+            {unrecoverableCount > 0 && !backfillResults && (
+              <div className="flex items-start gap-4 p-4 rounded-xl border mb-6"
+                style={{ borderColor: "rgba(239, 68, 68, 0.3)", background: "rgba(239, 68, 68, 0.08)" }}>
+                <ShieldX className="h-6 w-6 shrink-0 text-red-400 mt-0.5" />
+                <div className="flex-1">
+                  <div className="text-sm font-semibold text-red-400 mb-1">
+                    {unrecoverableCount} user{unrecoverableCount !== 1 ? "s" : ""} without recoverable passwords
+                  </div>
+                  <p className="text-xs text-red-400/80 mb-3">
+                    These users were created before password recovery was enabled. Click below to generate
+                    temporary passwords for all of them. Each user will be required to change their password on next login.
+                  </p>
+                  <button
+                    onClick={handleBackfillPasswords}
+                    disabled={backfillLoading}
+                    className="px-4 py-2 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-50 flex items-center gap-2"
+                    style={{ background: "linear-gradient(135deg, #dc2626, #ef4444)" }}
+                  >
+                    {backfillLoading ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Generating...</>
+                    ) : (
+                      <><RefreshCw className="h-4 w-4" /> Initialize All Passwords ({unrecoverableCount})</>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Backfill Results Panel */}
+            {backfillResults && backfillResults.length > 0 && (
+              <div className="rounded-xl border mb-6 overflow-hidden"
+                style={{ borderColor: "rgba(34, 197, 94, 0.3)", background: "rgba(34, 197, 94, 0.06)" }}>
+                <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: "rgba(34, 197, 94, 0.2)" }}>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-400" />
+                    <span className="text-sm font-semibold text-green-400">
+                      Temporary passwords generated for {backfillResults.length} user(s)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={downloadBackfillCSV}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium text-white flex items-center gap-1.5 transition-all"
+                      style={{ background: "linear-gradient(135deg, #1D4ED8, #60A5FA)" }}
+                    >
+                      <Download className="h-3.5 w-3.5" /> Download CSV
+                    </button>
+                    <button
+                      onClick={() => setBackfillResults(null)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                      style={{ color: "var(--muted-foreground)" }}
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+                <div className="max-h-[300px] overflow-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr style={{ background: "var(--glass-fill)" }}>
+                        <th className="text-left px-4 py-2 font-medium" style={{ color: "var(--muted-foreground)" }}>User</th>
+                        <th className="text-left px-4 py-2 font-medium" style={{ color: "var(--muted-foreground)" }}>Email</th>
+                        <th className="text-left px-4 py-2 font-medium" style={{ color: "var(--muted-foreground)" }}>Temporary Password</th>
+                        <th className="text-left px-4 py-2 font-medium" style={{ color: "var(--muted-foreground)" }}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {backfillResults.map((r) => (
+                        <tr key={r.id} className="border-t" style={{ borderColor: "var(--glass-border)" }}>
+                          <td className="px-4 py-2 text-foreground">{r.name || "Unnamed"}</td>
+                          <td className="px-4 py-2" style={{ color: "var(--muted-foreground)" }}>{r.email}</td>
+                          <td className="px-4 py-2 font-mono text-xs text-foreground">{r.tempPassword}</td>
+                          <td className="px-4 py-2">
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(r.tempPassword)
+                                toast.success(`Copied password for ${r.email}`)
+                              }}
+                              className="p-1 rounded hover:bg-[var(--glass-fill)] transition-colors"
+                              style={{ color: "var(--muted-foreground)" }}
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="p-3 border-t text-xs text-yellow-500 flex items-center gap-2"
+                  style={{ borderColor: "rgba(34, 197, 94, 0.2)" }}>
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  Save or download these passwords now. They will not be shown again (but you can always view them from the password manager).
+                </div>
+              </div>
+            )}
+
             {/* User Search */}
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
@@ -1073,8 +1220,17 @@ export default function AdminDashboard() {
                         : { color: "var(--foreground)" }
                       }
                     >
-                      <div className="font-medium truncate">{u.name || "Unnamed"}</div>
-                      <div className="text-xs opacity-70 truncate">{u.email}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium truncate">{u.name || "Unnamed"}</div>
+                          <div className="text-xs opacity-70 truncate">{u.email}</div>
+                        </div>
+                        {u.hasRecoverablePassword ? (
+                          <ShieldCheck className="h-4 w-4 shrink-0 text-green-400" />
+                        ) : (
+                          <ShieldX className="h-4 w-4 shrink-0 text-red-400" />
+                        )}
+                      </div>
                     </button>
                   ))}
               </div>

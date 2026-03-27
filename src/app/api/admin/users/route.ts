@@ -17,6 +17,7 @@ export async function GET() {
         role: true,
         isBanned: true,
         createdAt: true,
+        encryptedPassword: true,
         _count: {
           select: { sets: true }
         }
@@ -24,7 +25,13 @@ export async function GET() {
       orderBy: { createdAt: "desc" }
     })
 
-    return NextResponse.json(users)
+    // Map to include hasRecoverablePassword flag — never expose the actual encrypted value
+    const mapped = users.map(({ encryptedPassword, ...rest }) => ({
+      ...rest,
+      hasRecoverablePassword: !!encryptedPassword,
+    }))
+
+    return NextResponse.json(mapped)
   } catch (error) {
     console.error("Error fetching users:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

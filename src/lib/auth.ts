@@ -40,8 +40,8 @@ const providers: any[] = [
               where: { id: user.id },
               data: { encryptedPassword: encrypted },
             })
-          } catch {
-            // Non-blocking — don't prevent login if encryption fails
+          } catch (err) {
+            console.error("Failed to backfill encrypted password on login:", err)
           }
         }
 
