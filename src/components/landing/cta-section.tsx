@@ -20,10 +20,10 @@ export function CTASection() {
           className="text-[0.938rem] leading-relaxed max-w-md mx-auto mb-10"
           style={{ color: "var(--landing-muted)" }}
         >
-          Join Notera for free. No setup, no friction — just start learning.
+          No setup, no friction — just start learning.
         </p>
         <Link href="/signup" className="landing-btn-primary">
-          Get started for free
+          Get started
         </Link>
       </div>
     </section>

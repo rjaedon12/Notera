@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { SetCardSkeleton } from "@/components/ui/skeleton"
 import { BookOpen, Users, Layers, ArrowRight, Clock, Star, TrendingUp } from "lucide-react"
-import { Suspense, useMemo } from "react"
+import { Suspense, useEffect, useMemo } from "react"
 import { StreakHero } from "@/components/streak/streak-hero"
 import toast from "react-hot-toast"
 import {
@@ -156,6 +156,12 @@ function HomeContent() {
   const { data: publicSets, isLoading } = usePublicSets(search, { limit: search ? 50 : 6 })
   const { data: starredSetIds = [] } = useStarredSets()
   const toggleStar = useToggleSetStar()
+
+  // ── Dynamic page title ──
+  useEffect(() => {
+    if (status === "loading") return
+    document.title = session?.user ? "Notera | Home" : "Notera | Landing"
+  }, [session, status])
 
   // ── Landing page for unauthenticated users ──
   if (status !== "loading" && !session?.user) {

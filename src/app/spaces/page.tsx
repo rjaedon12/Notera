@@ -4,10 +4,8 @@ import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Users,
@@ -16,10 +14,10 @@ import {
   Copy,
   Check,
   GraduationCap,
-  Flame,
   ClipboardList,
+  ChevronRight,
+  X,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 interface Space {
   id: string
@@ -28,35 +26,41 @@ interface Space {
   type: "COLLABORATIVE" | "CLASSROOM"
   inviteCode: string
   createdAt: string
-  _count: {
-    members: number
-    sets: number
-    assignments: number
-  }
-  members: {
-    role: string
-    user: { id: string; name: string | null }
-  }[]
-  owner: {
-    id: string
-    name: string | null
-    role: string
-  }
+  _count: { members: number; sets: number; assignments: number }
+  members: { role: string; user: { id: string; name: string | null } }[]
+  owner: { id: string; name: string | null; role: string }
+}
+
+/* ── Color palette per space card (Google Classroom style) ── */
+const CARD_COLORS = [
+  { bg: "linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)", text: "#fff" },
+  { bg: "linear-gradient(135deg, #064e3b 0%, #059669 100%)", text: "#fff" },
+  { bg: "linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%)", text: "#fff" },
+  { bg: "linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)", text: "#fff" },
+  { bg: "linear-gradient(135deg, #713f12 0%, #d97706 100%)", text: "#fff" },
+  { bg: "linear-gradient(135deg, #134e4a 0%, #0d9488 100%)", text: "#fff" },
+  { bg: "linear-gradient(135deg, #581c87 0%, #a855f7 100%)", text: "#fff" },
+  { bg: "linear-gradient(135deg, #1e3a5f 0%, #0ea5e9 100%)", text: "#fff" },
+]
+
+function getCardColor(id: string) {
+  let hash = 0
+  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash)
+  return CARD_COLORS[Math.abs(hash) % CARD_COLORS.length]
 }
 
 export default function SpacesPage() {
   const { data: session } = useSession()
   const queryClient = useQueryClient()
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [newSpaceName, setNewSpaceName] = useState("")
-  const [newSpaceDesc, setNewSpaceDesc] = useState("")
+  const [showCreate, setShowCreate] = useState(false)
+  const [name, setName] = useState("")
+  const [desc, setDesc] = useState("")
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
   const [joinCode, setJoinCode] = useState("")
+  const [showJoin, setShowJoin] = useState(false)
 
-  const isTeacher =
-    session?.user?.role === "TEACHER" || session?.user?.role === "ADMIN"
+  const isTeacher = session?.user?.role === "TEACHER" || session?.user?.role === "ADMIN"
 
-  // Fetch user's spaces
   const { data: spaces = [], isLoading } = useQuery<Space[]>({
     queryKey: ["spaces"],
     queryFn: async () => {
@@ -67,29 +71,24 @@ export default function SpacesPage() {
     enabled: !!session?.user,
   })
 
-  // Create space mutation
   const createSpace = useMutation({
     mutationFn: async () => {
       const res = await fetch("/api/spaces", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newSpaceName,
-          description: newSpaceDesc || null,
-        }),
+        body: JSON.stringify({ name, description: desc || null }),
       })
       if (!res.ok) throw new Error("Failed to create space")
       return res.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["spaces"] })
-      setShowCreateForm(false)
-      setNewSpaceName("")
-      setNewSpaceDesc("")
+      setShowCreate(false)
+      setName("")
+      setDesc("")
     },
   })
 
-  // Join space mutation
   const joinSpace = useMutation({
     mutationFn: async (code: string) => {
       const res = await fetch("/api/spaces/join", {
@@ -99,17 +98,20 @@ export default function SpacesPage() {
       })
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || "Failed to join space")
+        throw new Error(data.error || "Failed to join")
       }
       return res.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["spaces"] })
       setJoinCode("")
+      setShowJoin(false)
     },
   })
 
-  const copyInviteCode = async (code: string) => {
+  const copyCode = async (code: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
     await navigator.clipboard.writeText(code)
     setCopiedCode(code)
     setTimeout(() => setCopiedCode(null), 2000)
@@ -117,20 +119,15 @@ export default function SpacesPage() {
 
   if (!session?.user) {
     return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <Users
-          className="h-12 w-12 mx-auto mb-4"
-          style={{ color: "var(--muted-foreground)", opacity: 0.4 }}
-        />
-        <h1 className="text-2xl font-bold mb-2 text-foreground font-heading">
-          Spaces
-        </h1>
-        <p className="mb-4" style={{ color: "var(--muted-foreground)" }}>
-          Sign in to create or join study spaces and classrooms
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+        <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+          <Users className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <h1 className="text-2xl font-semibold text-foreground mb-2">Spaces</h1>
+        <p className="text-muted-foreground mb-6 max-w-sm">
+          Sign in to create or join study spaces and classrooms.
         </p>
-        <Link href="/login">
-          <Button>Sign In</Button>
-        </Link>
+        <Link href="/login"><Button size="lg">Sign In</Button></Link>
       </div>
     )
   }
@@ -139,305 +136,215 @@ export default function SpacesPage() {
   const collaborative = spaces.filter((s) => s.type === "COLLABORATIVE")
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground font-heading tracking-tight">
-              Spaces
-            </h1>
-            <p style={{ color: "var(--muted-foreground)" }}>
-              {isTeacher
-                ? "Manage classrooms and assign study materials"
-                : "Collaborate with others in study spaces"}
-            </p>
-          </div>
-          <Button onClick={() => setShowCreateForm(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            {isTeacher ? "Create Classroom" : "Create Space"}
+    <div className="max-w-6xl mx-auto px-4 py-6 sm:px-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-2xl font-semibold text-foreground tracking-tight">
+          {isTeacher ? "Your classes" : "Your spaces"}
+        </h1>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowJoin(true)}>
+            <Plus className="h-4 w-4 mr-1.5" /> Join
+          </Button>
+          <Button size="sm" onClick={() => setShowCreate(true)}>
+            <Plus className="h-4 w-4 mr-1.5" />
+            {isTeacher ? "Create class" : "Create space"}
           </Button>
         </div>
-
-        {/* Join by code */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                if (joinCode.trim()) {
-                  joinSpace.mutate(joinCode.trim())
-                }
-              }}
-              className="flex gap-3"
-            >
-              <Input
-                placeholder="Enter invite code to join..."
-                value={joinCode}
-                onChange={(e) => setJoinCode(e.target.value)}
-                className="flex-1"
-              />
-              <Button
-                type="submit"
-                variant="outline"
-                disabled={joinSpace.isPending}
-              >
-                Join Space
-              </Button>
-            </form>
-            {joinSpace.isError && (
-              <p className="text-sm text-red-500 mt-2">
-                {(joinSpace.error as Error).message}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Create Space Form */}
-        {showCreateForm && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>
-                {isTeacher ? "Create New Classroom" : "Create New Space"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  if (newSpaceName.trim()) {
-                    createSpace.mutate()
-                  }
-                }}
-                className="space-y-4"
-              >
-                <div>
-                  <Label htmlFor="spaceName">
-                    {isTeacher ? "Classroom Name" : "Space Name"}
-                  </Label>
-                  <Input
-                    id="spaceName"
-                    placeholder={
-                      isTeacher
-                        ? "AP US History — Period 3"
-                        : "My Study Space"
-                    }
-                    value={newSpaceName}
-                    onChange={(e) => setNewSpaceName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="spaceDesc">Description (optional)</Label>
-                  <Input
-                    id="spaceDesc"
-                    placeholder={
-                      isTeacher
-                        ? "Class description, section, semester..."
-                        : "What is this space about?"
-                    }
-                    value={newSpaceDesc}
-                    onChange={(e) => setNewSpaceDesc(e.target.value)}
-                  />
-                </div>
-                {isTeacher && (
-                  <div
-                    className="flex items-start gap-3 rounded-xl border px-4 py-3"
-                    style={{
-                      borderColor: "rgba(99, 102, 241, 0.25)",
-                      background: "rgba(99, 102, 241, 0.06)",
-                    }}
-                  >
-                    <GraduationCap
-                      className="h-4 w-4 mt-0.5 shrink-0"
-                      style={{ color: "#6366f1" }}
-                    />
-                    <p
-                      className="text-xs leading-relaxed"
-                      style={{ color: "var(--muted-foreground)" }}
-                    >
-                      As a teacher, this will be created as a <strong>Classroom</strong> space.
-                      Students will join with a code and you can assign study sets, quizzes,
-                      and DBQs.
-                    </p>
-                  </div>
-                )}
-                <div className="flex gap-3">
-                  <Button type="submit" disabled={createSpace.isPending}>
-                    {isTeacher ? "Create Classroom" : "Create Space"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowCreateForm(false)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Spaces List */}
-        {isLoading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-32 rounded-2xl" />
-            ))}
-          </div>
-        ) : spaces.length === 0 ? (
-          <Card className="p-8 text-center">
-            <Users
-              className="h-12 w-12 mx-auto mb-4"
-              style={{ color: "var(--muted-foreground)", opacity: 0.4 }}
-            />
-            <h3 className="text-lg font-medium mb-2 text-foreground font-heading">
-              No spaces yet
-            </h3>
-            <p className="mb-4" style={{ color: "var(--muted-foreground)" }}>
-              {isTeacher
-                ? "Create a classroom to get started with your students"
-                : "Create a study space or join one with an invite code"}
-            </p>
-          </Card>
-        ) : (
-          <div className="space-y-6">
-            {/* Teacher Classrooms */}
-            {classrooms.length > 0 && (
-              <div>
-                <h2 className="text-sm font-semibold uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color: "var(--muted-foreground)" }}>
-                  <GraduationCap className="h-4 w-4" />
-                  Classrooms
-                </h2>
-                <div className="space-y-3">
-                  {classrooms.map((space) => (
-                    <SpaceCard
-                      key={space.id}
-                      space={space}
-                      session={session}
-                      copiedCode={copiedCode}
-                      onCopyCode={copyInviteCode}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Collaborative Spaces */}
-            {collaborative.length > 0 && (
-              <div>
-                <h2 className="text-sm font-semibold uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color: "var(--muted-foreground)" }}>
-                  <Users className="h-4 w-4" />
-                  Study Spaces
-                </h2>
-                <div className="space-y-3">
-                  {collaborative.map((space) => (
-                    <SpaceCard
-                      key={space.id}
-                      space={space}
-                      session={session}
-                      copiedCode={copiedCode}
-                      onCopyCode={copyInviteCode}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* Join inline dialog */}
+      {showJoin && (
+        <div className="mb-6 rounded-xl border border-border bg-card p-5 animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-foreground">Join with code</h2>
+            <button onClick={() => setShowJoin(false)} className="text-muted-foreground hover:text-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <form
+            onSubmit={(e) => { e.preventDefault(); if (joinCode.trim()) joinSpace.mutate(joinCode.trim()) }}
+            className="flex gap-3"
+          >
+            <Input
+              placeholder="Enter class code"
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value)}
+              className="flex-1 font-mono tracking-wider text-center text-lg"
+              maxLength={8}
+              autoFocus
+            />
+            <Button type="submit" disabled={joinSpace.isPending || !joinCode.trim()}>Join</Button>
+          </form>
+          {joinSpace.isError && (
+            <p className="text-sm text-red-500 mt-2">{(joinSpace.error as Error).message}</p>
+          )}
+        </div>
+      )}
+
+      {/* Create inline dialog */}
+      {showCreate && (
+        <div className="mb-6 rounded-xl border border-border bg-card p-5 animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-foreground">
+              {isTeacher ? "Create a class" : "Create a space"}
+            </h2>
+            <button onClick={() => setShowCreate(false)} className="text-muted-foreground hover:text-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <form
+            onSubmit={(e) => { e.preventDefault(); if (name.trim()) createSpace.mutate() }}
+            className="space-y-3"
+          >
+            <Input
+              placeholder={isTeacher ? "Class name (e.g. AP US History — Period 3)" : "Space name"}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              autoFocus
+            />
+            <Input
+              placeholder="Description (optional)"
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
+            />
+            <div className="flex gap-2 pt-1">
+              <Button type="submit" disabled={createSpace.isPending}>
+                {isTeacher ? "Create class" : "Create space"}
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setShowCreate(false)}>Cancel</Button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Content */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-48 rounded-xl" />)}
+        </div>
+      ) : spaces.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-20 h-20 rounded-2xl bg-muted flex items-center justify-center mb-5">
+            {isTeacher
+              ? <GraduationCap className="h-10 w-10 text-muted-foreground" />
+              : <Users className="h-10 w-10 text-muted-foreground" />}
+          </div>
+          <h2 className="text-lg font-semibold text-foreground mb-2">
+            {isTeacher ? "No classes yet" : "No spaces yet"}
+          </h2>
+          <p className="text-muted-foreground max-w-sm mb-6">
+            {isTeacher
+              ? "Create your first class to start assigning study materials to your students."
+              : "Create a study space or join one with a code from your teacher or classmate."}
+          </p>
+          <div className="flex gap-3">
+            <Button onClick={() => setShowCreate(true)}>
+              <Plus className="h-4 w-4 mr-1.5" /> {isTeacher ? "Create class" : "Create space"}
+            </Button>
+            <Button variant="outline" onClick={() => setShowJoin(true)}>Join with code</Button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {classrooms.length > 0 && (
+            <section>
+              {collaborative.length > 0 && (
+                <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
+                  <GraduationCap className="h-3.5 w-3.5" /> Classes
+                </h2>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {classrooms.map((s) => (
+                  <SpaceCard key={s.id} space={s} userId={session.user.id} copiedCode={copiedCode} onCopy={copyCode} />
+                ))}
+              </div>
+            </section>
+          )}
+          {collaborative.length > 0 && (
+            <section>
+              {classrooms.length > 0 && (
+                <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
+                  <Users className="h-3.5 w-3.5" /> Study Spaces
+                </h2>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {collaborative.map((s) => (
+                  <SpaceCard key={s.id} space={s} userId={session.user.id} copiedCode={copiedCode} onCopy={copyCode} />
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
+/* ─── Google Classroom–style Card ─── */
 function SpaceCard({
-  space,
-  session,
-  copiedCode,
-  onCopyCode,
+  space, userId, copiedCode, onCopy,
 }: {
   space: Space
-  session: { user: { id: string } } | null
+  userId: string
   copiedCode: string | null
-  onCopyCode: (code: string) => void
+  onCopy: (code: string, e: React.MouseEvent) => void
 }) {
-  const isOwner = space.members.some(
-    (m) => m.user.id === session?.user?.id && m.role === "OWNER"
-  )
+  const color = getCardColor(space.id)
+  const isOwner = space.members.some((m) => m.user.id === userId && m.role === "OWNER")
+  const ownerName = space.owner.name || "Unknown"
 
   return (
-    <Link href={`/spaces/${space.id}`}>
-      <Card className="cursor-pointer hover:shadow-md transition-shadow">
-        <CardContent className="p-5">
+    <Link href={`/spaces/${space.id}`} className="block group">
+      <div className="rounded-xl border border-border overflow-hidden bg-card transition-shadow hover:shadow-lg">
+        {/* Colored banner */}
+        <div className="relative px-5 pt-5 pb-4" style={{ background: color.bg }}>
           <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold text-lg text-card-foreground font-heading">
-                  {space.name}
-                </h3>
-                <span
-                  className={cn(
-                    "px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full",
-                    space.type === "CLASSROOM"
-                      ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400"
-                      : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                  )}
-                >
-                  {space.type === "CLASSROOM" ? "Classroom" : "Study Space"}
-                </span>
-              </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-lg truncate group-hover:underline" style={{ color: color.text }}>
+                {space.name}
+              </h3>
               {space.description && (
-                <p className="text-muted-foreground text-sm mb-3">
+                <p className="text-sm truncate mt-0.5 opacity-80" style={{ color: color.text }}>
                   {space.description}
                 </p>
               )}
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Users className="h-4 w-4" />
-                  {space._count.members} members
-                </span>
-                <span className="flex items-center gap-1">
-                  <BookOpen className="h-4 w-4" />
-                  {space._count.sets} sets
-                </span>
-                {space.type === "CLASSROOM" && (
-                  <span className="flex items-center gap-1">
-                    <ClipboardList className="h-4 w-4" />
-                    {space._count.assignments} assignments
-                  </span>
-                )}
-              </div>
+              <p className="text-xs mt-2 opacity-70" style={{ color: color.text }}>
+                {ownerName}
+              </p>
             </div>
-
-            {/* Invite code for owners */}
-            {isOwner && space.inviteCode && (
-              <button
-                onClick={(e) => {
-                  e.preventDefault()
-                  onCopyCode(space.inviteCode)
-                }}
-                className="flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-all"
-                style={{
-                  background: "var(--glass-fill)",
-                  border: "1px solid var(--glass-border)",
-                }}
-              >
-                {copiedCode === space.inviteCode ? (
-                  <>
-                    <Check className="h-3 w-3 text-green-500" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3 w-3" />
-                    {space.inviteCode}
-                  </>
-                )}
-              </button>
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ml-3"
+              style={{ background: "rgba(255,255,255,0.2)", color: color.text }}
+            >
+              {ownerName.charAt(0).toUpperCase()}
+            </div>
+          </div>
+          {isOwner && space.inviteCode && (
+            <button
+              onClick={(e) => onCopy(space.inviteCode, e)}
+              className="absolute bottom-2 right-3 flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono transition-all"
+              style={{ background: "rgba(255,255,255,0.15)", color: color.text, backdropFilter: "blur(4px)" }}
+            >
+              {copiedCode === space.inviteCode
+                ? <><Check className="h-3 w-3" /> Copied</>
+                : <><Copy className="h-3 w-3" /> {space.inviteCode}</>}
+            </button>
+          )}
+        </div>
+        {/* Stats footer */}
+        <div className="px-5 py-3 flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {space._count.members}</span>
+            <span className="flex items-center gap-1"><BookOpen className="h-3.5 w-3.5" /> {space._count.sets}</span>
+            {space.type === "CLASSROOM" && space._count.assignments > 0 && (
+              <span className="flex items-center gap-1"><ClipboardList className="h-3.5 w-3.5" /> {space._count.assignments}</span>
             )}
           </div>
-        </CardContent>
-      </Card>
+          <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+        </div>
+      </div>
     </Link>
   )
 }

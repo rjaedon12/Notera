@@ -61,20 +61,12 @@ export function HeroSection() {
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link href="/signup" className="landing-btn-primary">
-            Get started — it&apos;s free
+            Get started
           </Link>
           <a href="#features" className="landing-btn-ghost">
             See what&apos;s inside
           </a>
         </div>
-
-        {/* Trust line */}
-        <p
-          className="mt-10 text-xs"
-          style={{ color: "color-mix(in srgb, var(--landing-muted) 60%, transparent)" }}
-        >
-          No credit card required · Free forever for students
-        </p>
       </div>
     </section>
   )

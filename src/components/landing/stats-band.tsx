@@ -40,7 +40,7 @@ export function StatsBand() {
     { value: 10000, suffix: "+", label: "Flashcards created" },
     { value: 50, suffix: "+", label: "Study sets available" },
     { value: 5, suffix: "", label: "Study modes" },
-    { value: 99, suffix: "%", label: "Free to use" },
+    { value: 11, suffix: "+", label: "Math visualizers" },
   ]
 
   return (
