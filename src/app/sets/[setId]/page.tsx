@@ -257,12 +257,15 @@ export default function SetPage({ params }: PageProps) {
       </div>
 
       {/* Export */}
-      <div className="mt-6 flex gap-2">
+      <div className="mt-6 flex gap-2 flex-wrap">
         <Button variant="outline" size="sm" onClick={() => window.open(`/api/sets/${setId}/export?format=csv`, "_blank")}>
           <Download className="h-4 w-4 mr-2" /> Export CSV
         </Button>
         <Button variant="outline" size="sm" onClick={() => window.open(`/api/sets/${setId}/export?format=json`, "_blank")}>
           <Download className="h-4 w-4 mr-2" /> Export JSON
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => window.open(`/api/sets/${setId}/export?format=pptx`, "_blank")}>
+          <Download className="h-4 w-4 mr-2" /> Download Slides (.pptx)
         </Button>
       </div>
 

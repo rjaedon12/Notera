@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import PptxGenJS from "pptxgenjs"
 
-// GET /api/sets/[setId]/export — export set as CSV
+// GET /api/sets/[setId]/export — export set as CSV, TSV, JSON, or PPTX
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ setId: string }> }
@@ -24,6 +25,121 @@ export async function GET(
     const session = await auth()
     if (!set.isPublic && set.userId !== session?.user?.id) {
       return Response.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    if (format === "pptx") {
+      const pres = new PptxGenJS()
+      pres.layout = "LAYOUT_WIDE"
+
+      // Title slide
+      const titleSlide = pres.addSlide()
+      titleSlide.background = { color: "1D4ED8" }
+      titleSlide.addText(set.title, {
+        x: 0.5,
+        y: 1.5,
+        w: "90%",
+        h: 1.5,
+        fontSize: 40,
+        bold: true,
+        color: "FFFFFF",
+        align: "center",
+      })
+      if (set.description) {
+        titleSlide.addText(set.description, {
+          x: 0.5,
+          y: 3.2,
+          w: "90%",
+          h: 0.8,
+          fontSize: 18,
+          color: "BFDBFE",
+          align: "center",
+        })
+      }
+      titleSlide.addText(`${set.cards.length} card${set.cards.length !== 1 ? "s" : ""}`, {
+        x: 0.5,
+        y: 4.2,
+        w: "90%",
+        h: 0.5,
+        fontSize: 14,
+        color: "93C5FD",
+        align: "center",
+      })
+
+      // One slide per card: term on top, definition on bottom
+      for (const card of set.cards) {
+        const slide = pres.addSlide()
+        slide.background = { color: "F8FAFC" }
+
+        // Term section
+        slide.addShape(pres.ShapeType.rect, {
+          x: 0.5,
+          y: 0.4,
+          w: "88%",
+          h: 2.6,
+          fill: { color: "1D4ED8" },
+          line: { color: "1D4ED8", width: 0 },
+        })
+        slide.addText("TERM", {
+          x: 0.5,
+          y: 0.5,
+          w: "88%",
+          h: 0.35,
+          fontSize: 11,
+          bold: true,
+          color: "93C5FD",
+          align: "center",
+        })
+        slide.addText(card.term, {
+          x: 0.5,
+          y: 0.9,
+          w: "88%",
+          h: 2.0,
+          fontSize: 24,
+          bold: true,
+          color: "FFFFFF",
+          align: "center",
+          valign: "middle",
+        })
+
+        // Definition section
+        slide.addShape(pres.ShapeType.rect, {
+          x: 0.5,
+          y: 3.2,
+          w: "88%",
+          h: 2.6,
+          fill: { color: "FFFFFF" },
+          line: { color: "E2E8F0", width: 1 },
+        })
+        slide.addText("DEFINITION", {
+          x: 0.5,
+          y: 3.3,
+          w: "88%",
+          h: 0.35,
+          fontSize: 11,
+          bold: true,
+          color: "64748B",
+          align: "center",
+        })
+        slide.addText(card.definition, {
+          x: 0.5,
+          y: 3.7,
+          w: "88%",
+          h: 2.0,
+          fontSize: 18,
+          color: "1E293B",
+          align: "center",
+          valign: "middle",
+        })
+      }
+
+      const buffer = (await pres.write({ outputType: "nodebuffer" })) as Buffer
+      const safeTitle = set.title.replace(/[^a-z0-9\s-]/gi, "").replace(/[\s-]+/g, "-").trim() || "flashcards"
+      return new Response(new Uint8Array(buffer), {
+        headers: {
+          "Content-Type": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+          "Content-Disposition": `attachment; filename="${safeTitle}.pptx"`,
+        },
+      })
     }
 
     if (format === "csv") {

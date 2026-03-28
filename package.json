@@ -69,6 +69,7 @@
     "next-auth": "^5.0.0-beta.30",
     "p5": "^2.2.2",
     "perfect-freehand": "^1.2.3",
+    "pptxgenjs": "^4.0.1",
     "prisma": "^6.16.2",
     "react": "19.2.3",
     "react-chartjs-2": "^5.3.1",
