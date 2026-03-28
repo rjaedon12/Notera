@@ -2,7 +2,7 @@
 
 import { memo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Flame, Layers, Zap } from "lucide-react"
+import { Flame } from "lucide-react"
 import type { ScoreState } from "@/lib/blast"
 
 interface BlastScoreDisplayProps {
@@ -20,14 +20,14 @@ export const BlastScoreDisplay = memo(function BlastScoreDisplay({
       <div className="flex items-baseline gap-1.5">
         <motion.span
           key={score.score}
-          initial={{ scale: 1.25, color: "#a78bfa" }}
-          animate={{ scale: 1, color: "#ffffff" }}
-          transition={{ duration: 0.35 }}
-          className="text-3xl font-extrabold tabular-nums tracking-tight"
+          initial={{ scale: 1.15 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="text-3xl font-extrabold tabular-nums tracking-tight text-foreground"
         >
           {score.score.toLocaleString()}
         </motion.span>
-        <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">
+        <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
           pts
         </span>
       </div>
@@ -39,15 +39,10 @@ export const BlastScoreDisplay = memo(function BlastScoreDisplay({
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-sm"
-            style={{
-              background: "linear-gradient(135deg, rgba(251,191,36,0.2), rgba(245,158,11,0.15))",
-              color: "#fbbf24",
-              boxShadow: "0 0 12px rgba(251,191,36,0.15)",
-            }}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full font-bold text-sm text-amber-500 dark:text-amber-400 bg-amber-500/10 dark:bg-amber-400/10"
           >
             <Flame className="h-4 w-4" />
-            <span>×{score.comboCount + 1}</span>
+            <span>&times;{score.comboCount + 1}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -56,19 +51,19 @@ export const BlastScoreDisplay = memo(function BlastScoreDisplay({
       <div className="flex items-center gap-4">
         {round !== undefined && round > 0 && (
           <div className="text-center">
-            <div className="text-base font-bold tabular-nums text-zinc-300">
+            <div className="text-base font-bold tabular-nums text-foreground">
               {round}
             </div>
-            <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-semibold">
+            <div className="text-[9px] text-muted-foreground uppercase tracking-widest font-semibold">
               Round
             </div>
           </div>
         )}
         <div className="text-center">
-          <div className="text-base font-bold tabular-nums text-zinc-300">
+          <div className="text-base font-bold tabular-nums text-foreground">
             {score.linesCleared}
           </div>
-          <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-semibold">
+          <div className="text-[9px] text-muted-foreground uppercase tracking-widest font-semibold">
             Lines
           </div>
         </div>

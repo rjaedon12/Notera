@@ -1,6 +1,6 @@
 "use client"
 
-import { memo, useCallback, useRef, useEffect, useState } from "react"
+import { memo, useCallback } from "react"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import type { Board, GamePiece } from "@/lib/blast"
@@ -14,7 +14,6 @@ interface BlastBoardProps {
   clearingCols: number[]
   onClearAnimationDone: () => void
   onDrop: (row: number, col: number, pieceIndex: number) => void
-  /** Called by tray drag to update the hover position on the board. */
   boardRef?: React.RefObject<HTMLDivElement | null>
   disabled?: boolean
 }
@@ -31,7 +30,6 @@ export const BlastBoard = memo(function BlastBoard({
 }: BlastBoardProps) {
   const isClearing = clearingRows.length > 0 || clearingCols.length > 0
 
-  // Compute ghost preview cells
   const ghostCells = new Set<string>()
   let ghostValid = false
   if (dragPiece && dragCell && !isClearing && !disabled) {
@@ -51,9 +49,7 @@ export const BlastBoard = memo(function BlastBoard({
   }
 
   const handleClearDone = useCallback(() => {
-    if (isClearing) {
-      onClearAnimationDone()
-    }
+    if (isClearing) onClearAnimationDone()
   }, [isClearing, onClearAnimationDone])
 
   const isCellClearing = (r: number, c: number) =>
@@ -63,14 +59,13 @@ export const BlastBoard = memo(function BlastBoard({
     <div
       ref={boardRef}
       className={cn(
-        "inline-grid p-[3px] rounded-xl select-none touch-none",
-        "bg-gradient-to-br from-zinc-800/80 to-zinc-900/90",
-        "shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_4px_24px_rgba(0,0,0,0.3)]",
-        "border border-zinc-700/40"
+        "inline-grid rounded-2xl select-none touch-none overflow-hidden",
+        "bg-[var(--background-secondary)] border border-[var(--glass-border)]"
       )}
       style={{
         gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)`,
-        gap: "3px",
+        gap: "2px",
+        padding: "2px",
       }}
     >
       {board.map((row, r) =>
@@ -78,18 +73,13 @@ export const BlastBoard = memo(function BlastBoard({
           const key = `${r}-${c}`
           const clearing = isCellClearing(r, c) && cell !== null
           const isGhost = ghostCells.has(key)
-          // Subtle checkerboard pattern for empty cells
           const isEvenCell = (r + c) % 2 === 0
 
           return (
             <motion.div
               key={key}
               className={cn(
-                "aspect-square rounded-md transition-colors duration-75",
-                "w-[clamp(34px,calc((100vw-48px)/8-3px),48px)]",
-                !cell && !isGhost && (isEvenCell
-                  ? "bg-zinc-850 dark:bg-zinc-900/80"
-                  : "bg-zinc-900 dark:bg-zinc-900/60"),
+                "aspect-square rounded-[4px] w-[clamp(34px,calc((100vw-48px)/8-2px),48px)]",
                 disabled && "pointer-events-none"
               )}
               style={{
@@ -99,40 +89,29 @@ export const BlastBoard = memo(function BlastBoard({
                     ? cell.color
                     : isGhost
                       ? ghostValid
-                        ? `${dragPiece!.color}88`   // brighter valid ghost
-                        : "#ef444466"                // red tint for invalid
-                      : undefined,
-                boxShadow: clearing
-                  ? undefined
-                  : cell
-                    ? `inset 2px 2px 0 rgba(255,255,255,0.18), inset -1px -1px 0 rgba(0,0,0,0.15)`
-                    : isGhost
-                      ? ghostValid
-                        ? `inset 0 0 0 2px ${dragPiece!.color}cc, 0 0 8px ${dragPiece!.color}44`
-                        : `inset 0 0 0 2px #ef444488`
-                      : `inset 0 1px 3px rgba(0,0,0,0.2)`,
+                        ? `${dragPiece!.color}55`
+                        : "rgba(239,68,68,0.25)"
+                      : isEvenCell
+                        ? "var(--background-tertiary)"
+                        : "var(--background-secondary)",
+                boxShadow: cell && !clearing
+                  ? "inset 0 -1px 0 rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.12)"
+                  : undefined,
+                border: isGhost && !clearing
+                  ? ghostValid
+                    ? `1.5px solid ${dragPiece!.color}aa`
+                    : "1.5px solid rgba(239,68,68,0.4)"
+                  : "1.5px solid transparent",
               }}
               animate={
                 clearing
-                  ? {
-                      scale: [1, 1.15, 0],
-                      opacity: [1, 1, 0],
-                      backgroundColor: [
-                        "#ffffff",
-                        cell?.color ?? "#ffffff",
-                        "var(--color-background, #18181b)",
-                      ],
-                    }
-                  : isGhost && ghostValid
-                    ? { opacity: [0.7, 1, 0.7], scale: 1 }
-                    : { scale: 1, opacity: 1 }
+                  ? { scale: [1, 1.1, 0], opacity: [1, 1, 0] }
+                  : { scale: 1, opacity: 1 }
               }
               transition={
                 clearing
-                  ? { duration: 0.35, ease: "easeOut" }
-                  : isGhost && ghostValid
-                    ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" }
-                    : { duration: 0.1 }
+                  ? { duration: 0.3, ease: "easeOut" }
+                  : { duration: 0.1 }
               }
               onAnimationComplete={() => {
                 if (

@@ -183,13 +183,13 @@ export default function TimedPage({ params }: PageProps) {
 
   // ── Active game (QUESTION / PLACING / CLEARING) ──
   return (
-    <div className="min-h-[100dvh] flex flex-col items-center justify-center px-4 py-4">
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center px-4 py-4 bg-background">
       <div className="w-full max-w-fit">
         {/* Score display */}
         <BlastScoreDisplay score={game.state.score} round={game.state.round} />
 
         {/* Game area — board + question overlay */}
-        <div className="relative">
+        <div className="relative overflow-hidden rounded-2xl">
           <BlastBoard
             board={game.state.board}
             dragPiece={draggingPiece}
@@ -217,7 +217,7 @@ export default function TimedPage({ params }: PageProps) {
           </AnimatePresence>
         </div>
 
-        {/* Piece tray with label */}
+        {/* Piece tray */}
         <div className="mt-2">
           <BlastPieceTray
             tray={game.state.tray}
@@ -228,8 +228,8 @@ export default function TimedPage({ params }: PageProps) {
           />
         </div>
 
-        {/* Floating drag ghost */}
-        {draggingPiece && dragPos && (
+        {/* Floating drag ghost — only while actively dragging */}
+        {draggingPiece && dragPos && draggingIndex !== null && (
           <DragGhost piece={draggingPiece} x={dragPos.x} y={dragPos.y} />
         )}
       </div>
@@ -237,7 +237,7 @@ export default function TimedPage({ params }: PageProps) {
   )
 }
 
-/** Floating piece that follows the pointer during drag — centered on cursor. */
+/** Floating piece that follows the pointer during drag. */
 function DragGhost({ piece, x, y }: { piece: GamePiece; x: number; y: number }) {
   const grid = piece.shape.grid
   const cols = Math.max(...grid.map((r) => r.length))
@@ -252,8 +252,7 @@ function DragGhost({ piece, x, y }: { piece: GamePiece; x: number; y: number }) 
       style={{
         left: x - w / 2,
         top: y - h / 2,
-        opacity: 0.92,
-        filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.4))",
+        opacity: 0.88,
       }}
     >
       <div
@@ -267,13 +266,13 @@ function DragGhost({ piece, x, y }: { piece: GamePiece; x: number; y: number }) 
           Array.from({ length: cols }, (_, c) => (
             <div
               key={`${r}-${c}`}
-              className="rounded-md"
+              className="rounded-[4px]"
               style={{
                 width: cellPx,
                 height: cellPx,
                 backgroundColor: row[c] ? piece.color : "transparent",
                 boxShadow: row[c]
-                  ? `inset 2px 2px 0 rgba(255,255,255,0.25), 0 2px 8px ${piece.color}55`
+                  ? "inset 0 -1px 0 rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.15)"
                   : undefined,
               }}
             />

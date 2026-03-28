@@ -90,16 +90,16 @@ function DraggablePiece({
     <motion.div
       ref={ref}
       className={cn(
-        "relative rounded-xl transition-all min-w-[68px] min-h-[68px]",
+        "relative rounded-xl min-w-[68px] min-h-[68px]",
         "flex items-center justify-center touch-none select-none",
         piece
           ? isDragging
-            ? "shadow-lg ring-2 ring-violet-500/40 bg-zinc-800/50"
-            : "bg-zinc-800/60 hover:bg-zinc-700/60 cursor-grab active:cursor-grabbing border border-zinc-700/40 shadow-sm hover:shadow-md hover:border-zinc-600/50"
-          : "border-2 border-dashed border-zinc-700/30 bg-transparent"
+            ? "bg-[var(--background-tertiary)]"
+            : "bg-[var(--glass-fill)] border border-[var(--glass-border)] cursor-grab active:cursor-grabbing"
+          : "border border-dashed border-[var(--glass-border)] bg-transparent"
       )}
-      style={{ padding: piece ? "10px" : "10px" }}
-      animate={isDragging ? { scale: 0.85, opacity: 0.35 } : { scale: 1, opacity: piece ? 1 : 0.4 }}
+      style={{ padding: "10px" }}
+      animate={isDragging ? { scale: 0.85, opacity: 0.3 } : { scale: 1, opacity: piece ? 1 : 0.35 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -110,14 +110,13 @@ function DraggablePiece({
         <PieceMiniGrid shape={piece.shape.grid} color={piece.color} />
       ) : (
         <div className="w-8 h-8 flex items-center justify-center">
-          <div className="w-2 h-2 rounded-full bg-zinc-700/50" />
+          <div className="w-2 h-2 rounded-full bg-[var(--muted-foreground)] opacity-30" />
         </div>
       )}
     </motion.div>
   )
 }
 
-/** Renders a small preview of a piece shape. */
 function PieceMiniGrid({
   shape,
   color,
@@ -132,7 +131,7 @@ function PieceMiniGrid({
       className="inline-grid"
       style={{
         gridTemplateColumns: `repeat(${cols}, 1fr)`,
-        gap: "3px",
+        gap: "2px",
       }}
     >
       {shape.flatMap((row, r) =>
@@ -143,7 +142,7 @@ function PieceMiniGrid({
             style={{
               backgroundColor: row[c] ? color : "transparent",
               boxShadow: row[c]
-                ? `inset 1.5px 1.5px 0 rgba(255,255,255,0.2), inset -0.5px -0.5px 0 rgba(0,0,0,0.1)`
+                ? "inset 0 -1px 0 rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.15)"
                 : undefined,
             }}
           />
