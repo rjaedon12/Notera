@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { cn } from "@/lib/utils"
 import {
   Users,
   Plus,
@@ -17,6 +18,10 @@ import {
   ClipboardList,
   ChevronRight,
   X,
+  Hash,
+  AlignLeft,
+  LogIn,
+  Sparkles,
 } from "lucide-react"
 
 interface Space {
@@ -54,6 +59,7 @@ export default function SpacesPage() {
   const queryClient = useQueryClient()
   const [showCreate, setShowCreate] = useState(false)
   const [name, setName] = useState("")
+  const [section, setSection] = useState("")
   const [desc, setDesc] = useState("")
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
   const [joinCode, setJoinCode] = useState("")
@@ -73,10 +79,11 @@ export default function SpacesPage() {
 
   const createSpace = useMutation({
     mutationFn: async () => {
+      const fullName = isTeacher && section.trim() ? `${name.trim()} — ${section.trim()}` : name.trim()
       const res = await fetch("/api/spaces", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, description: desc || null }),
+        body: JSON.stringify({ name: fullName, description: desc || null }),
       })
       if (!res.ok) throw new Error("Failed to create space")
       return res.json()
@@ -85,6 +92,7 @@ export default function SpacesPage() {
       queryClient.invalidateQueries({ queryKey: ["spaces"] })
       setShowCreate(false)
       setName("")
+      setSection("")
       setDesc("")
     },
   })
@@ -144,7 +152,7 @@ export default function SpacesPage() {
         </h1>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setShowJoin(true)}>
-            <Plus className="h-4 w-4 mr-1.5" /> Join
+            <LogIn className="h-4 w-4 mr-1.5" /> Join
           </Button>
           <Button size="sm" onClick={() => setShowCreate(true)}>
             <Plus className="h-4 w-4 mr-1.5" />
@@ -153,71 +161,30 @@ export default function SpacesPage() {
         </div>
       </div>
 
-      {/* Join inline dialog */}
-      {showJoin && (
-        <div className="mb-6 rounded-xl border border-border bg-card p-5 animate-in fade-in slide-in-from-top-2">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-foreground">Join with code</h2>
-            <button onClick={() => setShowJoin(false)} className="text-muted-foreground hover:text-foreground">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          <form
-            onSubmit={(e) => { e.preventDefault(); if (joinCode.trim()) joinSpace.mutate(joinCode.trim()) }}
-            className="flex gap-3"
-          >
-            <Input
-              placeholder="Enter class code"
-              value={joinCode}
-              onChange={(e) => setJoinCode(e.target.value)}
-              className="flex-1 font-mono tracking-wider text-center text-lg"
-              maxLength={8}
-              autoFocus
-            />
-            <Button type="submit" disabled={joinSpace.isPending || !joinCode.trim()}>Join</Button>
-          </form>
-          {joinSpace.isError && (
-            <p className="text-sm text-red-500 mt-2">{(joinSpace.error as Error).message}</p>
-          )}
-        </div>
-      )}
-
-      {/* Create inline dialog */}
-      {showCreate && (
-        <div className="mb-6 rounded-xl border border-border bg-card p-5 animate-in fade-in slide-in-from-top-2">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-foreground">
-              {isTeacher ? "Create a class" : "Create a space"}
-            </h2>
-            <button onClick={() => setShowCreate(false)} className="text-muted-foreground hover:text-foreground">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          <form
-            onSubmit={(e) => { e.preventDefault(); if (name.trim()) createSpace.mutate() }}
-            className="space-y-3"
-          >
-            <Input
-              placeholder={isTeacher ? "Class name (e.g. AP US History — Period 3)" : "Space name"}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              autoFocus
-            />
-            <Input
-              placeholder="Description (optional)"
-              value={desc}
-              onChange={(e) => setDesc(e.target.value)}
-            />
-            <div className="flex gap-2 pt-1">
-              <Button type="submit" disabled={createSpace.isPending}>
-                {isTeacher ? "Create class" : "Create space"}
-              </Button>
-              <Button type="button" variant="ghost" onClick={() => setShowCreate(false)}>Cancel</Button>
-            </div>
-          </form>
-        </div>
-      )}
+      {/* Modal dialogs */}
+      <JoinModal
+        open={showJoin}
+        onClose={() => { setShowJoin(false); setJoinCode("") }}
+        joinCode={joinCode}
+        setJoinCode={setJoinCode}
+        onJoin={() => { if (joinCode.trim()) joinSpace.mutate(joinCode.trim()) }}
+        isPending={joinSpace.isPending}
+        error={joinSpace.isError ? (joinSpace.error as Error).message : null}
+      />
+      <CreateModal
+        open={showCreate}
+        isTeacher={isTeacher}
+        onClose={() => { setShowCreate(false); setName(""); setSection(""); setDesc("") }}
+        name={name}
+        setName={setName}
+        section={section}
+        setSection={setSection}
+        desc={desc}
+        setDesc={setDesc}
+        onCreate={() => { if (name.trim()) createSpace.mutate() }}
+        isPending={createSpace.isPending}
+        error={createSpace.isError ? (createSpace.error as Error).message : null}
+      />
 
       {/* Content */}
       {isLoading ? (
@@ -225,27 +192,7 @@ export default function SpacesPage() {
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-48 rounded-xl" />)}
         </div>
       ) : spaces.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-20 h-20 rounded-2xl bg-muted flex items-center justify-center mb-5">
-            {isTeacher
-              ? <GraduationCap className="h-10 w-10 text-muted-foreground" />
-              : <Users className="h-10 w-10 text-muted-foreground" />}
-          </div>
-          <h2 className="text-lg font-semibold text-foreground mb-2">
-            {isTeacher ? "No classes yet" : "No spaces yet"}
-          </h2>
-          <p className="text-muted-foreground max-w-sm mb-6">
-            {isTeacher
-              ? "Create your first class to start assigning study materials to your students."
-              : "Create a study space or join one with a code from your teacher or classmate."}
-          </p>
-          <div className="flex gap-3">
-            <Button onClick={() => setShowCreate(true)}>
-              <Plus className="h-4 w-4 mr-1.5" /> {isTeacher ? "Create class" : "Create space"}
-            </Button>
-            <Button variant="outline" onClick={() => setShowJoin(true)}>Join with code</Button>
-          </div>
-        </div>
+        <EmptyState isTeacher={isTeacher} onCreate={() => setShowCreate(true)} onJoin={() => setShowJoin(true)} />
       ) : (
         <div className="space-y-8">
           {classrooms.length > 0 && (
@@ -278,6 +225,237 @@ export default function SpacesPage() {
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+/* ─── Modal backdrop wrapper ─── */
+function Modal({ open, onClose, children }: { open: boolean; onClose: () => void; children: React.ReactNode }) {
+  const overlayRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
+    document.addEventListener("keydown", handleKey)
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.removeEventListener("keydown", handleKey)
+      document.body.style.overflow = ""
+    }
+  }, [open, onClose])
+
+  if (!open) return null
+
+  return (
+    <div
+      ref={overlayRef}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}
+      onClick={(e) => { if (e.target === overlayRef.current) onClose() }}
+    >
+      <div className="w-full max-w-md animate-in fade-in zoom-in-95 duration-150">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Join Modal ─── */
+function JoinModal({
+  open, onClose, joinCode, setJoinCode, onJoin, isPending, error,
+}: {
+  open: boolean; onClose: () => void; joinCode: string
+  setJoinCode: (v: string) => void; onJoin: () => void
+  isPending: boolean; error: string | null
+}) {
+  return (
+    <Modal open={open} onClose={onClose}>
+      <div className="rounded-2xl bg-card border border-border shadow-2xl overflow-hidden">
+        {/* Header */}
+        <div className="flex items-start justify-between px-6 pt-6 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--accent-color)", opacity: 0.9 }}>
+              <Hash className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-foreground">Join with class code</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Ask your teacher for the 6–8 character code</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-0.5">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="px-6 pb-6 space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); onJoin() }}>
+            {/* Code input */}
+            <div className="rounded-xl border-2 border-border focus-within:border-[var(--accent-color)] transition-colors overflow-hidden">
+              <input
+                type="text"
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                placeholder="e.g. ABC12345"
+                maxLength={8}
+                autoFocus
+                autoComplete="off"
+                spellCheck={false}
+                className="w-full px-5 py-4 text-2xl font-mono tracking-[0.35em] text-center bg-transparent text-foreground placeholder:text-muted-foreground/40 focus:outline-none uppercase"
+              />
+            </div>
+
+            {error && <p className="text-sm text-red-500 text-center pt-1">{error}</p>}
+
+            <div className="flex gap-2 mt-4">
+              <Button type="button" variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
+              <Button type="submit" className="flex-1" disabled={isPending || !joinCode.trim()}>
+                {isPending ? "Joining…" : "Join class"}
+              </Button>
+            </div>
+          </form>
+
+          <p className="text-xs text-muted-foreground text-center">
+            The class code is case-insensitive and provided by your teacher.
+          </p>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+/* ─── Create Modal ─── */
+function CreateModal({
+  open, isTeacher, onClose, name, setName, section, setSection, desc, setDesc, onCreate, isPending, error,
+}: {
+  open: boolean; isTeacher: boolean; onClose: () => void
+  name: string; setName: (v: string) => void
+  section: string; setSection: (v: string) => void
+  desc: string; setDesc: (v: string) => void
+  onCreate: () => void; isPending: boolean; error: string | null
+}) {
+  return (
+    <Modal open={open} onClose={onClose}>
+      <div className="rounded-2xl bg-card border border-border shadow-2xl overflow-hidden">
+        {/* Decorative top strip */}
+        <div className="h-1.5 w-full" style={{ background: "linear-gradient(90deg, var(--accent-color), #7c3aed)" }} />
+
+        {/* Header */}
+        <div className="flex items-start justify-between px-6 pt-5 pb-1">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, var(--accent-color) 0%, #7c3aed 100%)" }}>
+              {isTeacher ? <GraduationCap className="h-5 w-5 text-white" /> : <Sparkles className="h-5 w-5 text-white" />}
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-foreground">
+                {isTeacher ? "Create a class" : "Create a space"}
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isTeacher
+                  ? "Set up a classroom to manage students and assignments"
+                  : "Start a collaborative space for studying together"}
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors ml-2 mt-0.5">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <form
+          onSubmit={(e) => { e.preventDefault(); onCreate() }}
+          className="px-6 pb-6 pt-4 space-y-4"
+        >
+          {/* Name field */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              {isTeacher ? "Class name" : "Space name"} <span className="text-red-500">*</span>
+            </label>
+            <Input
+              placeholder={isTeacher ? "e.g. AP US History" : "e.g. Study Group"}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              autoFocus
+              className="h-10"
+            />
+          </div>
+
+          {/* Section (teacher only) */}
+          {isTeacher && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Section / Period</label>
+              <Input
+                placeholder="e.g. Period 3 · Fall 2026"
+                value={section}
+                onChange={(e) => setSection(e.target.value)}
+                className="h-10"
+              />
+            </div>
+          )}
+
+          {/* Description */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Description
+              <span className="ml-1 text-muted-foreground/60 normal-case tracking-normal font-normal">(optional)</span>
+            </label>
+            <div className="relative">
+              <AlignLeft className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <textarea
+                placeholder={isTeacher ? "Let students know what this class covers…" : "What will you study here?"}
+                value={desc}
+                onChange={(e) => setDesc(e.target.value)}
+                rows={2}
+                className="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] resize-none"
+              />
+            </div>
+          </div>
+
+          {error && <p className="text-sm text-red-500">{error}</p>}
+
+          <div className="flex gap-2 pt-1">
+            <Button type="button" variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
+            <Button
+              type="submit"
+              className="flex-1"
+              disabled={isPending || !name.trim()}
+            >
+              {isPending
+                ? (isTeacher ? "Creating…" : "Creating…")
+                : (isTeacher ? "Create class" : "Create space")}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </Modal>
+  )
+}
+
+/* ─── Empty state ─── */
+function EmptyState({ isTeacher, onCreate, onJoin }: { isTeacher: boolean; onCreate: () => void; onJoin: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-center">
+      <div className="w-20 h-20 rounded-2xl bg-muted flex items-center justify-center mb-5">
+        {isTeacher
+          ? <GraduationCap className="h-10 w-10 text-muted-foreground" />
+          : <Users className="h-10 w-10 text-muted-foreground" />}
+      </div>
+      <h2 className="text-lg font-semibold text-foreground mb-2">
+        {isTeacher ? "No classes yet" : "No spaces yet"}
+      </h2>
+      <p className="text-muted-foreground max-w-sm mb-6 text-sm">
+        {isTeacher
+          ? "Create your first class to start assigning study materials and tracking your students."
+          : "Create a study space or join one with a code from your teacher or classmate."}
+      </p>
+      <div className="flex gap-3">
+        <Button onClick={onCreate}>
+          <Plus className="h-4 w-4 mr-1.5" /> {isTeacher ? "Create class" : "Create space"}
+        </Button>
+        <Button variant="outline" onClick={onJoin}>
+          <LogIn className="h-4 w-4 mr-1.5" /> Join with code
+        </Button>
+      </div>
     </div>
   )
 }

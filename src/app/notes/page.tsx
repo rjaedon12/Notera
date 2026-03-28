@@ -10,6 +10,8 @@ export default function NotesIndexPage() {
   const { data: pages = [], isLoading } = useNotePages()
   const createPage = useCreateNotePage()
 
+  useEffect(() => { document.title = "Notera | Notes" }, [])
+
   // If there are pages, redirect to the first one
   useEffect(() => {
     if (!isLoading && pages.length > 0) {

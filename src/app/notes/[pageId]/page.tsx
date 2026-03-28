@@ -1,7 +1,7 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { useRef, useCallback, useState } from "react"
+import { useRef, useCallback, useState, useEffect } from "react"
 import { useNotePage, useNotePages, useUpdateNotePage } from "@/hooks/useNotePages"
 import { useAutoSave } from "@/hooks/useAutoSave"
 import { NoteHeader } from "@/components/notes/NoteHeader"
@@ -19,6 +19,8 @@ export default function NoteEditorPage() {
   const { status, save, retrySave } = useAutoSave(pageId)
   const editorRef = useRef<ReturnType<typeof useEditor>>(null)
   const [wordCount, setWordCount] = useState(0)
+
+  useEffect(() => { document.title = "Notera | Notes" }, [])
 
   const handleTitleChange = useCallback(
     (title: string) => {
