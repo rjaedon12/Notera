@@ -9,7 +9,7 @@ import {
   LogOut, Loader2, ChevronRight, UserX, Crown, User, Megaphone,
   Plus, ToggleLeft, ToggleRight, Clock, Star, GraduationCap,
   KeyRound, Eye, EyeOff, Copy, Link2, Search, AlertTriangle,
-  ShieldCheck, ShieldX, Download, ExternalLink, ChevronDown, ChevronUp, X,
+  ShieldCheck, ShieldX,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
@@ -191,17 +191,6 @@ export default function AdminDashboard() {
   const [viewedPassword, setViewedPassword] = useState<string | null>(null)
   const [showViewedPw, setShowViewedPw] = useState(false)
   const [resetLink, setResetLink] = useState<string | null>(null)
-
-  // ─── Quizlet Import State ───
-  const [showQuizletImport, setShowQuizletImport] = useState(false)
-  const [quizletUrl, setQuizletUrl] = useState("")
-  const [quizletPreview, setQuizletPreview] = useState<{ title: string; description: string; numTerms: number; terms: { term: string; definition: string }[] } | null>(null)
-  const [importTitle, setImportTitle] = useState("")
-  const [importDescription, setImportDescription] = useState("")
-  const [importTags, setImportTags] = useState("")
-  const [importIsPublic, setImportIsPublic] = useState(true)
-  const [importIsFeatured, setImportIsFeatured] = useState(false)
-
   // Audit log query
   const { data: auditLogs = [] } = useQuery<AuditLogEntry[]>({
     queryKey: ["admin-dash", "audit-log"],
@@ -421,69 +410,6 @@ export default function AdminDashboard() {
       toast.success("Featured status updated")
     },
     onError: () => toast.error("Failed to update featured status"),
-  })
-
-  // Preview Quizlet set mutation
-  const previewQuizletMutation = useMutation({
-    mutationFn: async (url: string) => {
-      const res = await fetch("/api/admin/sets/preview-quizlet", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quizletUrl: url }),
-      })
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || "Failed to preview")
-      }
-      return res.json()
-    },
-    onSuccess: (data) => {
-      setQuizletPreview(data)
-      setImportTitle(data.title || "")
-      setImportDescription(data.description || "")
-      toast.success(`Found ${data.numTerms} terms`)
-    },
-    onError: (err: Error) => {
-      setQuizletPreview(null)
-      toast.error(err.message || "Failed to fetch Quizlet set")
-    },
-  })
-
-  // Import Quizlet set mutation
-  const importQuizletMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch("/api/admin/sets/import-quizlet", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          quizletUrl,
-          title: importTitle,
-          description: importDescription,
-          isPublic: importIsPublic,
-          isFeatured: importIsFeatured,
-          tags: importTags.split(",").map((t) => t.trim()).filter(Boolean),
-        }),
-      })
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || "Failed to import")
-      }
-      return res.json()
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["admin-dash", "sets"] })
-      toast.success(`Imported "${data.title}" with ${data._count?.cards || 0} cards`)
-      // Reset form
-      setQuizletUrl("")
-      setQuizletPreview(null)
-      setImportTitle("")
-      setImportDescription("")
-      setImportTags("")
-      setImportIsPublic(true)
-      setImportIsFeatured(false)
-      setShowQuizletImport(false)
-    },
-    onError: (err: Error) => toast.error(err.message || "Failed to import Quizlet set"),
   })
 
   // Delete quiz mutation
@@ -727,188 +653,7 @@ export default function AdminDashboard() {
         {/* Sets Panel */}
         {activePanel === "sets" && (
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-foreground font-heading">All Flashcard Sets</h2>
-              <button
-                onClick={() => setShowQuizletImport(!showQuizletImport)}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-                style={{
-                  background: showQuizletImport ? "var(--glass-fill)" : "var(--primary)",
-                  color: showQuizletImport ? "var(--muted-foreground)" : "white",
-                  border: showQuizletImport ? "1px solid var(--glass-border)" : "none",
-                }}
-              >
-                {showQuizletImport ? <X className="h-4 w-4" /> : <Download className="h-4 w-4" />}
-                {showQuizletImport ? "Cancel" : "Import from Quizlet"}
-              </button>
-            </div>
-
-            {/* Quizlet Import Section */}
-            {showQuizletImport && (
-              <div className="rounded-xl border p-6 mb-6 space-y-4" style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <ExternalLink className="h-5 w-5" style={{ color: "var(--primary)" }} />
-                  <h3 className="text-lg font-semibold text-foreground">Import from Quizlet</h3>
-                </div>
-                <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
-                  Paste a Quizlet set URL to preview and import its flashcards into the app.
-                </p>
-
-                {/* URL Input + Preview Button */}
-                <div className="flex gap-3">
-                  <input
-                    type="url"
-                    value={quizletUrl}
-                    onChange={(e) => setQuizletUrl(e.target.value)}
-                    placeholder="https://quizlet.com/123456789/example-set-flash-cards/"
-                    className="flex-1 px-4 py-2 rounded-lg text-sm bg-transparent border outline-none focus:ring-2 text-foreground"
-                    style={{ borderColor: "var(--glass-border)", focusRingColor: "var(--primary)" } as React.CSSProperties}
-                  />
-                  <button
-                    onClick={() => quizletUrl.trim() && previewQuizletMutation.mutate(quizletUrl.trim())}
-                    disabled={!quizletUrl.trim() || previewQuizletMutation.isPending}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
-                    style={{ background: "var(--primary)", color: "white" }}
-                  >
-                    {previewQuizletMutation.isPending ? (
-                      <><Loader2 className="h-4 w-4 animate-spin" /> Fetching...</>
-                    ) : (
-                      <><Search className="h-4 w-4" /> Preview</>
-                    )}
-                  </button>
-                </div>
-
-                {/* Preview Results */}
-                {quizletPreview && (
-                  <div className="space-y-4 pt-4 border-t" style={{ borderColor: "var(--glass-border)" }}>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-green-500/15 text-green-400">
-                        {quizletPreview.numTerms} terms found
-                      </span>
-                    </div>
-
-                    {/* Editable Fields */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-medium mb-1" style={{ color: "var(--muted-foreground)" }}>Title</label>
-                        <input
-                          type="text"
-                          value={importTitle}
-                          onChange={(e) => setImportTitle(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg text-sm bg-transparent border outline-none text-foreground"
-                          style={{ borderColor: "var(--glass-border)" }}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium mb-1" style={{ color: "var(--muted-foreground)" }}>Tags (comma-separated)</label>
-                        <input
-                          type="text"
-                          value={importTags}
-                          onChange={(e) => setImportTags(e.target.value)}
-                          placeholder="vocabulary, language, quizlet"
-                          className="w-full px-3 py-2 rounded-lg text-sm bg-transparent border outline-none text-foreground"
-                          style={{ borderColor: "var(--glass-border)" }}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium mb-1" style={{ color: "var(--muted-foreground)" }}>Description</label>
-                      <textarea
-                        value={importDescription}
-                        onChange={(e) => setImportDescription(e.target.value)}
-                        rows={2}
-                        className="w-full px-3 py-2 rounded-lg text-sm bg-transparent border outline-none text-foreground resize-none"
-                        style={{ borderColor: "var(--glass-border)" }}
-                      />
-                    </div>
-
-                    {/* Toggles */}
-                    <div className="flex items-center gap-6">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <button
-                          type="button"
-                          onClick={() => setImportIsPublic(!importIsPublic)}
-                          className="p-0.5"
-                        >
-                          {importIsPublic ? (
-                            <ToggleRight className="h-6 w-6" style={{ color: "var(--primary)" }} />
-                          ) : (
-                            <ToggleLeft className="h-6 w-6" style={{ color: "var(--muted-foreground)" }} />
-                          )}
-                        </button>
-                        <span className="text-sm text-foreground">Public</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <button
-                          type="button"
-                          onClick={() => setImportIsFeatured(!importIsFeatured)}
-                          className="p-0.5"
-                        >
-                          {importIsFeatured ? (
-                            <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                          ) : (
-                            <Star className="h-5 w-5" style={{ color: "var(--muted-foreground)" }} />
-                          )}
-                        </button>
-                        <span className="text-sm text-foreground">Featured</span>
-                      </label>
-                    </div>
-
-                    {/* Terms Preview Table */}
-                    <div>
-                      <button
-                        onClick={() => {
-                          const el = document.getElementById("quizlet-terms-preview")
-                          if (el) el.classList.toggle("hidden")
-                        }}
-                        className="inline-flex items-center gap-1 text-sm font-medium mb-2 transition-colors"
-                        style={{ color: "var(--primary)" }}
-                      >
-                        <ChevronDown className="h-4 w-4" /> Preview Terms ({quizletPreview.numTerms})
-                      </button>
-                      <div id="quizlet-terms-preview" className="rounded-lg border overflow-hidden max-h-64 overflow-y-auto" style={{ borderColor: "var(--glass-border)" }}>
-                        <table className="w-full text-sm">
-                          <thead className="sticky top-0" style={{ background: "var(--glass-fill)" }}>
-                            <tr>
-                              <th className="text-left px-3 py-2 font-medium text-xs" style={{ color: "var(--muted-foreground)" }}>#</th>
-                              <th className="text-left px-3 py-2 font-medium text-xs" style={{ color: "var(--muted-foreground)" }}>Term</th>
-                              <th className="text-left px-3 py-2 font-medium text-xs" style={{ color: "var(--muted-foreground)" }}>Definition</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {quizletPreview.terms.map((t, i) => (
-                              <tr key={i} className="border-t" style={{ borderColor: "var(--glass-border)" }}>
-                                <td className="px-3 py-1.5 text-xs" style={{ color: "var(--muted-foreground)" }}>{i + 1}</td>
-                                <td className="px-3 py-1.5 text-foreground">{t.term}</td>
-                                <td className="px-3 py-1.5" style={{ color: "var(--muted-foreground)" }}>{t.definition}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-
-                    {/* Import Button */}
-                    <div className="flex justify-end pt-2">
-                      <button
-                        onClick={() => importQuizletMutation.mutate()}
-                        disabled={importQuizletMutation.isPending || !importTitle.trim()}
-                        className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
-                        style={{ background: "var(--primary)", color: "white" }}
-                      >
-                        {importQuizletMutation.isPending ? (
-                          <><Loader2 className="h-4 w-4 animate-spin" /> Creating Set...</>
-                        ) : (
-                          <><Download className="h-4 w-4" /> Create Set ({quizletPreview.numTerms} cards)</>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
+            <h2 className="text-xl font-bold text-foreground mb-4 font-heading">All Flashcard Sets</h2>
             <div className="rounded-xl border overflow-hidden" style={{ borderColor: "var(--glass-border)" }}>
               <table className="w-full text-sm">
                 <thead>
