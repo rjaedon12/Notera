@@ -7,7 +7,7 @@ function generateInviteCode(): string {
   return randomBytes(3).toString("hex").toUpperCase() // 6-char hex code
 }
 
-// GET /api/groups — get user's groups
+// GET /api/spaces — get user's spaces
 export async function GET() {
   try {
     const session = await auth()
@@ -15,15 +15,15 @@ export async function GET() {
       return Response.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const groups = await prisma.group.findMany({
+    const spaces = await prisma.space.findMany({
       where: {
         members: {
           some: { userId: session.user.id },
         },
       },
       include: {
-        owner: { select: { id: true, name: true, email: true } },
-        _count: { select: { members: true, sets: true } },
+        owner: { select: { id: true, name: true, email: true, role: true } },
+        _count: { select: { members: true, sets: true, assignments: true } },
         members: {
           include: {
             user: { select: { id: true, name: true, image: true } },
@@ -33,14 +33,14 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     })
 
-    return Response.json(groups)
+    return Response.json(spaces)
   } catch (error) {
-    console.error("Get groups error:", error)
+    console.error("Get spaces error:", error)
     return Response.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
-// POST /api/groups — create group, auto-generate 6-char invite code
+// POST /api/spaces — create space
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
@@ -48,41 +48,48 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { name } = await request.json()
+    const { name, description } = await request.json()
 
     if (!name) {
       return Response.json(
-        { error: "Group name is required" },
+        { error: "Space name is required" },
         { status: 400 }
       )
     }
 
-    let group;
-    let retries = 3;
+    // Auto-determine space type based on user role
+    const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } })
+    const isTeacher = user?.role === "TEACHER" || user?.role === "ADMIN"
+    const spaceType = isTeacher ? "CLASSROOM" : "COLLABORATIVE"
+    const memberRole = isTeacher ? "OWNER" : "OWNER"
+
+    let space
+    let retries = 3
     while (retries > 0) {
       try {
-        group = await prisma.group.create({
+        space = await prisma.space.create({
           data: {
             name,
+            description: description || null,
             inviteCode: generateInviteCode(),
+            type: spaceType,
             ownerId: session.user.id,
             members: {
               create: {
                 userId: session.user.id,
-                role: "OWNER",
+                role: memberRole,
               },
             },
           },
           include: {
-            owner: { select: { id: true, name: true, email: true } },
-            _count: { select: { members: true, sets: true } },
+            owner: { select: { id: true, name: true, email: true, role: true } },
+            _count: { select: { members: true, sets: true, assignments: true } },
           },
         })
         break
       } catch (err: unknown) {
         const prismaError = err as { code?: string }
-        // P2002 = unique constraint violation (invite code collision)
-        if (prismaError.code === 'P2002' && retries > 1) {
+        if (prismaError.code === "P2002" && retries > 1) {
           retries--
           continue
         }
@@ -90,9 +97,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return Response.json(group, { status: 201 })
+    return Response.json(space, { status: 201 })
   } catch (error) {
-    console.error("Create group error:", error)
+    console.error("Create space error:", error)
     return Response.json({ error: "Internal server error" }, { status: 500 })
   }
 }

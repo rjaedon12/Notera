@@ -19,15 +19,15 @@ const body = DM_Sans({
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.notera.us"),
   title: {
-    default: "Notera | Study Smarter",
-    template: "%s | Notera",
+    default: "Notera | The all in one education and productivity app",
+    template: "Notera | %s",
   },
   description:
-    "Create flashcards, study with multiple modes, and track your progress",
+    "Notera — The all in one education and productivity app. Flashcards, notes, quizzes, study guides, and more.",
   openGraph: {
-    title: "Notera | Study Smarter",
+    title: "Notera | The all in one education and productivity app",
     description:
-      "Create flashcards, study with multiple modes, and track your progress",
+      "Notera — The all in one education and productivity app. Flashcards, notes, quizzes, study guides, and more.",
     url: "https://www.notera.us",
     siteName: "Notera",
     locale: "en_US",
@@ -35,9 +35,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Notera | Study Smarter",
+    title: "Notera | The all in one education and productivity app",
     description:
-      "Create flashcards, study with multiple modes, and track your progress",
+      "Notera — The all in one education and productivity app. Flashcards, notes, quizzes, study guides, and more.",
   },
   icons: {
     icon: "/favicon.svg",

@@ -2,53 +2,54 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
-// POST /api/groups/[groupId]/leave - Leave a group
+// POST /api/spaces/[spaceId]/leave - Leave a space
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ groupId: string }> }
+  { params }: { params: Promise<{ spaceId: string }> }
 ) {
   try {
     const session = await auth()
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { groupId } = await params
+    const { spaceId } = await params
 
-    // Find membership
-    const membership = await prisma.groupMember.findFirst({
-      where: { groupId, userId: session.user.id },
+    const membership = await prisma.spaceMember.findFirst({
+      where: { spaceId, userId: session.user.id },
     })
 
     if (!membership) {
       return NextResponse.json(
-        { error: "You are not a member of this group" },
+        { error: "You are not a member of this space" },
         { status: 400 }
       )
     }
 
-    // Owners cannot leave, they must delete the group
+    // Owners cannot leave, they must delete the space
     if (membership.role === "OWNER") {
       return NextResponse.json(
-        { error: "Owners cannot leave. Transfer ownership or delete the group." },
+        {
+          error:
+            "Owners cannot leave. Transfer ownership or delete the space.",
+        },
         { status: 400 }
       )
     }
 
-    // Remove membership using composite key
-    await prisma.groupMember.delete({
+    await prisma.spaceMember.delete({
       where: {
-        userId_groupId: {
+        userId_spaceId: {
           userId: session.user.id,
-          groupId,
+          spaceId,
         },
       },
     })
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error leaving group:", error)
+    console.error("Error leaving space:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

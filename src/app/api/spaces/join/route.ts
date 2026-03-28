@@ -2,7 +2,7 @@ import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 
-// POST /api/groups/join — join group by { inviteCode }
+// POST /api/spaces/join — join space by { inviteCode }
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const group = await prisma.group.findUnique({
+    const space = await prisma.space.findUnique({
       where: { inviteCode: inviteCode.toUpperCase() },
       include: {
         members: {
@@ -28,37 +28,51 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (!group) {
+    if (!space) {
       return Response.json({ error: "Invalid invite code" }, { status: 404 })
     }
 
     // Already a member?
-    if (group.members.length > 0) {
+    if (space.members.length > 0) {
       return Response.json(
-        { error: "You are already a member of this group" },
+        { error: "You are already a member of this space" },
         { status: 400 }
       )
     }
 
-    await prisma.groupMember.create({
+    // Auto-assign role: STUDENT for classrooms, MEMBER for collaborative spaces
+    const joinRole = space.type === "CLASSROOM" ? "STUDENT" : "MEMBER"
+
+    await prisma.spaceMember.create({
       data: {
         userId: session.user.id,
-        groupId: group.id,
-        role: "MEMBER",
+        spaceId: space.id,
+        role: joinRole,
       },
     })
 
-    const updated = await prisma.group.findUnique({
-      where: { id: group.id },
+    // Send notification to space owner
+    await prisma.notification.create({
+      data: {
+        userId: space.ownerId,
+        type: "SPACE_INVITE",
+        title: "New member joined",
+        message: `${session.user.name || "Someone"} joined your space "${space.name}"`,
+        link: `/spaces/${space.id}`,
+      },
+    })
+
+    const updated = await prisma.space.findUnique({
+      where: { id: space.id },
       include: {
-        owner: { select: { id: true, name: true, email: true } },
-        _count: { select: { members: true, sets: true } },
+        owner: { select: { id: true, name: true, email: true, role: true } },
+        _count: { select: { members: true, sets: true, assignments: true } },
       },
     })
 
     return Response.json(updated)
   } catch (error) {
-    console.error("Join group error:", error)
+    console.error("Join space error:", error)
     return Response.json({ error: "Internal server error" }, { status: 500 })
   }
 }

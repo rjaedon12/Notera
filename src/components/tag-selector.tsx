@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Check, ChevronsUpDown, Tag as TagIcon } from "lucide-react"
+import { Check, ChevronsUpDown, Tag as TagIcon, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -12,20 +12,25 @@ import {
 } from "@/components/ui/popover"
 import { TagChip } from "@/components/tag-chip"
 
-interface Tag {
-  id: string
+interface AggregatedTag {
   name: string
   slug: string
-  color?: string
-  category: string | null
+  count: number
 }
 
 interface TagSelectorProps {
-  selectedTags: Tag[]
-  onTagsChange: (tags: Tag[]) => void
+  selectedTags: string[]
+  onTagsChange: (tags: string[]) => void
   maxTags?: number
   placeholder?: string
   disabled?: boolean
+}
+
+// Cycle through colors based on tag name
+function colorForTag(name: string) {
+  const colors = ["blue", "green", "purple", "orange", "pink", "yellow", "red"]
+  const hash = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)
+  return colors[hash % colors.length]
 }
 
 export function TagSelector({
@@ -33,38 +38,43 @@ export function TagSelector({
   onTagsChange,
   maxTags = 5,
   placeholder = "Add tags...",
-  disabled = false
+  disabled = false,
 }: TagSelectorProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
 
-  // Fetch available tags
-  const { data: availableTags = [] } = useQuery<Tag[]>({
+  // Fetch aggregated tags from public sets
+  const { data: availableTags = [] } = useQuery<AggregatedTag[]>({
     queryKey: ["tags"],
     queryFn: async () => {
       const res = await fetch("/api/tags")
-      if (!res.ok) throw new Error("Failed to fetch tags")
+      if (!res.ok) return []
       return res.json()
-    }
+    },
   })
 
   const filteredTags = availableTags.filter(
     (tag) =>
       tag.name.toLowerCase().includes(search.toLowerCase()) &&
-      !selectedTags.some((t) => t.id === tag.id)
+      !selectedTags.includes(tag.name)
   )
 
-  const toggleTag = (tag: Tag) => {
-    const isSelected = selectedTags.some((t) => t.id === tag.id)
-    if (isSelected) {
-      onTagsChange(selectedTags.filter((t) => t.id !== tag.id))
-    } else if (selectedTags.length < maxTags) {
-      onTagsChange([...selectedTags, tag])
+  const canAddCustom =
+    search.trim().length > 0 &&
+    !selectedTags.includes(search.trim().toLowerCase()) &&
+    !availableTags.some((t) => t.name === search.trim().toLowerCase()) &&
+    selectedTags.length < maxTags
+
+  const addTag = (tagName: string) => {
+    const normalized = tagName.trim().toLowerCase()
+    if (normalized && !selectedTags.includes(normalized) && selectedTags.length < maxTags) {
+      onTagsChange([...selectedTags, normalized])
+      setSearch("")
     }
   }
 
-  const removeTag = (tagId: string) => {
-    onTagsChange(selectedTags.filter((t) => t.id !== tagId))
+  const removeTag = (tagName: string) => {
+    onTagsChange(selectedTags.filter((t) => t !== tagName))
   }
 
   return (
@@ -74,13 +84,12 @@ export function TagSelector({
         <div className="flex flex-wrap gap-1.5">
           {selectedTags.map((tag) => (
             <TagChip
-              key={tag.id}
-              name={tag.name}
-              slug={tag.slug}
-              color={tag.color || "blue"}
+              key={tag}
+              name={tag}
+              color={colorForTag(tag)}
               size="sm"
               removable
-              onRemove={() => removeTag(tag.id)}
+              onRemove={() => removeTag(tag)}
             />
           ))}
         </div>
@@ -105,50 +114,67 @@ export function TagSelector({
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-64 p-0" align="start">
+        <PopoverContent className="w-72 p-0" align="start">
           <div className="p-2">
             <input
               type="text"
-              placeholder="Search tags..."
+              placeholder="Search or create tags..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && canAddCustom) {
+                  e.preventDefault()
+                  addTag(search)
+                }
+              }}
               className="w-full px-3 py-2 text-sm border border-border rounded-md bg-input text-input-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <div className="max-h-60 overflow-auto p-1">
-            {filteredTags.length === 0 ? (
+            {/* Custom tag option */}
+            {canAddCustom && (
+              <button
+                onClick={() => addTag(search)}
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted text-foreground"
+              >
+                <Plus className="h-4 w-4 text-primary" />
+                <span>
+                  Create &quot;<span className="font-medium">{search.trim().toLowerCase()}</span>&quot;
+                </span>
+              </button>
+            )}
+
+            {filteredTags.length === 0 && !canAddCustom ? (
               <p className="py-4 text-center text-sm text-muted-foreground">
-                No tags found
+                {search ? "No matching tags" : "No tags available"}
               </p>
             ) : (
               filteredTags.map((tag) => {
-                const isSelected = selectedTags.some((t) => t.id === tag.id)
+                const isSelected = selectedTags.includes(tag.name)
                 return (
                   <button
-                    key={tag.id}
-                    onClick={() => toggleTag(tag)}
+                    key={tag.slug}
+                    onClick={() => addTag(tag.name)}
                     className={cn(
                       "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm",
                       "hover:bg-muted text-foreground",
                       isSelected && "bg-primary/10"
                     )}
                   >
-                    <div className={cn(
-                      "h-4 w-4 rounded border flex items-center justify-center",
-                      isSelected
-                        ? "bg-primary border-primary text-primary-foreground"
-                        : "border-border"
-                    )}>
+                    <div
+                      className={cn(
+                        "h-4 w-4 rounded border flex items-center justify-center",
+                        isSelected
+                          ? "bg-primary border-primary text-primary-foreground"
+                          : "border-border"
+                      )}
+                    >
                       {isSelected && <Check className="h-3 w-3" />}
                     </div>
-                    <span className="flex-1 text-left">
-                      {tag.name}
+                    <span className="flex-1 text-left">{tag.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {tag.count} {tag.count === 1 ? "set" : "sets"}
                     </span>
-                    {tag.category && (
-                      <span className="text-xs text-muted-foreground">
-                        {tag.category}
-                      </span>
-                    )}
                   </button>
                 )
               })

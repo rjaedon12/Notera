@@ -43,7 +43,7 @@ export function usePublicSets(search?: string, options?: { featured?: boolean; l
 export function useCreateStudySet() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (data: { title: string; description?: string; isPublic?: boolean; cards?: { term: string; definition: string }[] }) => {
+    mutationFn: async (data: { title: string; description?: string; isPublic?: boolean; tags?: string[]; cards?: { term: string; definition: string }[] }) => {
       const res = await fetch("/api/sets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

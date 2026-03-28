@@ -3,27 +3,39 @@
 const features = [
   {
     label: "Study Modes",
-    title: "Five ways to learn. One goal: mastery.",
+    title: "Five ways to master any subject.",
     description:
-      "Flashcards, learn, test, match, and timed modes. Switch between them to match your focus and keep sessions effective.",
+      "Flashcards, learn, test, match, and timed modes. Adaptive algorithms surface weak spots so you study what matters most.",
   },
   {
-    label: "Adaptive",
-    title: "Cards you miss appear more often.",
+    label: "Notes",
+    title: "Write, organize, think clearly.",
     description:
-      "The system tracks what you know and what you don't. Weak spots surface automatically so you spend time where it matters.",
+      "A full rich-text editor with folders and instant search. Capture ideas in class or build structured study notes — all in one place.",
+  },
+  {
+    label: "Quizzes & DBQ",
+    title: "Practice that mirrors the real thing.",
+    description:
+      "Multiple-choice quiz banks and document-based-question practice with AI scoring. Prep for AP exams, finals, and everything in between.",
+  },
+  {
+    label: "Whiteboard",
+    title: "Sketch it out. See the big picture.",
+    description:
+      "An infinite canvas for diagrams, mind maps, and visual brainstorming. Great for planning essays or mapping out complex topics.",
+  },
+  {
+    label: "Study Guides",
+    title: "Turn notes into guided review.",
+    description:
+      "Generate structured study guides from your content. Organize by topic, add key terms, and review efficiently before exams.",
   },
   {
     label: "Progress",
     title: "See exactly where you stand.",
     description:
-      "Mastery levels, streaks, and study time — all tracked. A clean dashboard shows your growth at a glance.",
-  },
-  {
-    label: "Open",
-    title: "Share sets. Study together.",
-    description:
-      "Create public study sets, discover community content, or keep your cards private. Your call.",
+      "Mastery levels, streaks, and study time — all tracked. A clean dashboard shows your growth at a glance across every tool.",
   },
 ]
 
@@ -36,18 +48,18 @@ export function FeatureSections() {
           className="text-xs font-semibold uppercase tracking-widest mb-4"
           style={{ color: "var(--landing-muted)", letterSpacing: "0.12em" }}
         >
-          Features
+          Everything you need
         </p>
         <h2
           className="font-heading font-bold leading-[1.1] max-w-md"
           style={{ color: "var(--landing-fg)", fontSize: "clamp(1.75rem, 4vw, 2.5rem)", letterSpacing: "-0.03em" }}
         >
-          Everything you need to study effectively
+          One app. Every tool for school.
         </h2>
       </div>
 
-      {/* Feature cards — flat, borderless-ish, editorial */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-14">
+      {/* Feature cards — 3-column grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-14">
         {features.map((f) => (
           <div key={f.label}>
             <p

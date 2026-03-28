@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url)
-  const groupId = searchParams.get("groupId")
+  const spaceId = searchParams.get("spaceId")
   const archived = searchParams.get("archived")
 
   const where: Record<string, unknown> = {
@@ -23,8 +23,8 @@ export async function GET(req: NextRequest) {
     where.isArchived = false
   }
 
-  if (groupId) {
-    where.groupId = groupId
+  if (spaceId) {
+    where.spaceId = spaceId
   }
 
   const pages = await prisma.notePage.findMany({
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
       isArchived: true,
       isFullWidth: true,
       coverImage: true,
-      groupId: true,
+      spaceId: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { title, parentId, groupId, icon } = body
+  const { title, parentId, spaceId, icon } = body
 
   // If parentId is given, verify ownership
   if (parentId) {
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       title: title || "Untitled",
       icon: icon || null,
       parentId: parentId || null,
-      groupId: groupId || null,
+      spaceId: spaceId || null,
       sortOrder: (maxSort._max.sortOrder ?? -1) + 1,
       userId: session.user.id,
     },

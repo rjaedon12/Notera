@@ -14,16 +14,16 @@ export function CTASection() {
             letterSpacing: "-0.03em",
           }}
         >
-          Ready to start studying?
+          Ready to level up how you learn?
         </h2>
         <p
           className="text-[0.938rem] leading-relaxed max-w-md mx-auto mb-10"
           style={{ color: "var(--landing-muted)" }}
         >
-          Create an account in seconds. No setup, no friction.
+          Join Notera for free. No setup, no friction — just start learning.
         </p>
         <Link href="/signup" className="landing-btn-primary">
-          Sign up
+          Get started for free
         </Link>
       </div>
     </section>

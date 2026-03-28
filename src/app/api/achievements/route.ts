@@ -12,7 +12,7 @@ export const ACHIEVEMENTS = [
   { key: "streak_30", title: "Monthly Master", description: "Maintained a 30-day study streak", icon: "🏆" },
   { key: "cards_50", title: "Card Collector", description: "Mastered 50 cards", icon: "🃏" },
   { key: "cards_100", title: "Card Master", description: "Mastered 100 cards", icon: "👑" },
-  { key: "first_group", title: "Team Player", description: "Joined or created a study group", icon: "👥" },
+  { key: "first_group", title: "Team Player", description: "Joined or created a space", icon: "👥" },
   { key: "first_comment", title: "Contributor", description: "Left your first comment on a set", icon: "💬" },
   { key: "first_rating", title: "Critic", description: "Rated your first study set", icon: "⭐" },
 ]
@@ -69,7 +69,7 @@ export async function POST() {
       prisma.flashcardSet.count({ where: { userId } }),
       prisma.cardProgress.count({ where: { userId, status: "MASTERED" } }),
       prisma.quizAttempt.findMany({ where: { userId, completedAt: { not: null } }, select: { score: true } }),
-      prisma.groupMember.count({ where: { userId } }),
+      prisma.spaceMember.count({ where: { userId } }),
       prisma.comment.count({ where: { userId } }),
       prisma.rating.count({ where: { userId } }),
       prisma.userAchievement.findMany({ where: { userId }, select: { achieveKey: true } }),

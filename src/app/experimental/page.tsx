@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { FlaskConical, Users, Beaker, ArrowRight, Sparkles, FileText, Clock } from "lucide-react"
+import { FlaskConical, Music, Beaker, ArrowRight, Sparkles, FileText, Clock } from "lucide-react"
 import { motion } from "framer-motion"
 
 const experimentalFeatures = [
@@ -33,11 +33,11 @@ const experimentalFeatures = [
     status: "Beta",
   },
   {
-    href: "/groups",
-    title: "Study Groups",
+    href: "/sightreading",
+    title: "Sightreading Practice",
     description:
-      "Collaborate with classmates in study groups. Share flashcard sets, study together, and keep each other on track with group-level progress tracking.",
-    icon: <Users className="h-6 w-6" />,
+      "Practice identifying notes on the musical staff. Choose your clef, difficulty level, and sharpen your music reading skills with interactive quizzes.",
+    icon: <Music className="h-6 w-6" />,
     color: "#60a5fa",
     status: "Beta",
   },

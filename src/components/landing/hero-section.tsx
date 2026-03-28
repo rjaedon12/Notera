@@ -6,6 +6,19 @@ export function HeroSection() {
   return (
     <section className="relative flex items-center justify-center" style={{ minHeight: "100vh", paddingTop: "5rem" }}>
       <div className="max-w-3xl mx-auto px-6 text-center">
+        {/* Badge */}
+        <div
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8"
+          style={{
+            background: "color-mix(in srgb, var(--landing-fg) 6%, transparent)",
+            border: "1px solid color-mix(in srgb, var(--landing-fg) 10%, transparent)",
+          }}
+        >
+          <span className="text-xs font-medium" style={{ color: "var(--landing-muted)" }}>
+            ✨ Education &amp; Productivity, unified
+          </span>
+        </div>
+
         {/* Main headline — Bricolage 700, tight tracking */}
         <h1
           className="font-heading font-bold leading-[1.06] mb-6"
@@ -15,9 +28,19 @@ export function HeroSection() {
             fontSize: "clamp(2.75rem, 7vw, 4.5rem)",
           }}
         >
-          Master anything,
+          The all in one
           <br />
-          one card at a time.
+          <span
+            style={{
+              background: "linear-gradient(135deg, var(--landing-fg) 0%, color-mix(in srgb, var(--landing-fg) 60%, #3B82F6) 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            education &amp; productivity
+          </span>
+          <br />
+          app.
         </h1>
 
         {/* Subline — Bricolage 300, relaxed */}
@@ -30,19 +53,28 @@ export function HeroSection() {
             letterSpacing: "-0.01em",
           }}
         >
-          Flashcards, adaptive study modes, and progress tracking.
-          Built for how you actually learn.
+          Flashcards, notes, quizzes, study guides, whiteboards, and more.
+          <br />
+          Everything you need to learn, create, and stay organized.
         </p>
 
-        {/* Single CTA */}
+        {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link href="/signup" className="landing-btn-primary">
-            Start studying
+            Get started — it&apos;s free
           </Link>
           <a href="#features" className="landing-btn-ghost">
-            See how it works
+            See what&apos;s inside
           </a>
         </div>
+
+        {/* Trust line */}
+        <p
+          className="mt-10 text-xs"
+          style={{ color: "color-mix(in srgb, var(--landing-muted) 60%, transparent)" }}
+        >
+          No credit card required · Free forever for students
+        </p>
       </div>
     </section>
   )

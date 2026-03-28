@@ -34,6 +34,16 @@ const nextConfig: NextConfig = {
         destination: "/library?tab=homework",
         permanent: true,
       },
+      {
+        source: "/groups",
+        destination: "/spaces",
+        permanent: true,
+      },
+      {
+        source: "/groups/:path*",
+        destination: "/spaces/:path*",
+        permanent: true,
+      },
     ]
   },
 };

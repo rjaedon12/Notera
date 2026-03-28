@@ -22,14 +22,6 @@ interface CardData {
   definition: string
 }
 
-interface Tag {
-  id: string
-  name: string
-  slug: string
-  color?: string
-  category: string | null
-}
-
 export default function CreatePage() {
   const router = useRouter()
   const { status } = useSession()
@@ -39,7 +31,7 @@ export default function CreatePage() {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [isPublic, setIsPublic] = useState(false)
-  const [selectedTags, setSelectedTags] = useState<Tag[]>([])
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [cards, setCards] = useState<CardData[]>([
     { id: "1", term: "", definition: "" },
     { id: "2", term: "", definition: "" },
@@ -134,17 +126,9 @@ export default function CreatePage() {
         title,
         description,
         isPublic,
+        tags: selectedTags,
         cards: validCards.map((c) => ({ term: c.term, definition: c.definition })),
       })
-      
-      // Add tags if any selected
-      if (selectedTags.length > 0) {
-        await fetch(`/api/sets/${result.id}/tags`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tagIds: selectedTags.map(t => t.id) }),
-        })
-      }
       
       toast.success("Study set created!")
       router.push(`/sets/${result.id}`)

@@ -19,7 +19,7 @@ export function LandingFooter() {
               <span className="font-heading font-bold text-sm" style={{ color: "var(--landing-fg)" }}>Notera</span>
             </div>
             <p className="text-xs leading-relaxed" style={{ color: "var(--landing-subtle)" }}>
-              Flashcard app for students who want results.
+              The all in one education and productivity app.
             </p>
           </div>
 
@@ -33,12 +33,14 @@ export function LandingFooter() {
             </ul>
           </div>
 
-          {/* Community */}
+          {/* Features */}
           <div>
-            <p className="text-xs font-semibold uppercase mb-4" style={{ color: "var(--landing-subtle)", letterSpacing: "0.1em" }}>Community</p>
+            <p className="text-xs font-semibold uppercase mb-4" style={{ color: "var(--landing-subtle)", letterSpacing: "0.1em" }}>Features</p>
             <ul className="space-y-2.5">
+              <li><a href="#features" className="text-sm transition-colors" style={{ color: "var(--landing-muted)" }}>Study Modes</a></li>
+              <li><a href="#features" className="text-sm transition-colors" style={{ color: "var(--landing-muted)" }}>Notes</a></li>
+              <li><a href="#features" className="text-sm transition-colors" style={{ color: "var(--landing-muted)" }}>Whiteboards</a></li>
               <li><Link href="/forum" className="text-sm transition-colors" style={{ color: "var(--landing-muted)" }}>Forum</Link></li>
-              <li><a href="#features" className="text-sm transition-colors" style={{ color: "var(--landing-muted)" }}>Features</a></li>
             </ul>
           </div>
 

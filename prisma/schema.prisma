@@ -26,13 +26,22 @@ enum CardStatus {
   MASTERED
 }
 
-enum GroupRole {
+enum SpaceType {
+  COLLABORATIVE
+  CLASSROOM
+}
+
+enum SpaceRole {
   OWNER
+  MODERATOR
   MEMBER
+  STUDENT
 }
 
 enum NotificationType {
-  GROUP_INVITE
+  SPACE_INVITE
+  SPACE_ASSIGNMENT
+  SPACE_ANNOUNCEMENT
   SET_SHARED
   ACHIEVEMENT
   STUDY_REMINDER
@@ -104,10 +113,10 @@ model User {
   sets             FlashcardSet[]
   progress         StudyProgress[]
   cardProgress     CardProgress[]
-  groupMemberships GroupMember[]
+  spaceMemberships SpaceMember[]
   sessions         Session[]
   accounts         Account[]
-  ownedGroups      Group[]
+  ownedSpaces      Space[]
   resources        Resource[]
   questionBanks    QuestionBank[]
   quizAttempts     QuizAttempt[]
@@ -133,6 +142,8 @@ model User {
   fsrsProgress  UserFlashcardProgress[]
   adminAuditLogs AdminAuditLog[] @relation("AuditTarget")
   adminActions   AdminAuditLog[] @relation("AuditAdmin")
+  spaceAssignments SpaceAssignment[] @relation("AssignmentCreator")
+  spaceAnnouncements SpaceAnnouncement[] @relation("SpaceAnnouncementAuthor")
 }
 
 // ─── Admin Audit Log ─────────────────────────────────────
@@ -170,7 +181,8 @@ model FlashcardSet {
 
   cards     Flashcard[]
   progress  StudyProgress[]
-  groupSets GroupSet[]
+  spaceSets SpaceSet[]
+  spaceAssignments SpaceAssignment[]
   starredBy StarredSet[]
   savedBy   SavedSet[]
   comments  Comment[]
@@ -257,42 +269,89 @@ model UserFlashcardProgress {
   @@index([userId, due])
 }
 
-// ─── Groups ──────────────────────────────────────────────
+// ─── Spaces (Collaborative Study Spaces & Teacher Classrooms) ──
 
-model Group {
-  id         String   @id @default(cuid())
-  name       String
-  inviteCode String   @unique
-  createdAt  DateTime @default(now())
+model Space {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  inviteCode  String    @unique
+  type        SpaceType @default(COLLABORATIVE)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   ownerId String
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
-  members GroupMember[]
-  sets    GroupSet[]
-  notePages NotePage[]
+  members       SpaceMember[]
+  sets          SpaceSet[]
+  assignments   SpaceAssignment[]
+  announcements SpaceAnnouncement[]
+  notePages     NotePage[]
 }
 
-model GroupMember {
+model SpaceMember {
   userId   String
-  groupId  String
-  role     GroupRole @default(MEMBER)
+  spaceId  String
+  role     SpaceRole @default(MEMBER)
   joinedAt DateTime  @default(now())
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
 
-  @@id([userId, groupId])
+  @@id([userId, spaceId])
 }
 
-model GroupSet {
-  groupId String
+model SpaceSet {
+  spaceId String
   setId   String
 
-  group Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  space Space        @relation(fields: [spaceId], references: [id], onDelete: Cascade)
   set   FlashcardSet @relation(fields: [setId], references: [id], onDelete: Cascade)
 
-  @@id([groupId, setId])
+  @@id([spaceId, setId])
+}
+
+model SpaceAssignment {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  dueDate     DateTime?
+  assignedAt  DateTime  @default(now())
+
+  spaceId String
+  space   Space  @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  assignedById String
+  assignedBy   User   @relation("AssignmentCreator", fields: [assignedById], references: [id], onDelete: Cascade)
+
+  // Polymorphic content link — exactly one should be set
+  flashcardSetId String?
+  flashcardSet   FlashcardSet? @relation(fields: [flashcardSetId], references: [id], onDelete: SetNull)
+
+  questionBankId String?
+  questionBank   QuestionBank? @relation(fields: [questionBankId], references: [id], onDelete: SetNull)
+
+  dbqPromptId String?
+  dbqPrompt   DBQPrompt? @relation(fields: [dbqPromptId], references: [id], onDelete: SetNull)
+
+  @@index([spaceId])
+  @@index([assignedById])
+}
+
+model SpaceAnnouncement {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  createdAt DateTime @default(now())
+
+  spaceId String
+  space   Space  @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation("SpaceAnnouncementAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([spaceId, createdAt])
 }
 
 // ─── Resources / Timeline ────────────────────────────────
@@ -361,6 +420,7 @@ model QuestionBank {
 
   questions Question[]
   attempts  QuizAttempt[]
+  spaceAssignments SpaceAssignment[]
 }
 
 model Question {
@@ -543,6 +603,7 @@ model DBQPrompt {
 
   documents DBQDocument[]
   essays    DBQEssay[]
+  spaceAssignments SpaceAssignment[]
 }
 
 model DBQDocument {
@@ -728,15 +789,15 @@ model NotePage {
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Optional group attachment
-  groupId     String?
-  group       Group?      @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  spaceId     String?
+  space       Space?      @relation(fields: [spaceId], references: [id], onDelete: SetNull)
 
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
   @@index([userId])
   @@index([parentId])
-  @@index([groupId])
+  @@index([spaceId])
 }
 
 // ─── Whiteboard ──────────────────────────────────────────

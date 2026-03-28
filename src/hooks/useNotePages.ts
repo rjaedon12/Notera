@@ -16,7 +16,7 @@ export interface NotePageMeta {
   isArchived: boolean
   isFullWidth: boolean
   coverImage: string | null
-  groupId: string | null
+  spaceId: string | null
   createdAt: string
   updatedAt: string
 }
@@ -54,11 +54,11 @@ export function buildTree(pages: NotePageMeta[]): NotePageNode[] {
 }
 
 // Fetch all pages (metadata only, for sidebar)
-export function useNotePages(groupId?: string) {
+export function useNotePages(spaceId?: string) {
   return useQuery<NotePageMeta[]>({
-    queryKey: ["note-pages", groupId],
+    queryKey: ["note-pages", spaceId],
     queryFn: async () => {
-      const params = groupId ? `?groupId=${groupId}` : ""
+      const params = spaceId ? `?spaceId=${spaceId}` : ""
       const res = await fetch(`/api/notes${params}`)
       if (!res.ok) throw new Error("Failed to fetch pages")
       return res.json()
@@ -99,7 +99,7 @@ export function useCreateNotePage() {
     mutationFn: async (data: {
       title?: string
       parentId?: string | null
-      groupId?: string
+      spaceId?: string
       icon?: string
     }) => {
       const res = await fetch("/api/notes", {

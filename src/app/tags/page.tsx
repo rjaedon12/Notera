@@ -2,106 +2,139 @@
 
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tag as TagIcon, BookOpen, FileText } from "lucide-react"
+import { Tag as TagIcon, BookOpen, TrendingUp, Search } from "lucide-react"
+import { useState, useMemo } from "react"
 import { cn } from "@/lib/utils"
 
-interface Tag {
-  id: string
+interface AggregatedTag {
   name: string
   slug: string
-  category: string | null
-  _count: {
-    sets: number
-    resources: number
-  }
+  count: number
+}
+
+// Color based on tag name hash
+function colorForTag(name: string) {
+  const colors = [
+    "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20",
+    "bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/20",
+    "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/20",
+    "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/20",
+    "bg-pink-500/15 text-pink-600 dark:text-pink-400 border-pink-500/20",
+    "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/20",
+    "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20",
+  ]
+  const hash = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)
+  return colors[hash % colors.length]
 }
 
 export default function TagsPage() {
-  const { data: tags, isLoading } = useQuery<Tag[]>({
+  const [search, setSearch] = useState("")
+
+  const { data: tags, isLoading } = useQuery<AggregatedTag[]>({
     queryKey: ["tags"],
     queryFn: async () => {
       const res = await fetch("/api/tags")
-      if (!res.ok) throw new Error("Failed to fetch tags")
+      if (!res.ok) return []
       return res.json()
     },
   })
 
+  const filteredTags = useMemo(() => {
+    if (!tags) return []
+    if (!search.trim()) return tags
+    return tags.filter((t) => t.name.includes(search.toLowerCase()))
+  }, [tags, search])
+
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">Browse Tags</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Skeleton key={i} className="h-24" />
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="mb-8">
+          <Skeleton className="h-10 w-48 mb-2" />
+          <Skeleton className="h-5 w-72" />
+        </div>
+        <Skeleton className="h-10 w-full mb-8" />
+        <div className="flex flex-wrap gap-3">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) => (
+            <Skeleton key={i} className="h-10 w-28 rounded-full" />
           ))}
         </div>
       </div>
     )
   }
 
-  const categories = [...new Set(tags?.map((t) => t.category).filter(Boolean))]
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center gap-3 mb-6">
-        <TagIcon className="h-8 w-8 text-primary" />
-        <h1 className="text-3xl font-bold">Browse Tags</h1>
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <div
+            className="p-2 rounded-xl"
+            style={{ background: "var(--primary)", opacity: 0.9 }}
+          >
+            <TagIcon className="h-5 w-5" style={{ color: "var(--primary-foreground)" }} />
+          </div>
+          <h1 className="text-3xl font-bold font-heading">Browse Tags</h1>
+        </div>
+        <p className="text-muted-foreground">
+          Explore topics across all public study sets. Click a tag to find matching sets.
+        </p>
       </div>
 
-      {categories.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Categories</h2>
-          <div className="flex flex-wrap gap-2">
-            {categories.map((category) => (
-              <span
-                key={category}
-                className="px-3 py-1 rounded-full bg-muted text-muted-foreground text-sm"
-              >
-                {category}
-              </span>
-            ))}
-          </div>
+      {/* Search */}
+      <div className="relative mb-8">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Filter tags..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-10 pr-4 py-2.5 text-sm border border-border rounded-xl bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      </div>
+
+      {/* Stats */}
+      {tags && tags.length > 0 && (
+        <div className="flex items-center gap-4 mb-6 text-sm text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <TrendingUp className="h-4 w-4" />
+            {tags.length} tags across all sets
+          </span>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {tags?.map((tag) => (
-          <Link key={tag.id} href={`/tags/${tag.slug}`}>
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <TagIcon className="h-4 w-4 text-primary" />
-                  {tag.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <BookOpen className="h-4 w-4" />
-                    {tag._count.sets} sets
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <FileText className="h-4 w-4" />
-                    {tag._count.resources} resources
-                  </span>
-                </div>
-                {tag.category && (
-                  <span className="mt-2 inline-block px-2 py-0.5 rounded bg-muted text-xs text-muted-foreground">
-                    {tag.category}
-                  </span>
-                )}
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
-
-      {(!tags || tags.length === 0) && (
-        <Card className="p-8 text-center">
-          <p className="text-muted-foreground">No tags found yet.</p>
-        </Card>
+      {/* Tag cloud */}
+      {filteredTags.length > 0 ? (
+        <div className="flex flex-wrap gap-2.5">
+          {filteredTags.map((tag) => (
+            <Link
+              key={tag.slug}
+              href={`/tags/${tag.slug}`}
+              className={cn(
+                "inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition-all hover:scale-105 hover:shadow-md",
+                colorForTag(tag.name)
+              )}
+            >
+              <span>{tag.name}</span>
+              <span className="flex items-center gap-1 opacity-70 text-xs">
+                <BookOpen className="h-3 w-3" />
+                {tag.count}
+              </span>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-16">
+          <TagIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-40" />
+          <h3 className="font-semibold text-lg mb-2 text-foreground font-heading">
+            {search ? "No matching tags" : "No tags yet"}
+          </h3>
+          <p className="text-muted-foreground text-sm">
+            {search
+              ? "Try a different search term."
+              : "Tags will appear here as sets are created with tags."}
+          </p>
+        </div>
       )}
     </div>
   )
