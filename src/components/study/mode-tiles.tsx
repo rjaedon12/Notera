@@ -6,7 +6,7 @@ import {
   BookOpen, 
   FileText, 
   Grid3X3, 
-  Zap, 
+  Blocks, 
   Shuffle 
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -47,10 +47,10 @@ const modes = [
   },
   { 
     id: "timed", 
-    name: "Blast", 
-    icon: Zap, 
-    color: "bg-blue-500",
-    description: "Beat the clock"
+    name: "Blocks", 
+    icon: Blocks, 
+    color: "bg-purple-500",
+    description: "Block puzzle game"
   },
 ]
 
