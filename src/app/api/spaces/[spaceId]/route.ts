@@ -57,7 +57,20 @@ export async function GET(
         },
         announcements: {
           include: {
-            author: { select: { id: true, name: true } },
+            author: { select: { id: true, name: true, image: true } },
+            comments: {
+              include: {
+                author: { select: { id: true, name: true, image: true } },
+                replies: {
+                  include: {
+                    author: { select: { id: true, name: true, image: true } },
+                  },
+                  orderBy: { createdAt: "asc" as const },
+                },
+              },
+              where: { parentId: null },
+              orderBy: { createdAt: "asc" as const },
+            },
           },
           orderBy: { createdAt: "desc" },
           take: 20,
@@ -135,6 +148,60 @@ export async function DELETE(
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Error deleting space:", error)
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH /api/spaces/[spaceId] - Update space (name, description, banner)
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ spaceId: string }> }
+) {
+  try {
+    const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { spaceId } = await params
+    const body = await request.json()
+
+    const membership = await prisma.spaceMember.findFirst({
+      where: {
+        spaceId,
+        userId: session.user.id,
+        role: { in: ["OWNER", "MODERATOR"] },
+      },
+    })
+
+    if (!membership) {
+      return NextResponse.json(
+        { error: "Only owners and moderators can update a space" },
+        { status: 403 }
+      )
+    }
+
+    const data: Record<string, string | null> = {}
+    if (typeof body.name === "string" && body.name.trim()) data.name = body.name.trim()
+    if (typeof body.description === "string") data.description = body.description || null
+    if (typeof body.bannerColor === "string") data.bannerColor = body.bannerColor || null
+    if (typeof body.bannerImage === "string") data.bannerImage = body.bannerImage || null
+
+    if (Object.keys(data).length === 0) {
+      return NextResponse.json({ error: "No fields to update" }, { status: 400 })
+    }
+
+    const updated = await prisma.space.update({
+      where: { id: spaceId },
+      data,
+    })
+
+    return NextResponse.json(updated)
+  } catch (error) {
+    console.error("Error updating space:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

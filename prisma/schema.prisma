@@ -144,6 +144,7 @@ model User {
   adminActions   AdminAuditLog[] @relation("AuditAdmin")
   spaceAssignments SpaceAssignment[] @relation("AssignmentCreator")
   spaceAnnouncements SpaceAnnouncement[] @relation("SpaceAnnouncementAuthor")
+  spaceComments      SpaceComment[]      @relation("SpaceCommentAuthor")
 }
 
 // ─── Admin Audit Log ─────────────────────────────────────
@@ -277,6 +278,8 @@ model Space {
   description String?
   inviteCode  String    @unique
   type        SpaceType @default(COLLABORATIVE)
+  bannerColor String?   // CSS gradient or hex
+  bannerImage String?   // URL to uploaded image
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -351,7 +354,29 @@ model SpaceAnnouncement {
   authorId String
   author   User   @relation("SpaceAnnouncementAuthor", fields: [authorId], references: [id], onDelete: Cascade)
 
+  comments SpaceComment[]
+
   @@index([spaceId, createdAt])
+}
+
+model SpaceComment {
+  id        String   @id @default(cuid())
+  message   String
+  createdAt DateTime @default(now())
+
+  announcementId String
+  announcement   SpaceAnnouncement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User @relation("SpaceCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Self-referencing for replies
+  parentId String?
+  parent   SpaceComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  SpaceComment[] @relation("CommentReplies")
+
+  @@index([announcementId, createdAt])
+  @@index([parentId])
 }
 
 // ─── Resources / Timeline ────────────────────────────────

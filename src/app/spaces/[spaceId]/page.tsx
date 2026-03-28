@@ -12,11 +12,20 @@ import {
   Users, BookOpen, Copy, Check, ArrowLeft, Plus, Crown, User,
   Trash2, LogOut, Flame, Trophy, ClipboardList, Megaphone,
   FileText, HelpCircle, Calendar, ExternalLink, Search, X,
-  MoreVertical, Settings, UserPlus,
+  MoreVertical, Settings, UserPlus, Pencil, Palette, MessageCircle,
+  Reply, Send, Image as ImageIcon, CheckCircle2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 /* ─── Types ─── */
+interface SpaceComment {
+  id: string; message: string; createdAt: string
+  authorId: string
+  author: { id: string; name: string | null; image: string | null }
+  parentId: string | null
+  replies?: SpaceComment[]
+}
+
 interface SpaceMemberData {
   userId: string
   role: string
@@ -47,6 +56,7 @@ interface SpaceAssignment {
 interface SpaceAnnouncementData {
   id: string; title: string; message: string; createdAt: string
   author: { id: string; name: string | null; image: string | null }
+  comments?: SpaceComment[]
 }
 
 interface LeaderboardEntry {
@@ -57,6 +67,7 @@ interface LeaderboardEntry {
 interface SpaceData {
   id: string; name: string; description: string | null
   type: "COLLABORATIVE" | "CLASSROOM"; inviteCode: string; createdAt: string
+  bannerColor: string | null; bannerImage: string | null
   owner: { id: string; name: string | null; role: string }
   members: SpaceMemberData[]; sets: SpaceSet[]
   assignments: SpaceAssignment[]; announcements: SpaceAnnouncementData[]
@@ -65,22 +76,26 @@ interface SpaceData {
 
 type TabKey = "stream" | "classwork" | "people" | "leaderboard"
 
-/* ── Banner colors ── */
-const BANNER_COLORS = [
-  "linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)",
-  "linear-gradient(135deg, #064e3b 0%, #059669 100%)",
-  "linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%)",
-  "linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)",
-  "linear-gradient(135deg, #713f12 0%, #d97706 100%)",
-  "linear-gradient(135deg, #134e4a 0%, #0d9488 100%)",
-  "linear-gradient(135deg, #581c87 0%, #a855f7 100%)",
-  "linear-gradient(135deg, #1e3a5f 0%, #0ea5e9 100%)",
+/* ── Nice banner presets (name + gradient) ── */
+const BANNER_PRESETS = [
+  { name: "Ocean",    value: "linear-gradient(135deg, #0f172a 0%, #1e40af 50%, #3b82f6 100%)" },
+  { name: "Forest",   value: "linear-gradient(135deg, #052e16 0%, #15803d 50%, #22c55e 100%)" },
+  { name: "Violet",   value: "linear-gradient(135deg, #2e1065 0%, #7c3aed 50%, #a78bfa 100%)" },
+  { name: "Ember",    value: "linear-gradient(135deg, #450a0a 0%, #dc2626 50%, #f87171 100%)" },
+  { name: "Sunset",   value: "linear-gradient(135deg, #431407 0%, #ea580c 50%, #fdba74 100%)" },
+  { name: "Teal",     value: "linear-gradient(135deg, #042f2e 0%, #0d9488 50%, #5eead4 100%)" },
+  { name: "Orchid",   value: "linear-gradient(135deg, #3b0764 0%, #a855f7 50%, #d8b4fe 100%)" },
+  { name: "Sky",      value: "linear-gradient(135deg, #0c4a6e 0%, #0284c7 50%, #38bdf8 100%)" },
+  { name: "Slate",    value: "linear-gradient(135deg, #0f172a 0%, #475569 50%, #94a3b8 100%)" },
+  { name: "Rose",     value: "linear-gradient(135deg, #4c0519 0%, #e11d48 50%, #fb7185 100%)" },
+  { name: "Midnight", value: "linear-gradient(135deg, #020617 0%, #1e293b 50%, #334155 100%)" },
+  { name: "Emerald",  value: "linear-gradient(135deg, #064e3b 0%, #059669 50%, #6ee7b7 100%)" },
 ]
 
-function getBannerColor(id: string) {
+function getDefaultBannerColor(id: string) {
   let hash = 0
   for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash)
-  return BANNER_COLORS[Math.abs(hash) % BANNER_COLORS.length]
+  return BANNER_PRESETS[Math.abs(hash) % BANNER_PRESETS.length].value
 }
 
 interface PageProps { params: Promise<{ spaceId: string }> }
@@ -94,6 +109,7 @@ export default function SpaceDetailPage({ params }: PageProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("stream")
   const [joinCode, setJoinCode] = useState("")
   const [showMenu, setShowMenu] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
   const { data: space, isLoading, error } = useQuery<SpaceData>({
     queryKey: ["space", spaceId],
@@ -152,7 +168,8 @@ export default function SpaceDetailPage({ params }: PageProps) {
   const isOwner = currentMember?.role === "OWNER"
   const isModerator = currentMember?.role === "MODERATOR" || currentMember?.role === "OWNER"
   const isClassroom = space?.type === "CLASSROOM"
-  const bannerColor = getBannerColor(spaceId)
+  const bannerColor = space?.bannerColor || getDefaultBannerColor(spaceId)
+  const bannerImage = space?.bannerImage
 
   /* ── Loading ── */
   if (isLoading) {
@@ -220,8 +237,16 @@ export default function SpaceDetailPage({ params }: PageProps) {
       </Link>
 
       {/* ── Banner ── */}
-      <div className="relative rounded-xl overflow-hidden mb-1" style={{ background: bannerColor }}>
-        <div className="px-6 pt-14 pb-5">
+      <div
+        className="relative rounded-xl overflow-hidden mb-1"
+        style={{
+          background: bannerImage ? undefined : bannerColor,
+        }}
+      >
+        {bannerImage && (
+          <img src={bannerImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        )}
+        <div className={cn("relative px-6 pt-14 pb-5", bannerImage && "bg-black/40")}>
           <h1 className="text-2xl sm:text-3xl font-bold text-white">{space.name}</h1>
           {space.description && (
             <p className="text-white/70 text-sm mt-1">{space.description}</p>
@@ -251,7 +276,15 @@ export default function SpaceDetailPage({ params }: PageProps) {
             {showMenu && (
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setShowMenu(false)} />
-                <div className="absolute right-0 top-full mt-1 w-48 rounded-lg border border-border bg-card shadow-xl z-40 py-1">
+                <div className="absolute right-0 top-full mt-1 w-52 rounded-lg border border-border bg-card shadow-xl z-40 py-1">
+                  {isModerator && (
+                    <button
+                      onClick={() => { setShowMenu(false); setShowSettings(true) }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted transition-colors"
+                    >
+                      <Settings className="h-4 w-4" /> Class settings
+                    </button>
+                  )}
                   {isOwner ? (
                     <button
                       onClick={() => { setShowMenu(false); if (confirm("Delete this space and all its data?")) deleteSpace.mutate() }}
@@ -273,6 +306,16 @@ export default function SpaceDetailPage({ params }: PageProps) {
           </div>
         </div>
       </div>
+
+      {/* Settings modal */}
+      {showSettings && space && (
+        <SpaceSettingsModal
+          space={space}
+          spaceId={spaceId}
+          bannerColor={bannerColor}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
 
       {/* ── Tabs ── */}
       <div className="flex gap-1 border-b border-border mb-6">
@@ -297,7 +340,7 @@ export default function SpaceDetailPage({ params }: PageProps) {
 
       {/* ── Tab Content ── */}
       {activeTab === "stream" && (
-        <StreamTab space={space} isModerator={isModerator} spaceId={spaceId} isClassroom={!!isClassroom} />
+        <StreamTab space={space} isModerator={isModerator} spaceId={spaceId} isClassroom={!!isClassroom} userId={session?.user?.id || ""} />
       )}
       {activeTab === "classwork" && (
         <ClassworkTab space={space} isModerator={isModerator} spaceId={spaceId} isClassroom={!!isClassroom} />
@@ -316,9 +359,9 @@ export default function SpaceDetailPage({ params }: PageProps) {
    Stream Tab — Google Classroom style: announcements + activity
    ═══════════════════════════════════════════════════════════════ */
 function StreamTab({
-  space, isModerator, spaceId, isClassroom,
+  space, isModerator, spaceId, isClassroom, userId,
 }: {
-  space: SpaceData; isModerator: boolean; spaceId: string; isClassroom: boolean
+  space: SpaceData; isModerator: boolean; spaceId: string; isClassroom: boolean; userId: string
 }) {
   const queryClient = useQueryClient()
   const [showAnnounce, setShowAnnounce] = useState(false)
@@ -351,6 +394,7 @@ function StreamTab({
       author: a.author.name || "Admin",
       authorImage: a.author.image,
       date: new Date(a.createdAt),
+      comments: a.comments || [],
     })),
     ...space.assignments.map((a) => ({
       type: "assignment" as const,
@@ -365,6 +409,7 @@ function StreamTab({
         : a.questionBank ? `/quizzes/${a.questionBank.id}`
           : a.dbqPrompt ? `/dbq/${a.dbqPrompt.id}` : null,
       contentLabel: a.flashcardSet?.title || a.questionBank?.title || a.dbqPrompt?.title || null,
+      comments: [] as SpaceComment[],
     })),
   ].sort((a, b) => b.date.getTime() - a.date.getTime())
 
@@ -435,59 +480,7 @@ function StreamTab({
           </div>
         ) : (
           feed.map((item) => (
-            <div key={`${item.type}-${item.id}`} className="rounded-xl border border-border bg-card overflow-hidden">
-              <div className="px-4 py-3 flex items-start gap-3">
-                <div className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5",
-                  item.type === "assignment" ? "bg-indigo-100 dark:bg-indigo-900/30" : "bg-muted"
-                )}>
-                  {item.type === "assignment" ? (
-                    <ClipboardList className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                  ) : item.authorImage ? (
-                    <img src={item.authorImage} alt="" className="w-8 h-8 rounded-full" />
-                  ) : (
-                    <Megaphone className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-medium text-sm text-foreground">{item.author}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {item.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                    </span>
-                  </div>
-                  {item.type === "assignment" ? (
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      Posted a new assignment: <span className="font-medium text-foreground">{item.title}</span>
-                    </p>
-                  ) : (
-                    <>
-                      <p className="font-medium text-foreground text-sm mt-1">{item.title}</p>
-                      <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{item.body}</p>
-                    </>
-                  )}
-                  {item.type === "assignment" && (
-                    <div className="flex flex-wrap items-center gap-3 mt-2">
-                      {"dueDate" in item && item.dueDate && (
-                        <span className="flex items-center gap-1 text-xs text-orange-600 dark:text-orange-400">
-                          <Calendar className="h-3 w-3" />
-                          Due {item.dueDate.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                        </span>
-                      )}
-                      {"link" in item && item.link && (
-                        <Link
-                          href={item.link}
-                          className="flex items-center gap-1 text-xs font-medium hover:underline"
-                          style={{ color: "var(--accent-color)" }}
-                        >
-                          <ExternalLink className="h-3 w-3" /> Open
-                        </Link>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <FeedCard key={`${item.type}-${item.id}`} item={item} spaceId={spaceId} userId={userId} isModerator={isModerator} />
           ))
         )}
       </div>
@@ -536,6 +529,421 @@ function StreamTab({
         </div>
       </div>
     </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FeedCard — single announcement / assignment with comments
+   ═══════════════════════════════════════════════════════════════ */
+function FeedCard({
+  item,
+  spaceId,
+  userId,
+  isModerator,
+}: {
+  item: {
+    type: "announcement" | "assignment"; id: string; title: string
+    body: string | null; author: string; authorImage: string | null
+    date: Date; comments: SpaceComment[]
+    dueDate?: Date | null; link?: string | null; contentLabel?: string | null
+  }
+  spaceId: string; userId: string; isModerator: boolean
+}) {
+  const queryClient = useQueryClient()
+  const [showComments, setShowComments] = useState(false)
+  const [commentText, setCommentText] = useState("")
+  const [replyTo, setReplyTo] = useState<string | null>(null)
+  const [replyText, setReplyText] = useState("")
+
+  const postComment = useMutation({
+    mutationFn: async ({ message, parentId }: { message: string; parentId?: string }) => {
+      const res = await fetch(`/api/spaces/${spaceId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ announcementId: item.id, message, parentId }),
+      })
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Failed") }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["space", spaceId] })
+      setCommentText(""); setReplyText(""); setReplyTo(null)
+    },
+  })
+
+  const deleteComment = useMutation({
+    mutationFn: async (commentId: string) => {
+      const res = await fetch(`/api/spaces/${spaceId}/comments`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ commentId }),
+      })
+      if (!res.ok) throw new Error("Failed")
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["space", spaceId] }) },
+  })
+
+  const totalComments = item.comments.reduce((n, c) => n + 1 + (c.replies?.length || 0), 0)
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      {/* Main content */}
+      <div className="px-4 py-3 flex items-start gap-3">
+        <div className={cn(
+          "w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+          item.type === "assignment" ? "bg-indigo-100 dark:bg-indigo-900/30" : "bg-muted"
+        )}>
+          {item.type === "assignment" ? (
+            <ClipboardList className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+          ) : item.authorImage ? (
+            <img src={item.authorImage} alt="" className="w-8 h-8 rounded-full" />
+          ) : (
+            <Megaphone className="h-4 w-4 text-muted-foreground" />
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-2">
+            <span className="font-medium text-sm text-foreground">{item.author}</span>
+            <span className="text-xs text-muted-foreground">
+              {item.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            </span>
+          </div>
+          {item.type === "assignment" ? (
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Posted a new assignment: <span className="font-medium text-foreground">{item.title}</span>
+            </p>
+          ) : (
+            <>
+              <p className="font-medium text-foreground text-sm mt-1">{item.title}</p>
+              <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{item.body}</p>
+            </>
+          )}
+          {item.type === "assignment" && (
+            <div className="flex flex-wrap items-center gap-3 mt-2">
+              {"dueDate" in item && item.dueDate && (
+                <span className="flex items-center gap-1 text-xs text-orange-600 dark:text-orange-400">
+                  <Calendar className="h-3 w-3" />
+                  Due {item.dueDate.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                </span>
+              )}
+              {"link" in item && item.link && (
+                <Link
+                  href={item.link}
+                  className="flex items-center gap-1 text-xs font-medium hover:underline"
+                  style={{ color: "var(--accent-color)" }}
+                >
+                  <ExternalLink className="h-3 w-3" /> Open
+                </Link>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Comment toggle bar */}
+      {item.type === "announcement" && (
+        <div className="border-t border-border">
+          <button
+            onClick={() => setShowComments(!showComments)}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            {totalComments > 0
+              ? `${totalComments} comment${totalComments !== 1 ? "s" : ""}`
+              : "Add a comment"}
+          </button>
+        </div>
+      )}
+
+      {/* Comments section */}
+      {showComments && item.type === "announcement" && (
+        <div className="border-t border-border px-4 py-3 space-y-3">
+          {/* Comment list */}
+          {item.comments.map((c) => (
+            <div key={c.id} className="space-y-2">
+              {/* Top-level comment */}
+              <div className="flex items-start gap-2 group">
+                <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5 overflow-hidden">
+                  {c.author.image ? (
+                    <img src={c.author.image} alt="" className="w-6 h-6 rounded-full" />
+                  ) : (
+                    <User className="h-3 w-3 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xs font-medium text-foreground">{c.author.name || "Anonymous"}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {new Date(c.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">{c.message}</p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <button
+                      onClick={() => { setReplyTo(replyTo === c.id ? null : c.id); setReplyText("") }}
+                      className="text-[10px] font-medium hover:underline"
+                      style={{ color: "var(--accent-color)" }}
+                    >
+                      Reply
+                    </button>
+                    {(c.authorId === userId || isModerator) && (
+                      <button
+                        onClick={() => deleteComment.mutate(c.id)}
+                        className="text-[10px] text-red-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Replies */}
+              {c.replies && c.replies.length > 0 && (
+                <div className="ml-8 space-y-2 border-l-2 border-border pl-3">
+                  {c.replies.map((r) => (
+                    <div key={r.id} className="flex items-start gap-2 group">
+                      <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5 overflow-hidden">
+                        {r.author.image ? (
+                          <img src={r.author.image} alt="" className="w-5 h-5 rounded-full" />
+                        ) : (
+                          <User className="h-2.5 w-2.5 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-[11px] font-medium text-foreground">{r.author.name || "Anonymous"}</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {new Date(r.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">{r.message}</p>
+                        {(r.authorId === userId || isModerator) && (
+                          <button
+                            onClick={() => deleteComment.mutate(r.id)}
+                            className="text-[10px] text-red-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity mt-0.5"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Reply input */}
+              {replyTo === c.id && (
+                <div className="ml-8 flex items-center gap-2">
+                  <Input
+                    placeholder="Write a reply..."
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    className="h-8 text-xs"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && replyText.trim()) {
+                        postComment.mutate({ message: replyText.trim(), parentId: c.id })
+                      }
+                      if (e.key === "Escape") { setReplyTo(null); setReplyText("") }
+                    }}
+                  />
+                  <Button
+                    size="sm"
+                    className="h-8 px-2"
+                    disabled={!replyText.trim() || postComment.isPending}
+                    onClick={() => postComment.mutate({ message: replyText.trim(), parentId: c.id })}
+                  >
+                    <Send className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* New top-level comment input */}
+          <div className="flex items-center gap-2 pt-1">
+            <Input
+              placeholder="Add a comment..."
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              className="h-8 text-xs"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && commentText.trim()) {
+                  postComment.mutate({ message: commentText.trim() })
+                }
+              }}
+            />
+            <Button
+              size="sm"
+              className="h-8 px-2"
+              disabled={!commentText.trim() || postComment.isPending}
+              onClick={() => postComment.mutate({ message: commentText.trim() })}
+            >
+              <Send className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Space Settings Modal — Rename, banner color, image
+   ═══════════════════════════════════════════════════════════════ */
+function SpaceSettingsModal({
+  space, spaceId, bannerColor, onClose,
+}: {
+  space: SpaceData; spaceId: string; bannerColor: string; onClose: () => void
+}) {
+  const queryClient = useQueryClient()
+  const [name, setName] = useState(space.name)
+  const [description, setDescription] = useState(space.description || "")
+  const [selectedBanner, setSelectedBanner] = useState(space.bannerColor || bannerColor)
+  const [imageUrl, setImageUrl] = useState(space.bannerImage || "")
+  const [useImage, setUseImage] = useState(!!space.bannerImage)
+  const [saving, setSaving] = useState(false)
+
+  const save = async () => {
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/spaces/${spaceId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim() || space.name,
+          description: description.trim() || null,
+          bannerColor: useImage ? space.bannerColor : selectedBanner,
+          bannerImage: useImage && imageUrl.trim() ? imageUrl.trim() : null,
+        }),
+      })
+      if (!res.ok) throw new Error("Failed to update")
+      queryClient.invalidateQueries({ queryKey: ["space", spaceId] })
+      queryClient.invalidateQueries({ queryKey: ["spaces"] })
+      onClose()
+    } catch {
+      alert("Failed to save settings")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/50 z-50" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div
+          className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-foreground">Class Settings</h2>
+              <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Name */}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Name</label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Class name" />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Description</label>
+              <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional description" />
+            </div>
+
+            {/* Banner section */}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-3 block">Banner</label>
+
+              {/* Toggle: gradient or image */}
+              <div className="flex gap-2 mb-4">
+                <button
+                  onClick={() => setUseImage(false)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full border transition-all",
+                    !useImage
+                      ? "bg-[var(--accent-color)] text-white border-[var(--accent-color)]"
+                      : "border-border text-muted-foreground hover:border-foreground"
+                  )}
+                >
+                  <Palette className="h-3 w-3" /> Color
+                </button>
+                <button
+                  onClick={() => setUseImage(true)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full border transition-all",
+                    useImage
+                      ? "bg-[var(--accent-color)] text-white border-[var(--accent-color)]"
+                      : "border-border text-muted-foreground hover:border-foreground"
+                  )}
+                >
+                  <ImageIcon className="h-3 w-3" /> Image URL
+                </button>
+              </div>
+
+              {!useImage ? (
+                /* Banner color grid */
+                <div className="grid grid-cols-4 gap-2">
+                  {BANNER_PRESETS.map((preset) => (
+                    <button
+                      key={preset.name}
+                      onClick={() => setSelectedBanner(preset.value)}
+                      className={cn(
+                        "relative rounded-lg h-16 transition-all border-2",
+                        selectedBanner === preset.value
+                          ? "border-[var(--accent-color)] ring-2 ring-[var(--accent-color)]/30 scale-105"
+                          : "border-transparent hover:scale-105"
+                      )}
+                      style={{ background: preset.value }}
+                    >
+                      <span className="absolute bottom-1 left-0 right-0 text-[10px] font-medium text-white/80 text-center drop-shadow-sm">
+                        {preset.name}
+                      </span>
+                      {selectedBanner === preset.value && (
+                        <CheckCircle2 className="absolute top-1 right-1 h-4 w-4 text-white drop-shadow" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                /* Image URL input */
+                <div className="space-y-3">
+                  <Input
+                    placeholder="Paste an image URL…"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                  />
+                  {imageUrl.trim() && (
+                    <div className="rounded-lg overflow-hidden border border-border h-32 relative">
+                      <img
+                        src={imageUrl}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Save */}
+            <div className="flex gap-2 justify-end pt-2">
+              <Button variant="ghost" onClick={onClose}>Cancel</Button>
+              <Button onClick={save} disabled={saving}>
+                {saving ? "Saving..." : "Save changes"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   )
 }
 
@@ -606,28 +1014,58 @@ function ClassworkTab({
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {space.sets.map((gs) => (
-              <Link key={gs.setId} href={`/sets/${gs.set.id}`}>
-                <div className="rounded-xl border border-border bg-card p-4 hover:shadow-md transition-shadow">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
-                      <BookOpen className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-sm text-foreground truncate">{gs.set.title}</h3>
-                      {gs.set.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{gs.set.description}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {gs.set._count.cards} cards · by {gs.set.user.name || "Anonymous"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </Link>
+              <SetCard key={gs.setId} gs={gs} isModerator={isModerator} spaceId={spaceId} />
             ))}
           </div>
         )}
       </section>
+    </div>
+  )
+}
+
+/* ── Set Card with optional delete ── */
+function SetCard({ gs, isModerator, spaceId }: { gs: SpaceSet; isModerator: boolean; spaceId: string }) {
+  const queryClient = useQueryClient()
+  const deleteSet = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/spaces/${spaceId}/sets`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ setId: gs.setId }),
+      })
+      if (!res.ok) throw new Error("Failed")
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["space", spaceId] }) },
+  })
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 hover:shadow-md transition-shadow group relative">
+      <Link href={`/sets/${gs.set.id}`} className="flex items-start gap-3">
+        <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
+          <BookOpen className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-medium text-sm text-foreground truncate">{gs.set.title}</h3>
+          {gs.set.description && (
+            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{gs.set.description}</p>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">
+            {gs.set._count.cards} cards · by {gs.set.user.name || "Anonymous"}
+          </p>
+        </div>
+      </Link>
+      {isModerator && (
+        <button
+          onClick={(e) => {
+            e.preventDefault(); e.stopPropagation()
+            if (confirm("Remove this study set from the space?")) deleteSet.mutate()
+          }}
+          className="absolute top-2 right-2 p-1.5 rounded-lg text-red-500 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+          title="Remove set"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      )}
     </div>
   )
 }
