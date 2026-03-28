@@ -1,53 +1,49 @@
 "use client"
 
-import { memo, useState, useCallback } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { memo, useCallback, useRef, useEffect } from "react"
+import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
-import type { Board, GamePiece, PieceShape } from "@/lib/blast"
+import type { Board, GamePiece } from "@/lib/blast"
 import { BOARD_SIZE, canPlace } from "@/lib/blast"
 
 interface BlastBoardProps {
   board: Board
-  selectedPiece: GamePiece | null
+  dragPiece: GamePiece | null
+  dragCell: { row: number; col: number } | null
   clearingRows: number[]
   clearingCols: number[]
-  onCellClick: (row: number, col: number) => void
   onClearAnimationDone: () => void
+  onDrop: (row: number, col: number, pieceIndex: number) => void
+  /** Called by tray drag to update the hover position on the board. */
+  boardRef?: React.RefObject<HTMLDivElement | null>
   disabled?: boolean
 }
 
 export const BlastBoard = memo(function BlastBoard({
   board,
-  selectedPiece,
+  dragPiece,
+  dragCell,
   clearingRows,
   clearingCols,
-  onCellClick,
   onClearAnimationDone,
+  boardRef,
   disabled,
 }: BlastBoardProps) {
-  const [hoverCell, setHoverCell] = useState<{
-    row: number
-    col: number
-  } | null>(null)
-
   const isClearing = clearingRows.length > 0 || clearingCols.length > 0
 
   // Compute ghost preview cells
   const ghostCells = new Set<string>()
   let ghostValid = false
-  if (selectedPiece && hoverCell && !isClearing && !disabled) {
-    ghostValid = canPlace(
-      board,
-      selectedPiece.shape,
-      hoverCell.row,
-      hoverCell.col
-    )
-    if (ghostValid) {
-      const grid = selectedPiece.shape.grid
-      for (let r = 0; r < grid.length; r++) {
-        for (let c = 0; c < grid[r].length; c++) {
-          if (grid[r][c]) {
-            ghostCells.add(`${hoverCell.row + r}-${hoverCell.col + c}`)
+  if (dragPiece && dragCell && !isClearing && !disabled) {
+    ghostValid = canPlace(board, dragPiece.shape, dragCell.row, dragCell.col)
+    const grid = dragPiece.shape.grid
+    for (let r = 0; r < grid.length; r++) {
+      for (let c = 0; c < grid[r].length; c++) {
+        if (grid[r][c]) {
+          const br = dragCell.row + r
+          const bc = dragCell.col + c
+          if (br >= 0 && br < BOARD_SIZE && bc >= 0 && bc < BOARD_SIZE) {
+            ghostCells.add(`${br}-${bc}`)
           }
         }
       }
@@ -60,15 +56,14 @@ export const BlastBoard = memo(function BlastBoard({
     }
   }, [isClearing, onClearAnimationDone])
 
-  // Track if we've started the exit animation to call done once
   const isCellClearing = (r: number, c: number) =>
     clearingRows.includes(r) || clearingCols.includes(c)
 
   return (
     <div
-      className="inline-grid gap-[2px] bg-zinc-800 p-[2px] rounded-lg select-none"
+      ref={boardRef}
+      className="inline-grid gap-[2px] bg-muted/50 dark:bg-zinc-800 p-[2px] rounded-lg select-none touch-none"
       style={{ gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)` }}
-      onMouseLeave={() => setHoverCell(null)}
     >
       {board.map((row, r) =>
         row.map((cell, c) => {
@@ -80,9 +75,9 @@ export const BlastBoard = memo(function BlastBoard({
             <motion.div
               key={key}
               className={cn(
-                "aspect-square rounded-sm cursor-pointer transition-colors duration-75",
+                "aspect-square rounded-sm transition-colors duration-75",
                 "w-[clamp(32px,calc((100vw-48px)/8-2px),48px)]",
-                !cell && !isGhost && "bg-zinc-900",
+                !cell && !isGhost && "bg-background dark:bg-zinc-900",
                 disabled && "pointer-events-none"
               )}
               style={{
@@ -92,16 +87,24 @@ export const BlastBoard = memo(function BlastBoard({
                     ? cell.color
                     : isGhost
                       ? ghostValid
-                        ? `${selectedPiece!.color}55`
+                        ? `${dragPiece!.color}55`
                         : undefined
                       : undefined,
+                boxShadow:
+                  isGhost && ghostValid
+                    ? `inset 0 0 0 2px ${dragPiece!.color}88`
+                    : undefined,
               }}
               animate={
                 clearing
                   ? {
                       scale: [1, 1.15, 0],
                       opacity: [1, 1, 0],
-                      backgroundColor: ["#ffffff", cell?.color ?? "#ffffff", "#18181b"],
+                      backgroundColor: [
+                        "#ffffff",
+                        cell?.color ?? "#ffffff",
+                        "var(--color-background, #18181b)",
+                      ],
                     }
                   : { scale: 1, opacity: 1 }
               }
@@ -111,15 +114,13 @@ export const BlastBoard = memo(function BlastBoard({
                   : { duration: 0.1 }
               }
               onAnimationComplete={() => {
-                // Only fire once — from the first clearing cell
-                if (clearing && r === (clearingRows[0] ?? clearingCols[0] ?? r) && c === 0) {
+                if (
+                  clearing &&
+                  r === (clearingRows[0] ?? clearingCols[0] ?? r) &&
+                  c === 0
+                ) {
                   handleClearDone()
                 }
-              }}
-              onMouseEnter={() => setHoverCell({ row: r, col: c })}
-              onTouchStart={() => setHoverCell({ row: r, col: c })}
-              onClick={() => {
-                if (!disabled && !isClearing) onCellClick(r, c)
               }}
             />
           )

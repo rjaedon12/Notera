@@ -1,58 +1,119 @@
 "use client"
 
-import { memo } from "react"
+import { memo, useRef, useCallback, useState } from "react"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import type { GamePiece } from "@/lib/blast"
+import { BOARD_SIZE, canPlace } from "@/lib/blast"
 
 interface BlastPieceTrayProps {
   tray: (GamePiece | null)[]
-  selectedIndex: number | null
-  onSelect: (index: number) => void
+  onDragStart: (index: number) => void
+  onDragMove: (clientX: number, clientY: number) => void
+  onDragEnd: () => void
   disabled?: boolean
 }
 
 export const BlastPieceTray = memo(function BlastPieceTray({
   tray,
-  selectedIndex,
-  onSelect,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
   disabled,
 }: BlastPieceTrayProps) {
   return (
     <div className="flex items-center justify-center gap-4 py-3">
       {tray.map((piece, i) => (
-        <motion.button
+        <DraggablePiece
           key={i}
-          disabled={!piece || disabled}
-          className={cn(
-            "relative p-2 rounded-lg border-2 transition-colors min-w-[60px] min-h-[60px]",
-            "flex items-center justify-center",
-            piece && selectedIndex === i
-              ? "border-white bg-zinc-700 shadow-lg shadow-white/10"
-              : piece
-                ? "border-zinc-600 bg-zinc-800 hover:border-zinc-400"
-                : "border-zinc-800 bg-zinc-900 opacity-30"
-          )}
-          whileHover={piece && !disabled ? { scale: 1.05 } : {}}
-          whileTap={piece && !disabled ? { scale: 0.95 } : {}}
-          animate={
-            piece && selectedIndex === i
-              ? { y: -4 }
-              : { y: 0 }
-          }
-          transition={{ type: "spring", stiffness: 400, damping: 25 }}
-          onClick={() => piece && !disabled && onSelect(i)}
-        >
-          {piece ? (
-            <PieceMiniGrid shape={piece.shape.grid} color={piece.color} />
-          ) : (
-            <div className="w-6 h-6" />
-          )}
-        </motion.button>
+          piece={piece}
+          index={i}
+          disabled={disabled}
+          onDragStart={onDragStart}
+          onDragMove={onDragMove}
+          onDragEnd={onDragEnd}
+        />
       ))}
     </div>
   )
 })
+
+function DraggablePiece({
+  piece,
+  index,
+  disabled,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
+}: {
+  piece: GamePiece | null
+  index: number
+  disabled?: boolean
+  onDragStart: (index: number) => void
+  onDragMove: (clientX: number, clientY: number) => void
+  onDragEnd: () => void
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
+
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      if (!piece || disabled) return
+      e.preventDefault()
+      ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+      setIsDragging(true)
+      onDragStart(index)
+      onDragMove(e.clientX, e.clientY)
+    },
+    [piece, disabled, index, onDragStart, onDragMove]
+  )
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging) return
+      e.preventDefault()
+      onDragMove(e.clientX, e.clientY)
+    },
+    [isDragging, onDragMove]
+  )
+
+  const handlePointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging) return
+      ;(e.target as HTMLElement).releasePointerCapture(e.pointerId)
+      setIsDragging(false)
+      onDragEnd()
+    },
+    [isDragging, onDragEnd]
+  )
+
+  return (
+    <motion.div
+      ref={ref}
+      className={cn(
+        "relative p-2 rounded-lg border-2 transition-colors min-w-[60px] min-h-[60px]",
+        "flex items-center justify-center touch-none select-none",
+        piece
+          ? isDragging
+            ? "border-primary bg-primary/10 shadow-lg scale-110 opacity-50"
+            : "border-border bg-card hover:border-muted-foreground cursor-grab active:cursor-grabbing"
+          : "border-transparent bg-muted/30 opacity-30"
+      )}
+      animate={isDragging ? { scale: 0.85, opacity: 0.4 } : { scale: 1, opacity: piece ? 1 : 0.3 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+    >
+      {piece ? (
+        <PieceMiniGrid shape={piece.shape.grid} color={piece.color} />
+      ) : (
+        <div className="w-6 h-6" />
+      )}
+    </motion.div>
+  )
+}
 
 /** Renders a small preview of a piece shape. */
 function PieceMiniGrid({
@@ -62,7 +123,6 @@ function PieceMiniGrid({
   shape: boolean[][]
   color: string
 }) {
-  const rows = shape.length
   const cols = Math.max(...shape.map((r) => r.length))
 
   return (

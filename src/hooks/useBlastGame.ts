@@ -66,6 +66,7 @@ export type BlastAction =
   | { type: "SET_QUESTION"; question: BlastQuestion }
   | { type: "SELECT_PIECE"; index: number }
   | { type: "PLACE_PIECE"; row: number; col: number }
+  | { type: "PLACE_PIECE_DIRECT"; pieceIndex: number; row: number; col: number }
   | { type: "CLEAR_COMPLETE" }
   | { type: "CHECK_GAME_OVER" }
   | { type: "RESTART" }
@@ -135,6 +136,7 @@ function reducer(
       return {
         ...state,
         questionFirstTry: false,
+        currentQuestion: null, // triggers useEffect to serve a new question
       }
 
     case "SELECT_PIECE":
@@ -144,8 +146,23 @@ function reducer(
           state.selectedPieceIndex === action.index ? null : action.index,
       }
 
+    case "PLACE_PIECE_DIRECT": {
+      const directPiece = state.tray[action.pieceIndex]
+      if (!directPiece) return state
+      if (!canPlace(state.board, directPiece.shape, action.row, action.col))
+        return state
+      // Delegate to shared placement logic below via a synthetic PLACE_PIECE
+      return reducer(state, {
+        type: "PLACE_PIECE",
+        row: action.row,
+        col: action.col,
+        _pieceIdx: action.pieceIndex,
+      } as BlastAction & { _pieceIdx: number })
+    }
+
     case "PLACE_PIECE": {
-      const piece = state.tray[state.selectedPieceIndex!]
+      const pieceIdx = (action as unknown as { _pieceIdx?: number })._pieceIdx ?? state.selectedPieceIndex!
+      const piece = state.tray[pieceIdx]
       if (!piece) return state
       if (!canPlace(state.board, piece.shape, action.row, action.col))
         return state
@@ -170,7 +187,7 @@ function reducer(
 
       // Remove the placed piece from the tray
       const newTray = [...state.tray] as (GamePiece | null)[]
-      newTray[state.selectedPieceIndex!] = null
+      newTray[pieceIdx] = null
 
       // Only give first-try bonus on the first placement of the set
       const isFirstPlacement = state.tray.filter(Boolean).length === 3
@@ -302,6 +319,8 @@ export interface UseBlastGameReturn {
   submitAnswer: (answer: string) => "correct" | "close" | "wrong"
   selectPiece: (index: number) => void
   placePieceAt: (row: number, col: number) => boolean
+  /** Directly place a specific piece (used by drag-and-drop). */
+  placePieceDirect: (pieceIndex: number, row: number, col: number) => boolean
   finishClearing: () => void
   restart: () => void
   /** Whether the selected piece can be placed at (row, col). */
@@ -397,12 +416,25 @@ export function useBlastGame(cards: FlashCard[]): UseBlastGameReturn {
     dispatch({ type: "RESTART" })
   }, [])
 
+  const placePieceDirect = useCallback(
+    (pieceIndex: number, row: number, col: number): boolean => {
+      if (state.phase !== "PLACING") return false
+      const piece = state.tray[pieceIndex]
+      if (!piece) return false
+      if (!canPlace(state.board, piece.shape, row, col)) return false
+      dispatch({ type: "PLACE_PIECE_DIRECT", pieceIndex, row, col })
+      return true
+    },
+    [state.phase, state.tray, state.board]
+  )
+
   return {
     state,
     startGame,
     submitAnswer,
     selectPiece,
     placePieceAt,
+    placePieceDirect,
     finishClearing,
     restart,
     canPlaceAt,

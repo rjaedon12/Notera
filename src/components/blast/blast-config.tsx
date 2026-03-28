@@ -34,27 +34,27 @@ export function BlastConfig({ setTitle, cardCount, onStart }: BlastConfigProps) 
       <h1 className="text-2xl font-bold mb-1">Blocks</h1>
       <p className="text-muted-foreground mb-6 text-sm">{setTitle}</p>
 
-      <Card className="mb-6 bg-zinc-900 border-zinc-700">
+      <Card className="mb-6 bg-card border-border">
         <CardContent className="p-6 space-y-5 text-left">
           {/* Answer mode toggle */}
           <div className="space-y-3">
-            <Label className="text-zinc-300">Answer mode</Label>
+            <Label className="text-foreground">Answer mode</Label>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-zinc-400">Multiple choice</span>
+              <span className="text-sm text-muted-foreground">Multiple choice</span>
               <Switch checked={isMC} onCheckedChange={setIsMC} />
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-zinc-400">Typed answer</span>
+              <span className="text-sm text-muted-foreground">Typed answer</span>
               <Switch checked={!isMC} onCheckedChange={(v) => setIsMC(!v)} />
             </div>
           </div>
 
           {/* Prompt side */}
           <div className="space-y-3">
-            <Label className="text-zinc-300">Prompt direction</Label>
+            <Label className="text-foreground">Prompt direction</Label>
             {(["term", "definition", "mixed"] as const).map((side) => (
               <div key={side} className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400 capitalize">
+                <span className="text-sm text-muted-foreground capitalize">
                   {side === "term"
                     ? "Term → Definition"
                     : side === "definition"
@@ -70,7 +70,7 @@ export function BlastConfig({ setTitle, cardCount, onStart }: BlastConfigProps) 
           </div>
 
           {/* Rules */}
-          <div className="bg-zinc-800 rounded-lg p-4 space-y-2 text-sm text-zinc-400">
+          <div className="bg-muted rounded-lg p-4 space-y-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-amber-400 flex-shrink-0" />
               <span>Answer questions to earn block pieces</span>

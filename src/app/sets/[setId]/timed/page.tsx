@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useState, useEffect, useCallback } from "react"
+import { use, useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useStudySet, useSaveTimedScore } from "@/hooks/useStudy"
 import { Button } from "@/components/ui/button"
@@ -13,7 +13,8 @@ import { BlastQuestionModal } from "@/components/blast/blast-question-modal"
 import { BlastScoreDisplay } from "@/components/blast/blast-score-display"
 import { BlastConfig } from "@/components/blast/blast-config"
 import { BlastGameOver } from "@/components/blast/blast-game-over"
-import type { AnswerMode, PromptSide } from "@/lib/blast"
+import type { AnswerMode, PromptSide, GamePiece } from "@/lib/blast"
+import { BOARD_SIZE, canPlace } from "@/lib/blast"
 
 interface PageProps {
   params: Promise<{ setId: string }>
@@ -30,6 +31,55 @@ export default function TimedPage({ params }: PageProps) {
 
   const [isPersonalBest, setIsPersonalBest] = useState(false)
   const [scoreSaved, setScoreSaved] = useState(false)
+
+  // ── Drag state ──
+  const boardRef = useRef<HTMLDivElement | null>(null)
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null)
+  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null)
+  const [dragCell, setDragCell] = useState<{ row: number; col: number } | null>(null)
+
+  const draggingPiece: GamePiece | null =
+    draggingIndex !== null ? game.state.tray[draggingIndex] ?? null : null
+
+  // Compute the board cell from a client x/y
+  const clientToCell = useCallback(
+    (clientX: number, clientY: number): { row: number; col: number } | null => {
+      const el = boardRef.current
+      if (!el) return null
+      const rect = el.getBoundingClientRect()
+      const cellSize = rect.width / BOARD_SIZE
+      const col = Math.floor((clientX - rect.left) / cellSize)
+      const row = Math.floor((clientY - rect.top) / cellSize)
+      if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE)
+        return null
+      return { row, col }
+    },
+    []
+  )
+
+  const handleDragStart = useCallback((index: number) => {
+    setDraggingIndex(index)
+  }, [])
+
+  const handleDragMove = useCallback(
+    (clientX: number, clientY: number) => {
+      setDragPos({ x: clientX, y: clientY })
+      const cell = clientToCell(clientX, clientY)
+      setDragCell(cell)
+    },
+    [clientToCell]
+  )
+
+  const handleDragEnd = useCallback(() => {
+    if (draggingIndex !== null && dragCell && draggingPiece) {
+      if (canPlace(game.state.board, draggingPiece.shape, dragCell.row, dragCell.col)) {
+        game.placePieceDirect(draggingIndex, dragCell.row, dragCell.col)
+      }
+    }
+    setDraggingIndex(null)
+    setDragPos(null)
+    setDragCell(null)
+  }, [draggingIndex, dragCell, draggingPiece, game])
 
   // Save score on game over
   useEffect(() => {
@@ -120,11 +170,6 @@ export default function TimedPage({ params }: PageProps) {
   }
 
   // ── Active game (QUESTION / PLACING / CLEARING) ──
-  const selectedPiece =
-    game.state.selectedPieceIndex !== null
-      ? game.state.tray[game.state.selectedPieceIndex] ?? null
-      : null
-
   return (
     <div className="container mx-auto px-4 py-4 max-w-fit">
       {/* Score display */}
@@ -134,11 +179,13 @@ export default function TimedPage({ params }: PageProps) {
       <div className="relative">
         <BlastBoard
           board={game.state.board}
-          selectedPiece={selectedPiece}
+          dragPiece={draggingPiece}
+          dragCell={dragCell}
           clearingRows={game.state.clearingRows}
           clearingCols={game.state.clearingCols}
-          onCellClick={(r, c) => game.placePieceAt(r, c)}
           onClearAnimationDone={game.finishClearing}
+          onDrop={() => {}}
+          boardRef={boardRef}
           disabled={game.state.phase !== "PLACING"}
         />
 
@@ -146,7 +193,7 @@ export default function TimedPage({ params }: PageProps) {
         <AnimatePresence>
           {game.state.phase === "QUESTION" && game.state.currentQuestion && (
             <BlastQuestionModal
-              key={game.state.score.questionsAnswered}
+              key={game.state.currentQuestion.prompt + game.state.score.questionsAnswered}
               question={game.state.currentQuestion}
               answerMode={game.state.answerMode}
               onSubmit={game.submitAnswer}
@@ -158,10 +205,56 @@ export default function TimedPage({ params }: PageProps) {
       {/* Piece tray */}
       <BlastPieceTray
         tray={game.state.tray}
-        selectedIndex={game.state.selectedPieceIndex}
-        onSelect={game.selectPiece}
+        onDragStart={handleDragStart}
+        onDragMove={handleDragMove}
+        onDragEnd={handleDragEnd}
         disabled={game.state.phase !== "PLACING"}
       />
+
+      {/* Floating drag ghost */}
+      {draggingPiece && dragPos && (
+        <DragGhost piece={draggingPiece} x={dragPos.x} y={dragPos.y} />
+      )}
+    </div>
+  )
+}
+
+/** Floating piece that follows the pointer during drag. */
+function DragGhost({ piece, x, y }: { piece: GamePiece; x: number; y: number }) {
+  const grid = piece.shape.grid
+  const cols = Math.max(...grid.map((r) => r.length))
+  const cellPx = 32
+  const w = cols * (cellPx + 2)
+  const h = grid.length * (cellPx + 2)
+
+  return (
+    <div
+      className="fixed pointer-events-none z-50"
+      style={{
+        left: x - w / 2,
+        top: y - h - 16,
+        opacity: 0.9,
+      }}
+    >
+      <div
+        className="inline-grid gap-[2px]"
+        style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
+      >
+        {grid.flatMap((row, r) =>
+          Array.from({ length: cols }, (_, c) => (
+            <div
+              key={`${r}-${c}`}
+              className="rounded-sm"
+              style={{
+                width: cellPx,
+                height: cellPx,
+                backgroundColor: row[c] ? piece.color : "transparent",
+                boxShadow: row[c] ? `0 2px 8px ${piece.color}66` : undefined,
+              }}
+            />
+          ))
+        )}
+      </div>
     </div>
   )
 }

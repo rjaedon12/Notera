@@ -52,7 +52,7 @@ export function BlastGameOver({
       </motion.p>
       <p className="text-muted-foreground mb-6 text-sm">points</p>
 
-      <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-5 mb-6 space-y-3 text-left">
+      <div className="bg-card border border-border rounded-xl p-5 mb-6 space-y-3 text-left">
         <StatRow
           icon={<Flame className="h-4 w-4 text-amber-400" />}
           label="Best combo"
@@ -100,11 +100,11 @@ function StatRow({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-zinc-400 flex items-center gap-2 text-sm">
+      <span className="text-muted-foreground flex items-center gap-2 text-sm">
         {icon}
         {label}
       </span>
-      <span className="font-bold text-lg tabular-nums text-white">{value}</span>
+      <span className="font-bold text-lg tabular-nums text-foreground">{value}</span>
     </div>
   )
 }

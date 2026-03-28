@@ -57,15 +57,19 @@ export function calculatePlacementScore(
   comboCount: number,
   wasFirstTry: boolean
 ): { delta: ScoreDelta; newComboCount: number } {
-  const blockPoints = cellsPlaced
+  // Block Blast-style scoring: generous base points and dramatic line bonuses
+  const blockPoints = cellsPlaced * 10
 
   let linePoints = 0
   let comboMultiplier = 1
   let newComboCount = comboCount
 
   if (linesClearedNow > 0) {
-    // Base line score: 10 per line + 10 bonus per line beyond the first
-    linePoints = linesClearedNow * 10 + Math.max(0, linesClearedNow - 1) * 10
+    // Base: 100 per line, multi-line bonus scales dramatically
+    // 1→100, 2→300, 3→600, 4→1000, 5→1500
+    linePoints = linesClearedNow * 100 + Math.max(0, linesClearedNow - 1) * 100
+    // Extra multiplier for triple+ clears
+    if (linesClearedNow >= 3) linePoints += linesClearedNow * 100
     // Combo: increment THEN apply
     newComboCount = comboCount + 1
     comboMultiplier = newComboCount
@@ -75,7 +79,7 @@ export function calculatePlacementScore(
     newComboCount = 0
   }
 
-  const firstTryBonus = wasFirstTry ? 5 : 0
+  const firstTryBonus = wasFirstTry ? 50 : 0
 
   const totalAdded = blockPoints + linePoints + firstTryBonus
 

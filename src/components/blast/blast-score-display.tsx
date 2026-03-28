@@ -18,14 +18,14 @@ export const BlastScoreDisplay = memo(function BlastScoreDisplay({
       <div className="flex items-baseline gap-2">
         <motion.span
           key={score.score}
-          initial={{ scale: 1.3, color: "#facc15" }}
-          animate={{ scale: 1, color: "#ffffff" }}
+          initial={{ scale: 1.3 }}
+          animate={{ scale: 1 }}
           transition={{ duration: 0.3 }}
-          className="text-3xl font-bold tabular-nums text-white"
+          className="text-3xl font-bold tabular-nums text-foreground"
         >
           {score.score}
         </motion.span>
-        <span className="text-xs text-zinc-500 uppercase tracking-wider">
+        <span className="text-xs text-muted-foreground uppercase tracking-wider">
           pts
         </span>
       </div>
@@ -47,10 +47,10 @@ export const BlastScoreDisplay = memo(function BlastScoreDisplay({
 
       {/* Lines cleared */}
       <div className="text-right">
-        <div className="text-lg font-bold tabular-nums text-zinc-300">
+        <div className="text-lg font-bold tabular-nums text-foreground">
           {score.linesCleared}
         </div>
-        <div className="text-[10px] text-zinc-500 uppercase tracking-wider">
+        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
           Lines
         </div>
       </div>

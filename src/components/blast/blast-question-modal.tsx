@@ -89,19 +89,19 @@ export function BlastQuestionModal({
         className={cn(
           "w-full max-w-sm mx-4 rounded-2xl p-6 border-2",
           feedback === "correct" || feedback === "close"
-            ? "bg-green-950 border-green-500"
+            ? "bg-green-500/10 dark:bg-green-950 border-green-500"
             : feedback === "wrong"
-              ? "bg-red-950 border-red-500 animate-shake"
-              : "bg-zinc-900 border-zinc-700"
+              ? "bg-red-500/10 dark:bg-red-950 border-red-500 animate-shake"
+              : "bg-card border-border"
         )}
       >
         {/* Prompt */}
         <div className="mb-1">
-          <span className="text-xs uppercase tracking-wider text-zinc-400">
+          <span className="text-xs uppercase tracking-wider text-muted-foreground">
             {question.promptType === "term" ? "Term" : "Definition"}
           </span>
         </div>
-        <p className="text-lg font-semibold text-white mb-5">
+        <p className="text-lg font-semibold text-foreground mb-5">
           {question.prompt}
         </p>
 
@@ -138,13 +138,13 @@ export function BlastQuestionModal({
               const isCorrect = option === question.correctAnswer
               const showFb = showingFeedback
 
-              let bg = "bg-zinc-800 hover:bg-zinc-700 border-zinc-600"
+              let bg = "bg-muted hover:bg-muted/80 border-border"
               if (showFb && isCorrect) {
-                bg = "bg-green-900 border-green-500"
+                bg = "bg-green-500/20 dark:bg-green-900 border-green-500"
               } else if (showFb && isSelected && !isCorrect) {
-                bg = "bg-red-900 border-red-500"
+                bg = "bg-red-500/20 dark:bg-red-900 border-red-500"
               } else if (isSelected) {
-                bg = "bg-zinc-700 border-white"
+                bg = "bg-accent border-primary"
               }
 
               return (
@@ -159,10 +159,10 @@ export function BlastQuestionModal({
                   whileHover={!showFb ? { scale: 1.02 } : {}}
                   whileTap={!showFb ? { scale: 0.97 } : {}}
                 >
-                  <span className="flex-shrink-0 w-7 h-7 rounded-md bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">
+                  <span className="flex-shrink-0 w-7 h-7 rounded-md bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
                     {i + 1}
                   </span>
-                  <span className="text-sm text-zinc-100">{option}</span>
+                  <span className="text-sm text-foreground">{option}</span>
                 </motion.button>
               )
             })}
@@ -178,7 +178,7 @@ export function BlastQuestionModal({
               value={typedAnswer}
               onChange={(e) => setTypedAnswer(e.target.value)}
               disabled={showingFeedback}
-              className="bg-zinc-800 border-zinc-600 text-white placeholder:text-zinc-500"
+              className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
             />
             <Button
               type="submit"
