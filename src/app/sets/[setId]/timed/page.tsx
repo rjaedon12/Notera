@@ -6,6 +6,7 @@ import { useStudySet, useSaveTimedScore } from "@/hooks/useStudy"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AnimatePresence } from "framer-motion"
+import { ArrowLeft } from "lucide-react"
 import { useBlastGame } from "@/hooks/useBlastGame"
 import { BlastBoard } from "@/components/blast/blast-board"
 import { BlastPieceTray } from "@/components/blast/blast-piece-tray"
@@ -37,6 +38,7 @@ export default function TimedPage({ params }: PageProps) {
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null)
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null)
   const [dragCell, setDragCell] = useState<{ row: number; col: number } | null>(null)
+  const [justPlacedCells, setJustPlacedCells] = useState<Set<string>>(new Set())
 
   const draggingPiece: GamePiece | null =
     draggingIndex !== null ? game.state.tray[draggingIndex] ?? null : null
@@ -85,6 +87,18 @@ export default function TimedPage({ params }: PageProps) {
   const handleDragEnd = useCallback(() => {
     if (draggingIndex !== null && dragCell && draggingPiece) {
       if (canPlace(game.state.board, draggingPiece.shape, dragCell.row, dragCell.col)) {
+        // Track which cells are being placed for animation
+        const cells = new Set<string>()
+        const grid = draggingPiece.shape.grid
+        for (let r = 0; r < grid.length; r++) {
+          for (let c = 0; c < grid[r].length; c++) {
+            if (grid[r][c]) cells.add(`${dragCell.row + r}-${dragCell.col + c}`)
+          }
+        }
+        setJustPlacedCells(cells)
+        // Clear after animation
+        setTimeout(() => setJustPlacedCells(new Set()), 350)
+
         game.placePieceDirect(draggingIndex, dragCell.row, dragCell.col)
       }
     }
@@ -115,7 +129,7 @@ export default function TimedPage({ params }: PageProps) {
   // Auto-complete clearing animations after a timeout fallback
   useEffect(() => {
     if (game.state.phase === "CLEARING") {
-      const t = setTimeout(() => game.finishClearing(), 400)
+      const t = setTimeout(() => game.finishClearing(), 600)
       return () => clearTimeout(t)
     }
   }, [game.state.phase, game.finishClearing])
@@ -183,13 +197,24 @@ export default function TimedPage({ params }: PageProps) {
 
   // ── Active game (QUESTION / PLACING / CLEARING) ──
   return (
-    <div className="min-h-[100dvh] flex flex-col items-center justify-center px-4 py-4 bg-background">
-      <div className="w-full max-w-fit">
-        {/* Score display */}
-        <BlastScoreDisplay score={game.state.score} round={game.state.round} />
+    <div className="min-h-[100dvh] flex items-center justify-center px-4 py-6 bg-background">
+      {/* Back button */}
+      <button
+        onClick={() => router.push(`/sets/${setId}`)}
+        className="fixed top-5 left-5 z-30 w-10 h-10 rounded-full flex items-center justify-center bg-[var(--glass-fill)] border border-[var(--glass-border)] text-muted-foreground hover:text-foreground transition-colors"
+        aria-label="Back to set"
+      >
+        <ArrowLeft className="h-5 w-5" />
+      </button>
 
-        {/* Game area — board + question overlay */}
-        <div className="relative overflow-hidden rounded-2xl">
+      <div className="w-full max-w-[500px] flex flex-col items-center gap-2">
+        {/* Score display */}
+        <div className="w-full">
+          <BlastScoreDisplay score={game.state.score} round={game.state.round} />
+        </div>
+
+        {/* Game board + question overlay */}
+        <div className="relative w-full">
           <BlastBoard
             board={game.state.board}
             dragPiece={draggingPiece}
@@ -200,6 +225,7 @@ export default function TimedPage({ params }: PageProps) {
             onDrop={() => {}}
             boardRef={boardRef}
             disabled={game.state.phase !== "PLACING"}
+            justPlacedCells={justPlacedCells}
           />
 
           {/* Question overlay */}
@@ -218,67 +244,17 @@ export default function TimedPage({ params }: PageProps) {
         </div>
 
         {/* Piece tray */}
-        <div className="mt-2">
-          <BlastPieceTray
-            tray={game.state.tray}
-            onDragStart={handleDragStart}
-            onDragMove={handleDragMove}
-            onDragEnd={handleDragEnd}
-            disabled={game.state.phase !== "PLACING"}
-          />
-        </div>
+        <BlastPieceTray
+          tray={game.state.tray}
+          onDragStart={handleDragStart}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
+          disabled={game.state.phase !== "PLACING"}
+        />
 
-        {/* Floating drag ghost — only while actively dragging */}
-        {draggingPiece && dragPos && draggingIndex !== null && (
-          <DragGhost piece={draggingPiece} x={dragPos.x} y={dragPos.y} />
-        )}
       </div>
     </div>
   )
 }
 
-/** Floating piece that follows the pointer during drag. */
-function DragGhost({ piece, x, y }: { piece: GamePiece; x: number; y: number }) {
-  const grid = piece.shape.grid
-  const cols = Math.max(...grid.map((r) => r.length))
-  const cellPx = 36
-  const gap = 2
-  const w = cols * cellPx + (cols - 1) * gap
-  const h = grid.length * cellPx + (grid.length - 1) * gap
 
-  return (
-    <div
-      className="fixed pointer-events-none z-50"
-      style={{
-        left: x - w / 2,
-        top: y - h / 2,
-        opacity: 0.88,
-      }}
-    >
-      <div
-        className="inline-grid"
-        style={{
-          gridTemplateColumns: `repeat(${cols}, ${cellPx}px)`,
-          gap: `${gap}px`,
-        }}
-      >
-        {grid.flatMap((row, r) =>
-          Array.from({ length: cols }, (_, c) => (
-            <div
-              key={`${r}-${c}`}
-              className="rounded-[4px]"
-              style={{
-                width: cellPx,
-                height: cellPx,
-                backgroundColor: row[c] ? piece.color : "transparent",
-                boxShadow: row[c]
-                  ? "inset 0 -1px 0 rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.15)"
-                  : undefined,
-              }}
-            />
-          ))
-        )}
-      </div>
-    </div>
-  )
-}

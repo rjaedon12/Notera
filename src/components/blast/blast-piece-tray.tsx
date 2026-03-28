@@ -21,7 +21,7 @@ export const BlastPieceTray = memo(function BlastPieceTray({
   disabled,
 }: BlastPieceTrayProps) {
   return (
-    <div className="flex items-center justify-center gap-3 py-3 px-2">
+    <div className="flex items-center justify-center gap-4 py-4 px-2">
       {tray.map((piece, i) => (
         <DraggablePiece
           key={i}
@@ -90,7 +90,7 @@ function DraggablePiece({
     <motion.div
       ref={ref}
       className={cn(
-        "relative rounded-xl min-w-[68px] min-h-[68px]",
+        "relative rounded-xl min-w-[76px] min-h-[76px]",
         "flex items-center justify-center touch-none select-none",
         piece
           ? isDragging
@@ -98,7 +98,7 @@ function DraggablePiece({
             : "bg-[var(--glass-fill)] border border-[var(--glass-border)] cursor-grab active:cursor-grabbing"
           : "border border-dashed border-[var(--glass-border)] bg-transparent"
       )}
-      style={{ padding: "10px" }}
+      style={{ padding: "12px" }}
       animate={isDragging ? { scale: 0.85, opacity: 0.3 } : { scale: 1, opacity: piece ? 1 : 0.35 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
       onPointerDown={handlePointerDown}
@@ -138,7 +138,7 @@ function PieceMiniGrid({
         Array.from({ length: cols }, (_, c) => (
           <div
             key={`${r}-${c}`}
-            className="w-4 h-4 rounded-[3px]"
+            className="w-[18px] h-[18px] rounded-[4px]"
             style={{
               backgroundColor: row[c] ? color : "transparent",
               boxShadow: row[c]
