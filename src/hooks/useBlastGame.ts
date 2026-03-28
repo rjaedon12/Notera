@@ -50,6 +50,7 @@ export interface BlastGameState {
   currentQuestion: BlastQuestion | null
   questionFirstTry: boolean // was current question answered first-try?
   wasFirstTry: boolean // latest question result (carried into PLACING)
+  showingCorrectAnswer: boolean // true when wrong answer review is shown
   /** Lines being cleared right now (for animation). */
   clearingRows: number[]
   clearingCols: number[]
@@ -63,6 +64,7 @@ export type BlastAction =
   | { type: "START_GAME"; answerMode: AnswerMode; promptSide: PromptSide }
   | { type: "ANSWER_CORRECT" }
   | { type: "ANSWER_WRONG" }
+  | { type: "ACKNOWLEDGE_WRONG" }
   | { type: "SET_QUESTION"; question: BlastQuestion }
   | { type: "SELECT_PIECE"; index: number }
   | { type: "PLACE_PIECE"; row: number; col: number }
@@ -84,6 +86,7 @@ function createInitialState(): BlastGameState {
     currentQuestion: null,
     questionFirstTry: true,
     wasFirstTry: false,
+    showingCorrectAnswer: false,
     clearingRows: [],
     clearingCols: [],
     answerMode: "mc",
@@ -136,6 +139,13 @@ function reducer(
       return {
         ...state,
         questionFirstTry: false,
+        showingCorrectAnswer: true, // keep question visible for review
+      }
+
+    case "ACKNOWLEDGE_WRONG":
+      return {
+        ...state,
+        showingCorrectAnswer: false,
         currentQuestion: null, // triggers useEffect to serve a new question
       }
 
@@ -317,6 +327,7 @@ export interface UseBlastGameReturn {
   state: BlastGameState
   startGame: (answerMode: AnswerMode, promptSide: PromptSide) => void
   submitAnswer: (answer: string) => "correct" | "close" | "wrong"
+  acknowledgeWrong: () => void
   selectPiece: (index: number) => void
   placePieceAt: (row: number, col: number) => boolean
   /** Directly place a specific piece (used by drag-and-drop). */
@@ -408,6 +419,10 @@ export function useBlastGame(cards: FlashCard[]): UseBlastGameReturn {
     [canPlaceAt]
   )
 
+  const acknowledgeWrong = useCallback(() => {
+    dispatch({ type: "ACKNOWLEDGE_WRONG" })
+  }, [])
+
   const finishClearing = useCallback(() => {
     dispatch({ type: "CLEAR_COMPLETE" })
   }, [])
@@ -432,6 +447,7 @@ export function useBlastGame(cards: FlashCard[]): UseBlastGameReturn {
     state,
     startGame,
     submitAnswer,
+    acknowledgeWrong,
     selectPiece,
     placePieceAt,
     placePieceDirect,

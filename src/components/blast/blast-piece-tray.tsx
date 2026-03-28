@@ -4,7 +4,6 @@ import { memo, useRef, useCallback, useState } from "react"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import type { GamePiece } from "@/lib/blast"
-import { BOARD_SIZE, canPlace } from "@/lib/blast"
 
 interface BlastPieceTrayProps {
   tray: (GamePiece | null)[]
@@ -22,7 +21,7 @@ export const BlastPieceTray = memo(function BlastPieceTray({
   disabled,
 }: BlastPieceTrayProps) {
   return (
-    <div className="flex items-center justify-center gap-4 py-3">
+    <div className="flex items-center justify-center gap-3 py-3 px-2">
       {tray.map((piece, i) => (
         <DraggablePiece
           key={i}
@@ -91,15 +90,16 @@ function DraggablePiece({
     <motion.div
       ref={ref}
       className={cn(
-        "relative p-2 rounded-lg border-2 transition-colors min-w-[60px] min-h-[60px]",
+        "relative rounded-xl transition-all min-w-[68px] min-h-[68px]",
         "flex items-center justify-center touch-none select-none",
         piece
           ? isDragging
-            ? "border-primary bg-primary/10 shadow-lg scale-110 opacity-50"
-            : "border-border bg-card hover:border-muted-foreground cursor-grab active:cursor-grabbing"
-          : "border-transparent bg-muted/30 opacity-30"
+            ? "shadow-lg ring-2 ring-violet-500/40 bg-zinc-800/50"
+            : "bg-zinc-800/60 hover:bg-zinc-700/60 cursor-grab active:cursor-grabbing border border-zinc-700/40 shadow-sm hover:shadow-md hover:border-zinc-600/50"
+          : "border-2 border-dashed border-zinc-700/30 bg-transparent"
       )}
-      animate={isDragging ? { scale: 0.85, opacity: 0.4 } : { scale: 1, opacity: piece ? 1 : 0.3 }}
+      style={{ padding: piece ? "10px" : "10px" }}
+      animate={isDragging ? { scale: 0.85, opacity: 0.35 } : { scale: 1, opacity: piece ? 1 : 0.4 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -109,7 +109,9 @@ function DraggablePiece({
       {piece ? (
         <PieceMiniGrid shape={piece.shape.grid} color={piece.color} />
       ) : (
-        <div className="w-6 h-6" />
+        <div className="w-8 h-8 flex items-center justify-center">
+          <div className="w-2 h-2 rounded-full bg-zinc-700/50" />
+        </div>
       )}
     </motion.div>
   )
@@ -127,16 +129,22 @@ function PieceMiniGrid({
 
   return (
     <div
-      className="inline-grid gap-[2px]"
-      style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
+      className="inline-grid"
+      style={{
+        gridTemplateColumns: `repeat(${cols}, 1fr)`,
+        gap: "3px",
+      }}
     >
       {shape.flatMap((row, r) =>
         Array.from({ length: cols }, (_, c) => (
           <div
             key={`${r}-${c}`}
-            className="w-3 h-3 rounded-[2px]"
+            className="w-4 h-4 rounded-[3px]"
             style={{
               backgroundColor: row[c] ? color : "transparent",
+              boxShadow: row[c]
+                ? `inset 1.5px 1.5px 0 rgba(255,255,255,0.2), inset -0.5px -0.5px 0 rgba(0,0,0,0.1)`
+                : undefined,
             }}
           />
         ))

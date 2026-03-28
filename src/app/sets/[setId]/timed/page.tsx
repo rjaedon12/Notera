@@ -41,16 +41,26 @@ export default function TimedPage({ params }: PageProps) {
   const draggingPiece: GamePiece | null =
     draggingIndex !== null ? game.state.tray[draggingIndex] ?? null : null
 
-  // Compute the board cell from a client x/y
+  // Compute the board cell from a client x/y, centering the piece under the cursor.
+  // The anchor cell is offset so the cursor sits at the piece's visual center.
   const clientToCell = useCallback(
-    (clientX: number, clientY: number): { row: number; col: number } | null => {
+    (clientX: number, clientY: number, piece?: GamePiece | null): { row: number; col: number } | null => {
       const el = boardRef.current
       if (!el) return null
       const rect = el.getBoundingClientRect()
       const cellSize = rect.width / BOARD_SIZE
-      const col = Math.floor((clientX - rect.left) / cellSize)
-      const row = Math.floor((clientY - rect.top) / cellSize)
-      if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE)
+
+      // Get piece dimensions for center-offset calculation
+      const grid = piece?.shape?.grid
+      const pieceRows = grid ? grid.length : 1
+      const pieceCols = grid ? Math.max(...grid.map((r) => r.length)) : 1
+
+      // Offset so cursor maps to piece center, not top-left corner
+      const col = Math.floor((clientX - rect.left) / cellSize - pieceCols / 2)
+      const row = Math.floor((clientY - rect.top) / cellSize - pieceRows / 2)
+
+      // Allow slightly out-of-bounds so edge pieces can still be placed
+      if (row < -(pieceRows - 1) || row >= BOARD_SIZE || col < -(pieceCols - 1) || col >= BOARD_SIZE)
         return null
       return { row, col }
     },
@@ -64,10 +74,12 @@ export default function TimedPage({ params }: PageProps) {
   const handleDragMove = useCallback(
     (clientX: number, clientY: number) => {
       setDragPos({ x: clientX, y: clientY })
-      const cell = clientToCell(clientX, clientY)
+      // Pass the active piece so clientToCell can center-offset properly
+      const piece = draggingIndex !== null ? game.state.tray[draggingIndex] ?? null : null
+      const cell = clientToCell(clientX, clientY, piece)
       setDragCell(cell)
     },
-    [clientToCell]
+    [clientToCell, draggingIndex, game.state.tray]
   )
 
   const handleDragEnd = useCallback(() => {
@@ -171,85 +183,98 @@ export default function TimedPage({ params }: PageProps) {
 
   // ── Active game (QUESTION / PLACING / CLEARING) ──
   return (
-    <div className="container mx-auto px-4 py-4 max-w-fit">
-      {/* Score display */}
-      <BlastScoreDisplay score={game.state.score} />
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center px-4 py-4">
+      <div className="w-full max-w-fit">
+        {/* Score display */}
+        <BlastScoreDisplay score={game.state.score} round={game.state.round} />
 
-      {/* Game area — board + question overlay */}
-      <div className="relative">
-        <BlastBoard
-          board={game.state.board}
-          dragPiece={draggingPiece}
-          dragCell={dragCell}
-          clearingRows={game.state.clearingRows}
-          clearingCols={game.state.clearingCols}
-          onClearAnimationDone={game.finishClearing}
-          onDrop={() => {}}
-          boardRef={boardRef}
-          disabled={game.state.phase !== "PLACING"}
-        />
+        {/* Game area — board + question overlay */}
+        <div className="relative">
+          <BlastBoard
+            board={game.state.board}
+            dragPiece={draggingPiece}
+            dragCell={dragCell}
+            clearingRows={game.state.clearingRows}
+            clearingCols={game.state.clearingCols}
+            onClearAnimationDone={game.finishClearing}
+            onDrop={() => {}}
+            boardRef={boardRef}
+            disabled={game.state.phase !== "PLACING"}
+          />
 
-        {/* Question overlay */}
-        <AnimatePresence>
-          {game.state.phase === "QUESTION" && game.state.currentQuestion && (
-            <BlastQuestionModal
-              key={game.state.currentQuestion.prompt + game.state.score.questionsAnswered}
-              question={game.state.currentQuestion}
-              answerMode={game.state.answerMode}
-              onSubmit={game.submitAnswer}
-            />
-          )}
-        </AnimatePresence>
+          {/* Question overlay */}
+          <AnimatePresence>
+            {game.state.phase === "QUESTION" && game.state.currentQuestion && (
+              <BlastQuestionModal
+                key={game.state.currentQuestion.prompt + game.state.score.questionsAnswered}
+                question={game.state.currentQuestion}
+                answerMode={game.state.answerMode}
+                showingCorrectAnswer={game.state.showingCorrectAnswer}
+                onSubmit={game.submitAnswer}
+                onAcknowledgeWrong={game.acknowledgeWrong}
+              />
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Piece tray with label */}
+        <div className="mt-2">
+          <BlastPieceTray
+            tray={game.state.tray}
+            onDragStart={handleDragStart}
+            onDragMove={handleDragMove}
+            onDragEnd={handleDragEnd}
+            disabled={game.state.phase !== "PLACING"}
+          />
+        </div>
+
+        {/* Floating drag ghost */}
+        {draggingPiece && dragPos && (
+          <DragGhost piece={draggingPiece} x={dragPos.x} y={dragPos.y} />
+        )}
       </div>
-
-      {/* Piece tray */}
-      <BlastPieceTray
-        tray={game.state.tray}
-        onDragStart={handleDragStart}
-        onDragMove={handleDragMove}
-        onDragEnd={handleDragEnd}
-        disabled={game.state.phase !== "PLACING"}
-      />
-
-      {/* Floating drag ghost */}
-      {draggingPiece && dragPos && (
-        <DragGhost piece={draggingPiece} x={dragPos.x} y={dragPos.y} />
-      )}
     </div>
   )
 }
 
-/** Floating piece that follows the pointer during drag. */
+/** Floating piece that follows the pointer during drag — centered on cursor. */
 function DragGhost({ piece, x, y }: { piece: GamePiece; x: number; y: number }) {
   const grid = piece.shape.grid
   const cols = Math.max(...grid.map((r) => r.length))
-  const cellPx = 32
-  const w = cols * (cellPx + 2)
-  const h = grid.length * (cellPx + 2)
+  const cellPx = 36
+  const gap = 2
+  const w = cols * cellPx + (cols - 1) * gap
+  const h = grid.length * cellPx + (grid.length - 1) * gap
 
   return (
     <div
       className="fixed pointer-events-none z-50"
       style={{
         left: x - w / 2,
-        top: y - h - 16,
-        opacity: 0.9,
+        top: y - h / 2,
+        opacity: 0.92,
+        filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.4))",
       }}
     >
       <div
-        className="inline-grid gap-[2px]"
-        style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
+        className="inline-grid"
+        style={{
+          gridTemplateColumns: `repeat(${cols}, ${cellPx}px)`,
+          gap: `${gap}px`,
+        }}
       >
         {grid.flatMap((row, r) =>
           Array.from({ length: cols }, (_, c) => (
             <div
               key={`${r}-${c}`}
-              className="rounded-sm"
+              className="rounded-md"
               style={{
                 width: cellPx,
                 height: cellPx,
                 backgroundColor: row[c] ? piece.color : "transparent",
-                boxShadow: row[c] ? `0 2px 8px ${piece.color}66` : undefined,
+                boxShadow: row[c]
+                  ? `inset 2px 2px 0 rgba(255,255,255,0.25), 0 2px 8px ${piece.color}55`
+                  : undefined,
               }}
             />
           ))
