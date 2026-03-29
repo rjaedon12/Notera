@@ -57,35 +57,44 @@ export async function GET() {
         take: 20, // fetch more to sort client-side by engagement
       }),
 
-      // For You: sets in categories the user has studied (if authenticated)
+      // For You: sets in categories the user has studied or starred (if authenticated)
       userId
-        ? prisma.studyProgress
-            .findMany({
+        ? Promise.all([
+            prisma.studyProgress.findMany({
               where: { userId },
               select: { set: { select: { categoryId: true } } },
               orderBy: { lastStudied: "desc" },
               take: 50,
+            }),
+            prisma.starredSet.findMany({
+              where: { userId },
+              select: { set: { select: { categoryId: true } } },
+              orderBy: { createdAt: "desc" },
+              take: 50,
+            }),
+          ]).then(([progress, starred]) => {
+            const categoryIds = [
+              ...new Set([
+                ...progress
+                  .map((p) => p.set.categoryId)
+                  .filter((id): id is string => id !== null),
+                ...starred
+                  .map((s) => s.set.categoryId)
+                  .filter((id): id is string => id !== null),
+              ]),
+            ]
+            if (categoryIds.length === 0) return null
+            return prisma.flashcardSet.findMany({
+              where: {
+                isPublic: true,
+                categoryId: { in: categoryIds },
+                userId: { not: userId },
+              },
+              include: setInclude,
+              orderBy: { createdAt: "desc" },
+              take: 8,
             })
-            .then((progress) => {
-              const categoryIds = [
-                ...new Set(
-                  progress
-                    .map((p) => p.set.categoryId)
-                    .filter((id): id is string => id !== null)
-                ),
-              ]
-              if (categoryIds.length === 0) return null // no studied categories
-              return prisma.flashcardSet.findMany({
-                where: {
-                  isPublic: true,
-                  categoryId: { in: categoryIds },
-                  userId: { not: userId }, // exclude own sets
-                },
-                include: setInclude,
-                orderBy: { createdAt: "desc" },
-                take: 8,
-              })
-            })
+          })
         : Promise.resolve(null),
     ])
 

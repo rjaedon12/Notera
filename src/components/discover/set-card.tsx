@@ -16,8 +16,8 @@ export function SetCard({ set, isStarred, onToggleStar, showStar }: SetCardProps
   const starCount = set._count?.starredBy ?? 0
 
   return (
-    <Link href={`/sets/${set.id}`} className="block min-w-[240px] max-w-[320px] flex-shrink-0 snap-start">
-      <Card className={`h-full cursor-pointer relative overflow-hidden ${set.isFeatured ? "ring-1 ring-amber-400/40" : ""}`}>
+    <Link href={`/sets/${set.id}`} className="block w-[280px] flex-shrink-0 snap-start">
+      <Card className={`h-[160px] cursor-pointer relative overflow-hidden ${set.isFeatured ? "ring-1 ring-amber-400/40" : ""}`}>
         {set.isFeatured && (
           <div className="absolute top-0 right-0 z-10">
             <div className="bg-amber-500 text-white text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-bl-lg flex items-center gap-1">
@@ -26,7 +26,7 @@ export function SetCard({ set, isStarred, onToggleStar, showStar }: SetCardProps
             </div>
           </div>
         )}
-        <CardContent className="p-4">
+        <CardContent className="p-4 h-full flex flex-col">
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-semibold text-base mb-1 line-clamp-2 flex-1 font-heading">
               {set.title}
@@ -62,7 +62,7 @@ export function SetCard({ set, isStarred, onToggleStar, showStar }: SetCardProps
             </div>
           )}
 
-          <div className="flex items-center gap-3 text-xs" style={{ color: "var(--muted-foreground)" }}>
+          <div className="flex items-center gap-3 text-xs mt-auto" style={{ color: "var(--muted-foreground)" }}>
             <span>{set._count?.cards ?? 0} cards</span>
             {starCount > 0 && (
               <span className="flex items-center gap-0.5">
@@ -82,7 +82,7 @@ export function SetCardGrid({ set, isStarred, onToggleStar, showStar }: SetCardP
 
   return (
     <Link href={`/sets/${set.id}`} className="block">
-      <Card className={`h-full cursor-pointer relative overflow-hidden ${set.isFeatured ? "ring-1 ring-amber-400/40" : ""}`}>
+      <Card className={`h-[160px] cursor-pointer relative overflow-hidden ${set.isFeatured ? "ring-1 ring-amber-400/40" : ""}`}>
         {set.isFeatured && (
           <div className="absolute top-0 right-0 z-10">
             <div className="bg-amber-500 text-white text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-bl-lg flex items-center gap-1">
@@ -91,7 +91,7 @@ export function SetCardGrid({ set, isStarred, onToggleStar, showStar }: SetCardP
             </div>
           </div>
         )}
-        <CardContent className="p-4">
+        <CardContent className="p-4 h-full flex flex-col">
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-semibold text-base mb-1 line-clamp-2 flex-1 font-heading">
               {set.title}
@@ -127,7 +127,7 @@ export function SetCardGrid({ set, isStarred, onToggleStar, showStar }: SetCardP
             </div>
           )}
 
-          <div className="flex items-center gap-3 text-xs" style={{ color: "var(--muted-foreground)" }}>
+          <div className="flex items-center gap-3 text-xs mt-auto" style={{ color: "var(--muted-foreground)" }}>
             <span>{set._count?.cards ?? 0} cards</span>
             {starCount > 0 && (
               <span className="flex items-center gap-0.5">

@@ -44,7 +44,7 @@ export default function SignupPage() {
         router.push("/login")
       } else {
         toast.success("Welcome to Notera!")
-        router.push("/library")
+        router.push("/")
         router.refresh()
       }
     } catch {
