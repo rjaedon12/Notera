@@ -21,6 +21,7 @@ interface BankInput {
   title: string
   subject: string
   description: string
+  categorySlug?: string
   questions: QuestionInput[]
 }
 
@@ -34,6 +35,12 @@ async function createBank(adminId: string, bank: BankInput) {
     return existing
   }
 
+  let categoryId: string | null = null
+  if (bank.categorySlug) {
+    const cat = await prisma.category.findUnique({ where: { slug: bank.categorySlug } })
+    categoryId = cat?.id ?? null
+  }
+
   const created = await prisma.questionBank.create({
     data: {
       title: bank.title,
@@ -42,6 +49,7 @@ async function createBank(adminId: string, bank: BankInput) {
       isPremade: true,
       isPublic: true,
       userId: adminId,
+      categoryId,
       questions: {
         create: bank.questions.map((q, i) => ({
           prompt: q.prompt,
@@ -85,6 +93,7 @@ async function main() {
     title: "AP US History — Period 1–3 (1491–1800)",
     subject: "AP US History",
     description: "Multiple choice questions covering pre-Columbian America through the early republic (APUSH periods 1–3).",
+    categorySlug: "ap-us-history",
     questions: [
       {
         prompt: "Which of the following best describes the primary motivation for European exploration of the Americas in the late 15th and early 16th centuries?",
@@ -196,6 +205,7 @@ async function main() {
     title: "AP US History — Period 4–5 (1800–1877)",
     subject: "AP US History",
     description: "Multiple choice questions covering Manifest Destiny, antebellum America, the Civil War, and Reconstruction.",
+    categorySlug: "ap-us-history",
     questions: [
       {
         prompt: "The Missouri Compromise of 1820 was significant primarily because it:",
@@ -267,6 +277,7 @@ async function main() {
     title: "AP US History — Stimulus-Based Practice",
     subject: "AP US History",
     description: "Document and stimulus-based multiple choice questions in AP exam format, covering major historical periods.",
+    categorySlug: "ap-us-history",
     questions: [
       {
         prompt: "Use the passage to answer the question.\n\n\"We hold these truths to be self-evident, that all men are created equal, that they are endowed by their Creator with certain unalienable Rights, that among these are Life, Liberty and the pursuit of Happiness. — That to secure these rights, Governments are instituted among Men, deriving their just powers from the consent of the governed.\"\n\n— Declaration of Independence, 1776\n\nThe ideas expressed in this passage were most directly influenced by:",
@@ -348,6 +359,7 @@ async function main() {
     title: "AP World History — Ancient & Classical Civilizations",
     subject: "AP World History",
     description: "Multiple choice questions on ancient civilizations, classical empires, and early world history (Units 1–2).",
+    categorySlug: "ap-world-history",
     questions: [
       {
         prompt: "Which of the following best explains why river valleys were the sites of the earliest civilizations?",
@@ -399,6 +411,7 @@ async function main() {
     title: "AP World History — Global Interactions (1200–1900)",
     subject: "AP World History",
     description: "Multiple choice questions on the global exchange, European expansion, industrialization, and imperialism.",
+    categorySlug: "ap-world-history",
     questions: [
       {
         prompt: "The Atlantic slave trade differed from earlier forms of slavery primarily in that:",
@@ -450,6 +463,7 @@ async function main() {
     title: "AP US Government & Politics — Core Concepts",
     subject: "AP Government",
     description: "Essential multiple choice questions on the Constitution, branches of government, civil rights, and political participation.",
+    categorySlug: "ap-us-government",
     questions: [
       {
         prompt: "The principle of federalism, as established in the U.S. Constitution, refers to:",
@@ -512,6 +526,7 @@ async function main() {
     title: "AP World History — Stimulus Analysis I (1200–1650)",
     subject: "AP World History",
     description: "Stimulus-based multiple choice questions examining a primary source document (Magna Carta, 1215) and historical demographic data (Black Death, c. 1340–1360).",
+    categorySlug: "ap-world-history",
     questions: [
       // ─── STIMULUS 1: Magna Carta, Clauses 39–40 (1215) ───
       {
@@ -614,6 +629,7 @@ async function main() {
     title: "AP World History — Stimulus Analysis II (1750–1914)",
     subject: "AP World History",
     description: "Stimulus-based multiple choice questions using a primary source document (Communist Manifesto, 1848) and a political cartoon (\"Dropping the Pilot,\" Punch, 1890) from the age of revolution, industrialization, and imperialism.",
+    categorySlug: "ap-world-history",
     questions: [
       // ─── STIMULUS 1: Communist Manifesto (1848) ───
       {

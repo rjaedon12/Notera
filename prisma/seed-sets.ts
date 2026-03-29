@@ -174,7 +174,7 @@ async function createSet(
   userId: string,
   title: string,
   description: string,
-  tags: string[],
+  categorySlug: string,
   cards: { term: string; definition: string }[]
 ) {
   const existing = await prisma.flashcardSet.findFirst({ where: { title, userId } })
@@ -183,12 +183,14 @@ async function createSet(
     return existing
   }
 
+  const category = await prisma.category.findUnique({ where: { slug: categorySlug } })
+
   const set = await prisma.flashcardSet.create({
     data: {
       title,
       description,
       isPublic: true,
-      tags,
+      categoryId: category?.id ?? null,
       userId,
       cards: {
         create: cards.map((c, i) => ({
@@ -217,7 +219,7 @@ async function main() {
     admin.id,
     "Latin 2 - Vocab List 10",
     "4th and 5th declension Latin vocabulary. Front: term + genitive + gender. Back: English definition.",
-    ["language", "latin", "vocabulary"],
+    "latin-vocabulary",
     LATIN_CARDS
   )
 
@@ -225,7 +227,7 @@ async function main() {
     admin.id,
     "German 1 - Unit 3 Vocab",
     "German 1 Unit 3 vocabulary covering school, daily routine, hobbies, weather, clothing, and shopping.",
-    ["language", "german", "vocabulary"],
+    "german-vocabulary",
     GERMAN_CARDS
   )
 

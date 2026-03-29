@@ -9,12 +9,12 @@ import {
   LogOut, Loader2, ChevronRight, UserX, Crown, User, Megaphone,
   Plus, ToggleLeft, ToggleRight, Clock, Star, GraduationCap,
   KeyRound, Eye, EyeOff, Copy, Link2, Search, AlertTriangle,
-  ShieldCheck, ShieldX,
+  ShieldCheck, ShieldX, FolderTree, Pencil,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
 
-type PanelType = "stats" | "users" | "sets" | "quizzes" | "resources" | "dbq" | "banned" | "announcements" | "passwords"
+type PanelType = "stats" | "users" | "sets" | "quizzes" | "resources" | "dbq" | "banned" | "announcements" | "passwords" | "categories"
 
 interface AdminUser {
   id: string
@@ -200,6 +200,55 @@ export default function AdminDashboard() {
       return res.json()
     },
     enabled: authenticated && activePanel === "passwords",
+  })
+
+  // ── Categories ──
+  interface AdminCategory { id: string; name: string; slug: string; icon: string | null; order: number; parentId: string | null; children?: AdminCategory[] }
+  const { data: adminCategories = [], refetch: refetchCategories } = useQuery<AdminCategory[]>({
+    queryKey: ["admin-dash", "categories"],
+    queryFn: async () => {
+      const res = await fetch("/api/categories")
+      if (!res.ok) throw new Error("Failed")
+      return res.json()
+    },
+    enabled: authenticated && activePanel === "categories",
+  })
+
+  const [editingCat, setEditingCat] = useState<{ id?: string; name: string; slug: string; icon: string; parentId: string } | null>(null)
+
+  const saveCategoryMutation = useMutation({
+    mutationFn: async (cat: { id?: string; name: string; slug: string; icon: string; parentId: string }) => {
+      const method = cat.id ? "PUT" : "POST"
+      const res = await fetch("/api/admin/categories", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...cat,
+          parentId: cat.parentId || null,
+          icon: cat.icon || null,
+        }),
+      })
+      if (!res.ok) throw new Error("Failed to save")
+      return res.json()
+    },
+    onSuccess: () => {
+      refetchCategories()
+      setEditingCat(null)
+      toast.success("Category saved")
+    },
+    onError: () => toast.error("Failed to save category"),
+  })
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/admin/categories?id=${id}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("Failed")
+    },
+    onSuccess: () => {
+      refetchCategories()
+      toast.success("Category deleted")
+    },
+    onError: () => toast.error("Failed to delete category"),
   })
 
   // Set password mutation
@@ -481,6 +530,7 @@ export default function AdminDashboard() {
     { key: "banned", label: "Banned Users", icon: <UserX className="h-4 w-4" /> },
     { key: "announcements", label: "Announcements", icon: <Megaphone className="h-4 w-4" /> },
     { key: "passwords", label: "Passwords", icon: <KeyRound className="h-4 w-4" /> },
+    { key: "categories", label: "Categories", icon: <FolderTree className="h-4 w-4" /> },
   ]
 
   const bannedUsers = users.filter((u) => u.isBanned)
@@ -1356,7 +1406,115 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* ── Categories Panel ── */}
+        {activePanel === "categories" && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-foreground font-heading">Categories</h2>
+                <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>Manage the category hierarchy for sets, quizzes, and DBQs.</p>
+              </div>
+              <button
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white"
+                style={{ background: "var(--primary)" }}
+                onClick={() => setEditingCat({ name: "", slug: "", icon: "", parentId: "" })}
+              >
+                <Plus className="h-4 w-4" /> Add Category
+              </button>
+            </div>
+
+            {/* Edit / Create form */}
+            {editingCat && (
+              <div className="mb-6 p-4 rounded-lg border" style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}>
+                <h3 className="font-semibold mb-3 text-foreground">{editingCat.id ? "Edit" : "New"} Category</h3>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <input placeholder="Name" value={editingCat.name}
+                    onChange={e => setEditingCat({ ...editingCat, name: e.target.value })}
+                    className="px-3 py-2 rounded-lg border text-sm" style={{ borderColor: "var(--glass-border)", background: "var(--card)", color: "var(--foreground)" }} />
+                  <input placeholder="Slug (url-safe)" value={editingCat.slug}
+                    onChange={e => setEditingCat({ ...editingCat, slug: e.target.value })}
+                    className="px-3 py-2 rounded-lg border text-sm" style={{ borderColor: "var(--glass-border)", background: "var(--card)", color: "var(--foreground)" }} />
+                  <input placeholder="Icon (emoji)" value={editingCat.icon}
+                    onChange={e => setEditingCat({ ...editingCat, icon: e.target.value })}
+                    className="px-3 py-2 rounded-lg border text-sm" style={{ borderColor: "var(--glass-border)", background: "var(--card)", color: "var(--foreground)" }} />
+                  <select value={editingCat.parentId}
+                    onChange={e => setEditingCat({ ...editingCat, parentId: e.target.value })}
+                    className="px-3 py-2 rounded-lg border text-sm" style={{ borderColor: "var(--glass-border)", background: "var(--card)", color: "var(--foreground)" }}>
+                    <option value="">No parent (top-level)</option>
+                    {flattenCategories(adminCategories).map(c => (
+                      <option key={c.id} value={c.id}>{c.prefix}{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex gap-2">
+                  <button className="px-3 py-1.5 rounded-lg text-sm font-medium text-white" style={{ background: "var(--primary)" }}
+                    onClick={() => saveCategoryMutation.mutate(editingCat)}>
+                    {saveCategoryMutation.isPending ? "Saving..." : "Save"}
+                  </button>
+                  <button className="px-3 py-1.5 rounded-lg text-sm" style={{ color: "var(--muted-foreground)" }}
+                    onClick={() => setEditingCat(null)}>Cancel</button>
+                </div>
+              </div>
+            )}
+
+            {/* Category tree display */}
+            <div className="space-y-1">
+              {adminCategories.map(cat => (
+                <AdminCategoryRow key={cat.id} category={cat} depth={0}
+                  onEdit={(c) => setEditingCat({ id: c.id, name: c.name, slug: c.slug, icon: c.icon || "", parentId: c.parentId || "" })}
+                  onDelete={(id) => { if (confirm("Delete this category?")) deleteCategoryMutation.mutate(id) }}
+                />
+              ))}
+              {adminCategories.length === 0 && (
+                <p className="text-sm py-8 text-center" style={{ color: "var(--muted-foreground)" }}>No categories yet.</p>
+              )}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )
+}
+
+/* ── Admin category helpers ── */
+
+interface AdminCatNode {
+  id: string; name: string; slug: string; icon: string | null; order: number; parentId: string | null; children?: AdminCatNode[]
+}
+
+function AdminCategoryRow({ category, depth, onEdit, onDelete }: {
+  category: AdminCatNode; depth: number
+  onEdit: (c: AdminCatNode) => void; onDelete: (id: string) => void
+}) {
+  return (
+    <>
+      <div
+        className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-[var(--accent)] transition-colors"
+        style={{ paddingLeft: `${depth * 24 + 12}px` }}
+      >
+        {category.icon && <span>{category.icon}</span>}
+        <span className="text-sm font-medium text-foreground flex-1">{category.name}</span>
+        <span className="text-xs font-mono" style={{ color: "var(--muted-foreground)" }}>{category.slug}</span>
+        <button onClick={() => onEdit(category)} className="p-1 rounded hover:bg-[var(--accent)]" title="Edit">
+          <Pencil className="h-3.5 w-3.5" style={{ color: "var(--muted-foreground)" }} />
+        </button>
+        <button onClick={() => onDelete(category.id)} className="p-1 rounded hover:bg-[var(--accent)]" title="Delete">
+          <Trash2 className="h-3.5 w-3.5" style={{ color: "var(--destructive, #ef4444)" }} />
+        </button>
+      </div>
+      {category.children?.map(child => (
+        <AdminCategoryRow key={child.id} category={child} depth={depth + 1} onEdit={onEdit} onDelete={onDelete} />
+      ))}
+    </>
+  )
+}
+
+function flattenCategories(cats: AdminCatNode[], prefix = ""): { id: string; name: string; prefix: string }[] {
+  const result: { id: string; name: string; prefix: string }[] = []
+  for (const c of cats) {
+    result.push({ id: c.id, name: c.name, prefix })
+    if (c.children) result.push(...flattenCategories(c.children, prefix + "  "))
+  }
+  return result
 }

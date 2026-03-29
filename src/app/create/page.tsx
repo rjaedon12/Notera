@@ -13,7 +13,7 @@ import { Card } from "@/components/ui/card"
 import { Plus, Trash2, Upload, Download, GripVertical, Loader2, FileText } from "lucide-react"
 import toast from "react-hot-toast"
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd"
-import { TagSelector } from "@/components/tag-selector"
+import { CategoryPicker } from "@/components/category-picker"
 import { parseCSVContent } from "@/lib/csv-parser"
 import { ImportTextModal } from "@/components/import-text-modal"
 
@@ -32,7 +32,7 @@ export default function CreatePage() {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [isPublic, setIsPublic] = useState(false)
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [categoryId, setCategoryId] = useState<string | null>(null)
   const [cards, setCards] = useState<CardData[]>([
     { id: "1", term: "", definition: "" },
     { id: "2", term: "", definition: "" },
@@ -128,7 +128,7 @@ export default function CreatePage() {
         title,
         description,
         isPublic,
-        tags: selectedTags,
+        categoryId,
         cards: validCards.map((c) => ({ term: c.term, definition: c.definition })),
       })
       
@@ -179,13 +179,11 @@ export default function CreatePage() {
               />
             </div>
             <div>
-              <Label>Tags (optional)</Label>
-              <p className="text-sm text-muted-foreground mb-2">Add up to 5 tags to help others find your set</p>
-              <TagSelector
-                selectedTags={selectedTags}
-                onTagsChange={setSelectedTags}
-                maxTags={5}
-                placeholder="Select tags..."
+              <Label>Category (optional)</Label>
+              <p className="text-sm text-muted-foreground mb-2">Choose a category to help others find your set</p>
+              <CategoryPicker
+                value={categoryId}
+                onChange={setCategoryId}
               />
             </div>
           </div>

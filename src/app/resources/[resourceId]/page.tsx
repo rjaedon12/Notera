@@ -168,12 +168,10 @@ export default function ResourceDetailPage({ params }: PageProps) {
         {/* Tags */}
         {resource.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-6">
-            {resource.tags.map((t) => (
-              <Link key={t.tag.id} href={`/tags/${t.tag.slug}`}>
-                <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-sm rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
-                  {t.tag.name}
-                </span>
-              </Link>
+            {resource.tags.map((t: { tag: { id: string; slug: string; name: string } }) => (
+              <span key={t.tag.id} className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-sm rounded-full">
+                {t.tag.name}
+              </span>
             ))}
           </div>
         )}

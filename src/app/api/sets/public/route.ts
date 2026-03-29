@@ -7,12 +7,17 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const search = searchParams.get("search")
     const featured = searchParams.get("featured")
+    const categoryId = searchParams.get("categoryId")
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "50")))
 
     const where: Record<string, unknown> = { isPublic: true }
 
     if (featured === "true") {
       where.isFeatured = true
+    }
+
+    if (categoryId) {
+      where.categoryId = categoryId
     }
 
     if (search) {
@@ -26,6 +31,7 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         _count: { select: { cards: true } },
+        category: { select: { id: true, name: true, slug: true, icon: true, parent: { select: { id: true, name: true, slug: true } } } },
       },
       orderBy: { createdAt: "desc" },
       take: limit,

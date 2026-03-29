@@ -16,6 +16,7 @@ export async function GET(
       include: {
         cards: { orderBy: { order: "asc" } },
         user: { select: { id: true, name: true, email: true } },
+        category: { select: { id: true, name: true, slug: true } },
         _count: { select: { cards: true } },
       },
     })
@@ -36,7 +37,7 @@ export async function GET(
   }
 }
 
-// PUT/PATCH /api/sets/[id] — update set title/description/tags/isPublic (owner only)
+// PUT/PATCH /api/sets/[id] — update set title/description/category/isPublic (owner only)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ setId: string }> }
@@ -67,14 +68,14 @@ export async function PUT(
     }
 
     const { title, description, isPublic } = parsed.data
-    const { tags } = body // tags not in studySetSchema, allow passthrough
+    const { categoryId } = body
 
     const updated = await prisma.flashcardSet.update({
       where: { id: setId },
       data: {
         ...(title !== undefined && { title }),
         ...(description !== undefined && { description }),
-        ...(tags !== undefined && { tags }),
+        ...(categoryId !== undefined && { categoryId: categoryId || null }),
         ...(isPublic !== undefined && { isPublic }),
       },
       include: {

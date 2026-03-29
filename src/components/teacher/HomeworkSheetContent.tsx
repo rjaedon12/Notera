@@ -38,112 +38,128 @@ export function HomeworkSheetContent({
   config,
   questions,
 }: HomeworkSheetContentProps) {
+  // Build compact meta string: "Teacher: X  ·  Class: Y  ·  Date: Z"
+  const metaParts: string[] = []
+  if (config.teacherName) metaParts.push(`Teacher: ${config.teacherName}`)
+  if (config.className) metaParts.push(`Class: ${config.className}`)
+  if (config.date) metaParts.push(`Date: ${config.date}`)
+
   return (
     <div
       id="homework-sheet-content"
-      className="bg-white text-gray-900 p-8"
+      className="bg-white text-gray-900 px-14 py-12"
       style={{
-        width: "612px", // US Letter width in CSS px (≈ 8.5 in @ 72 dpi)
+        width: "612px",
         fontFamily:
           '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
       }}
     >
-      <div className="max-w-lg mx-auto space-y-4">
+      <div className="max-w-[488px] mx-auto">
         {/* Title */}
-        <h1 className="text-xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900">
           {config.title || "Homework Worksheet"}
         </h1>
 
-        {/* Meta */}
-        <div className="text-xs text-gray-500 space-y-0.5">
-          {config.teacherName && <p>Teacher: {config.teacherName}</p>}
-          {config.className && <p>Class: {config.className}</p>}
-          {config.date && <p>Date: {config.date}</p>}
-        </div>
+        {/* Meta — compact inline with dot separators */}
+        {metaParts.length > 0 && (
+          <p className="text-[9px] text-gray-400 mt-2">
+            {metaParts.join("   \u00b7   ")}
+          </p>
+        )}
 
         {/* Name field */}
         {config.includeNameField && (
-          <div className="flex items-center gap-2 pt-2">
-            <span className="text-sm text-gray-700">Name:</span>
-            <div className="flex-1 border-b border-gray-300" />
+          <div className="flex items-center gap-2 mt-5">
+            <span className="text-[9px] text-gray-400 shrink-0">Name:</span>
+            <div className="flex-1 max-w-[55%] border-b border-gray-200" />
           </div>
         )}
 
-        {/* Divider */}
-        <hr className="border-gray-300" />
+        {/* Divider — thin, subtle */}
+        <hr className="border-gray-200 mt-5 mb-5" />
 
         {/* Instructions */}
         {config.instructions && (
-          <p className="text-xs italic text-gray-500">{config.instructions}</p>
+          <p className="text-[9.5px] text-gray-400 mb-5 leading-relaxed">
+            {config.instructions}
+          </p>
         )}
 
-        {/* Word bank */}
+        {/* Word bank — minimal rule-based design */}
         {config.includeWordBank && questions.length > 0 && (
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-            <p className="text-xs font-bold text-gray-700 mb-1">Word Bank</p>
-            <p className="text-xs text-gray-600">
+          <div className="border-t border-b border-gray-200 py-3 mb-5">
+            <p className="text-[7.5px] font-semibold text-gray-400 uppercase tracking-[0.15em] mb-2">
+              Word Bank
+            </p>
+            <p className="text-[9.5px] text-gray-600 leading-relaxed">
               {[...new Set(questions.map((q) => q.answer))]
                 .sort()
-                .join("    •    ")}
+                .join("     \u00b7     ")}
             </p>
           </div>
         )}
 
         {/* Questions */}
-        <div className="space-y-4 pt-2">
+        <div className="space-y-6 pt-1">
           {questions.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">
+            <p className="text-sm text-gray-300 text-center py-10">
               No questions generated yet. Select sets and question types.
             </p>
           ) : (
             questions.map((q, i) => (
-              <div key={q.id} className="space-y-1 homework-question">
+              <div key={q.id} className="homework-question">
                 {q.type === "matching" && q.matchPairs ? (
-                  <>
-                    <p className="text-sm font-bold">
-                      {i + 1}. Matching
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-gray-900">
+                      <span className="font-bold">{i + 1}.</span>{" "}
+                      <span>Matching</span>
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-[9.5px] text-gray-400 pl-5">
                       <MathText text={q.prompt} />
                     </p>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 pl-4 pt-1">
-                      <p className="text-xs font-bold text-gray-600">Term</p>
-                      <p className="text-xs font-bold text-gray-600">
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 pl-5 pt-2">
+                      {/* Column headers */}
+                      <p className="text-[7.5px] font-semibold text-gray-400 uppercase tracking-[0.1em] pb-1 border-b border-gray-100">
+                        Term
+                      </p>
+                      <p className="text-[7.5px] font-semibold text-gray-400 uppercase tracking-[0.1em] pb-1 border-b border-gray-100">
                         Definition
                       </p>
                       {q.matchPairs.map((pair, pi) => (
                         <div key={pi} className="contents">
-                          <p className="text-xs text-gray-700">
-                            ___ <MathText text={pair.term} />
+                          <p className="text-[9.5px] text-gray-700">
+                            {pi + 1}.{" "}
+                            <MathText text={pair.term} />
                           </p>
-                          <p className="text-xs text-gray-700">
+                          <p className="text-[9.5px] text-gray-700">
                             {String.fromCharCode(65 + pi)}.{" "}
                             <MathText text={pair.definition} />
                           </p>
                         </div>
                       ))}
                     </div>
-                  </>
+                  </div>
                 ) : q.type === "multiple-choice" && q.choices ? (
-                  <>
-                    <p className="text-sm font-bold">
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] font-bold text-gray-900">
                       {i + 1}. <MathText text={q.prompt} />
                     </p>
-                    <div className="pl-4 space-y-0.5">
+                    <div className="pl-6 space-y-1">
                       {q.choices.map((c, ci) => (
-                        <p key={ci} className="text-xs text-gray-700">
-                          {String.fromCharCode(97 + ci)}) <MathText text={c} />
+                        <p key={ci} className="text-[9px] text-gray-600">
+                          {String.fromCharCode(97 + ci)}.{" "}
+                          <MathText text={c} />
                         </p>
                       ))}
                     </div>
-                  </>
+                  </div>
                 ) : (
-                  <>
-                    <p className="text-sm font-bold">
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-900">
                       {i + 1}. <MathText text={q.prompt} />
                     </p>
-                    <div className="border-b border-gray-300 ml-4 mt-2" />
-                  </>
+                    <div className="border-b border-gray-200 ml-6 mr-0 mt-3" />
+                  </div>
                 )}
               </div>
             ))
@@ -152,13 +168,13 @@ export function HomeworkSheetContent({
 
         {/* Answer key */}
         {config.includeAnswerKey && questions.length > 0 && (
-          <div className="pt-6 mt-6 border-t-2 border-gray-300">
-            <h2 className="text-lg font-bold text-gray-900 mb-3">
+          <div className="pt-10 mt-10 border-t border-gray-200">
+            <h2 className="text-sm font-bold tracking-tight text-gray-900 mb-4">
               Answer Key
             </h2>
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               {questions.map((q, i) => (
-                <p key={q.id} className="text-xs text-gray-600">
+                <p key={q.id} className="text-[9.5px] text-gray-500">
                   {i + 1}. <MathText text={q.answer} />
                 </p>
               ))}

@@ -2,13 +2,20 @@ import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
+async function getDbqCategoryId(slug: string): Promise<string | null> {
+  const cat = await prisma.category.findUnique({ where: { slug } })
+  return cat?.id ?? null
+}
+
 export async function seedDBQ() {
   console.log("🏛️  Seeding DBQ prompts...")
+
+  const categoryId = await getDbqCategoryId("ap-world-history")
 
   // Upsert the Qing Dynasty DBQ prompt
   const prompt = await prisma.dBQPrompt.upsert({
     where: { id: "dbq-qing-dynasty-collapse" },
-    update: {},
+    update: { categoryId },
     create: {
       id: "dbq-qing-dynasty-collapse",
       title: "Collapse of the Qing Dynasty",
@@ -16,6 +23,7 @@ export async function seedDBQ() {
         "Evaluate the extent to which foreign influence led to the collapse of the Qing Dynasty.",
       subject: "AP World History",
       era: "1750–1914",
+      categoryId,
     },
   })
 
@@ -130,9 +138,11 @@ The images were labeled as follows:
 export async function seedIndustrialRevolutionDBQ() {
   console.log("🏭  Seeding Industrial Revolution DBQ...")
 
+  const categoryId = await getDbqCategoryId("ap-world-history")
+
   const prompt = await prisma.dBQPrompt.upsert({
     where: { id: "dbq-industrial-revolution" },
-    update: {},
+    update: { categoryId },
     create: {
       id: "dbq-industrial-revolution",
       title: "The Industrial Revolution",
@@ -140,6 +150,7 @@ export async function seedIndustrialRevolutionDBQ() {
         "Evaluate the extent to which the Industrial Revolution changed social and economic structures in Europe and Japan between 1750 and 1900.",
       subject: "AP World History",
       era: "1750–1900",
+      categoryId,
     },
   })
 
@@ -261,9 +272,11 @@ Spinning our lives away for a meager wage.`,
 export async function seedImperialismDBQ() {
   console.log("🌍  Seeding Imperialism DBQ...")
 
+  const categoryId = await getDbqCategoryId("ap-world-history")
+
   const prompt = await prisma.dBQPrompt.upsert({
     where: { id: "dbq-imperialism-africa" },
-    update: {},
+    update: { categoryId },
     create: {
       id: "dbq-imperialism-africa",
       title: "European Imperialism in Africa",
@@ -271,6 +284,7 @@ export async function seedImperialismDBQ() {
         "Evaluate the extent to which European imperialism in Africa between 1870 and 1914 was driven by economic motives versus ideological justifications.",
       subject: "AP World History",
       era: "1870–1914",
+      categoryId,
     },
   })
 
@@ -380,9 +394,11 @@ Your Majesty's Government has seized their land, burned their towns, stolen thei
 export async function seedMongolEmpireDBQ() {
   console.log("🏇  Seeding Mongol Empire DBQ...")
 
+  const categoryId = await getDbqCategoryId("ap-world-history")
+
   const prompt = await prisma.dBQPrompt.upsert({
     where: { id: "dbq-mongol-empire" },
-    update: {},
+    update: { categoryId },
     create: {
       id: "dbq-mongol-empire",
       title: "The Mongol Empire and Eurasian Exchange",
@@ -390,6 +406,7 @@ export async function seedMongolEmpireDBQ() {
         "Evaluate the extent to which the Mongol Empire facilitated cultural and economic exchange across Eurasia during the 13th and 14th centuries.",
       subject: "AP World History",
       era: "13th–14th Centuries",
+      categoryId,
     },
   })
 
@@ -473,9 +490,11 @@ export async function seedMongolEmpireDBQ() {
 export async function seedUSImperialismDBQ() {
   console.log("🦅  Seeding US Imperialism DBQ...")
 
+  const categoryId = await getDbqCategoryId("ap-us-history")
+
   const prompt = await prisma.dBQPrompt.upsert({
     where: { id: "dbq-us-imperialism" },
-    update: {},
+    update: { categoryId },
     create: {
       id: "dbq-us-imperialism",
       title: "United States Imperialism, 1890–1913",
@@ -483,6 +502,7 @@ export async function seedUSImperialismDBQ() {
         "Evaluate the extent to which economic interests, rather than ideological motivations, drove United States imperialism in the period from 1890 to 1913.",
       subject: "AP United States History",
       era: "1890–1913",
+      categoryId,
     },
   })
 
@@ -566,9 +586,11 @@ export async function seedUSImperialismDBQ() {
 export async function seedFrenchRevolutionDBQ() {
   console.log("⚜️  Seeding French Revolution DBQ...")
 
+  const categoryId = await getDbqCategoryId("ap-european-history")
+
   const prompt = await prisma.dBQPrompt.upsert({
     where: { id: "dbq-french-revolution" },
-    update: {},
+    update: { categoryId },
     create: {
       id: "dbq-french-revolution",
       title: "The French Revolution and State-Individual Relations",
@@ -576,6 +598,7 @@ export async function seedFrenchRevolutionDBQ() {
         "Evaluate the extent to which the French Revolution fundamentally transformed the relationship between the state and the individual in France during the period 1789 to 1799.",
       subject: "AP European History",
       era: "1789–1799",
+      categoryId,
     },
   })
 

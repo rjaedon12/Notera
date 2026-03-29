@@ -325,24 +325,49 @@ export function generateQuestions(
 
 // ─── PDF Generation ──────────────────────────────────────
 
-const MARGIN = 54 // ~0.75 inch
-const PAGE_WIDTH = 612 // Letter
+// Layout constants — generous margins for a clean, editorial feel
+const MARGIN = 63 // ~0.875 inch
+const PAGE_WIDTH = 612 // US Letter
 const PAGE_HEIGHT = 792
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2
-const LINE_HEIGHT = 14
-const SECTION_GAP = 8
+const LINE_HEIGHT = 15
+const SECTION_GAP = 18
+const QUESTION_GAP = 22
+
+// Type scale
+const TITLE_SIZE = 20
+const SECTION_TITLE_SIZE = 14
+const META_SIZE = 9
+const QUESTION_NUM_SIZE = 10
+const BODY_SIZE = 9.5
+const CHOICE_SIZE = 9
+const FOOTER_SIZE = 7.5
+
+// Colors (RGB tuples)
+const COLOR_BLACK = 26 // #1a1a1a
+const COLOR_DARK = 60 // #3c3c3c
+const COLOR_MID = 120 // #787878
+const COLOR_LIGHT = 170 // #aaaaaa
+const COLOR_RULE = 210 // #d2d2d2
 
 /** Bottom of the printable area (leaving room for page footer) */
-const PAGE_BOTTOM = PAGE_HEIGHT - MARGIN - 24
+const PAGE_BOTTOM = PAGE_HEIGHT - MARGIN - 28
 
-function addPageFooter(doc: jsPDF, pageNum: number, totalPages: number) {
-  doc.setFontSize(8)
-  doc.setTextColor(150)
+function addPageFooter(
+  doc: jsPDF,
+  pageNum: number,
+  totalPages: number,
+  hasUnicode: boolean,
+  hasLatin: boolean
+) {
+  doc.setFontSize(FOOTER_SIZE)
+  doc.setTextColor(COLOR_LIGHT)
+  setSmartFont(doc, "normal", `${pageNum}`, hasUnicode, hasLatin)
   doc.text(
-    `Page ${pageNum} of ${totalPages}`,
-    PAGE_WIDTH / 2,
-    PAGE_HEIGHT - 30,
-    { align: "center" }
+    `${pageNum}  /  ${totalPages}`,
+    PAGE_WIDTH - MARGIN,
+    PAGE_HEIGHT - 32,
+    { align: "right" }
   )
 }
 
@@ -377,21 +402,20 @@ function estimateQuestionHeight(
   doc: jsPDF,
   contentWidth: number
 ): number {
-  const BASE = 28 // prompt line + spacing
+  const BASE = 34 // prompt line + spacing
 
   if (q.type === "matching" && q.matchPairs) {
-    // Header row + one row per pair + spacing
-    return BASE + 18 + q.matchPairs.length * 20
+    return BASE + 20 + q.matchPairs.length * 22
   }
 
   if (q.type === "multiple-choice" && q.choices) {
-    return BASE + q.choices.length * 16
+    return BASE + q.choices.length * 18
   }
 
   // Short-answer / fill-in-blank — prompt text may wrap
-  doc.setFontSize(10)
-  const lines = doc.splitTextToSize(sanitizeText(q.prompt), contentWidth - 16)
-  return BASE + (Array.isArray(lines) ? lines.length : 1) * LINE_HEIGHT + 22
+  doc.setFontSize(QUESTION_NUM_SIZE)
+  const lines = doc.splitTextToSize(sanitizeText(q.prompt), contentWidth - 20)
+  return BASE + (Array.isArray(lines) ? lines.length : 1) * LINE_HEIGHT + 28
 }
 
 export async function generateHomeworkPDF(
@@ -551,205 +575,225 @@ export async function generateHomeworkPDF(
 
   // ── Header ─────────────────────
   const titleText = safeText(config.title || "Homework Worksheet")
-  doc.setFontSize(18)
+  doc.setFontSize(TITLE_SIZE)
   smartFont("bold", titleText)
-  doc.setTextColor(30)
+  doc.setTextColor(COLOR_BLACK)
   doc.text(titleText, MARGIN, y)
-  y += 24
+  y += TITLE_SIZE + 8
 
-  doc.setFontSize(10)
-  doc.setTextColor(80)
+  // Meta line — compact inline layout: "Teacher: X  ·  Class: Y  ·  Date: Z"
+  const metaParts: string[] = []
+  if (config.teacherName) metaParts.push(`Teacher: ${safeText(config.teacherName)}`)
+  if (config.className) metaParts.push(`Class: ${safeText(config.className)}`)
+  if (config.date) metaParts.push(`Date: ${safeText(config.date)}`)
 
-  if (config.teacherName) {
-    const t = safeText(`Teacher: ${config.teacherName}`)
-    smartFont("normal", t)
-    doc.text(t, MARGIN, y)
-    y += LINE_HEIGHT
-  }
-  if (config.className) {
-    const t = safeText(`Class: ${config.className}`)
-    smartFont("normal", t)
-    doc.text(t, MARGIN, y)
-    y += LINE_HEIGHT
-  }
-  if (config.date) {
-    const t = safeText(`Date: ${config.date}`)
-    smartFont("normal", t)
-    doc.text(t, MARGIN, y)
-    y += LINE_HEIGHT
+  if (metaParts.length > 0) {
+    doc.setFontSize(META_SIZE)
+    doc.setTextColor(COLOR_MID)
+    const metaStr = metaParts.join("   \u00b7   ")
+    smartFont("normal", metaStr)
+    doc.text(metaStr, MARGIN, y)
+    y += LINE_HEIGHT + 2
   }
 
   // Student name field
   if (config.includeNameField) {
-    y += 6
-    doc.setDrawColor(180)
-    smartFont("normal", "Name: ")
-    doc.text("Name: ", MARGIN, y)
-    const nameX = MARGIN + doc.getTextWidth("Name: ")
-    doc.line(nameX, y + 1, nameX + 200, y + 1)
-    y += LINE_HEIGHT + 4
+    y += 10
+    doc.setFontSize(META_SIZE)
+    doc.setTextColor(COLOR_MID)
+    smartFont("normal", "Name:")
+    doc.text("Name:", MARGIN, y)
+    const nameX = MARGIN + doc.getTextWidth("Name:") + 8
+    doc.setDrawColor(COLOR_RULE)
+    doc.setLineWidth(0.5)
+    doc.line(nameX, y + 1, MARGIN + CONTENT_WIDTH * 0.55, y + 1)
+    doc.setLineWidth(0.5)
+    y += LINE_HEIGHT + 6
   }
 
-  // Divider
-  y += 4
-  doc.setDrawColor(200)
+  // Divider — thin, subtle rule
+  y += 6
+  doc.setDrawColor(COLOR_RULE)
+  doc.setLineWidth(0.5)
   doc.line(MARGIN, y, PAGE_WIDTH - MARGIN, y)
-  y += 12
+  doc.setLineWidth(0.5)
+  y += SECTION_GAP
 
   // Instructions
   if (config.instructions) {
-    doc.setFontSize(9)
+    doc.setFontSize(BODY_SIZE)
     const instrText = safeText(config.instructions)
-    smartFont("italic", instrText)
-    doc.setTextColor(100)
+    smartFont("normal", instrText)
+    doc.setTextColor(COLOR_MID)
     const lines = doc.splitTextToSize(instrText, CONTENT_WIDTH)
     doc.text(lines, MARGIN, y)
-    y += lines.length * 12 + SECTION_GAP
+    y += lines.length * 13 + SECTION_GAP
   }
 
-  // Word bank
+  // Word bank — minimal rule-based design
   if (config.includeWordBank) {
     const terms = [...new Set(questions.map((q) => q.answer))].sort()
     if (terms.length > 0) {
-      doc.setFontSize(10)
-      smartFont("bold", "Word Bank")
-      doc.setTextColor(30)
-      doc.text("Word Bank", MARGIN, y)
-      y += LINE_HEIGHT
+      // Thin top rule
+      doc.setDrawColor(COLOR_RULE)
+      doc.setLineWidth(0.5)
+      doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y)
+      y += 12
 
-      doc.setFontSize(9)
-      doc.setTextColor(60)
+      // "WORD BANK" label — small caps style
+      doc.setFontSize(7.5)
+      smartFont("bold", "WORD BANK")
+      doc.setTextColor(COLOR_MID)
+      doc.text("WORD BANK", MARGIN, y, { charSpace: 1.5 })
+      y += 12
 
-      // Draw word bank in a box — filter out LaTeX delimiters for clean display
-      const bankText = terms.map(t => sanitizeText(t)).join("    •    ")
+      // Terms listed cleanly
+      doc.setFontSize(BODY_SIZE)
+      doc.setTextColor(COLOR_DARK)
+      const bankText = terms.map(t => sanitizeText(t)).join("     \u00b7     ")
       smartFont("normal", bankText)
-      const bankLines = doc.splitTextToSize(bankText, CONTENT_WIDTH - 16)
-      const bankH = bankLines.length * 12 + 16
+      const bankLines = doc.splitTextToSize(bankText, CONTENT_WIDTH)
+      doc.text(bankLines, MARGIN, y)
+      y += bankLines.length * 13 + 8
 
-      doc.setDrawColor(180)
-      doc.setFillColor(248, 248, 248)
-      doc.roundedRect(MARGIN, y - 4, CONTENT_WIDTH, bankH, 4, 4, "FD")
-      doc.text(bankLines, MARGIN + 8, y + 8)
-      y += bankH + SECTION_GAP
+      // Thin bottom rule
+      doc.setDrawColor(COLOR_RULE)
+      doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y)
+      doc.setLineWidth(0.5)
+      y += SECTION_GAP
     }
   }
 
   // ── Questions ──────────────────
-  doc.setTextColor(30)
+  doc.setTextColor(COLOR_BLACK)
   let qNum = 0
 
   for (const q of questions) {
     qNum++
 
-    // ── Intelligent page-break: estimate entire question height first ──
+    // Intelligent page-break: estimate entire question height first
     const estimatedH = estimateQuestionHeight(q, doc, CONTENT_WIDTH)
     y = fitBlock(doc, y, estimatedH)
 
     if (q.type === "matching" && q.matchPairs) {
-      doc.setFontSize(10)
-      smartFont("bold", `${qNum}. Matching`)
-      doc.text(`${qNum}. Matching`, MARGIN, y)
+      // Question number + label
+      doc.setFontSize(QUESTION_NUM_SIZE)
+      doc.setTextColor(COLOR_BLACK)
+      smartFont("bold", `${qNum}.`)
+      doc.text(`${qNum}.`, MARGIN, y)
+      const numW = doc.getTextWidth(`${qNum}. `)
+      smartFont("normal", "Matching")
+      doc.text("Matching", MARGIN + numW, y)
+      y += LINE_HEIGHT + 2
+
+      // Instruction text
+      doc.setFontSize(BODY_SIZE)
+      doc.setTextColor(COLOR_MID)
+      y = renderTextWithMath(q.prompt, MARGIN + 18, y, CONTENT_WIDTH - 18, "normal", BODY_SIZE)
+      y += 6
+
+      doc.setTextColor(COLOR_BLACK)
+      const colA = MARGIN + 18
+      const colB = MARGIN + CONTENT_WIDTH / 2 + 24
+
+      // Column headers — subtle, uppercase, small
+      doc.setFontSize(7.5)
+      doc.setTextColor(COLOR_MID)
+      smartFont("bold", "TERM")
+      doc.text("TERM", colA, y, { charSpace: 0.8 })
+      doc.text("DEFINITION", colB, y, { charSpace: 0.8 })
       y += LINE_HEIGHT
 
-      doc.setFontSize(9)
-      doc.setTextColor(60)
-      y = renderTextWithMath(q.prompt, MARGIN + 16, y, CONTENT_WIDTH - 16, "normal", 9)
-      y += 2
+      // Thin rule under headers
+      doc.setDrawColor(COLOR_RULE)
+      doc.setLineWidth(0.3)
+      doc.line(colA, y - 4, colA + CONTENT_WIDTH / 2 - 30, y - 4)
+      doc.line(colB, y - 4, colB + CONTENT_WIDTH / 2 - 40, y - 4)
 
-      doc.setTextColor(30)
-      const colA = MARGIN + 16
-      const colB = MARGIN + CONTENT_WIDTH / 2 + 20
-
-      // Column headers
-      smartFont("bold", "Term")
-      doc.setFontSize(9)
-      doc.text("Term", colA, y)
-      doc.text("Definition", colB, y)
-      y += LINE_HEIGHT
-
-      doc.setFontSize(9)
+      doc.setFontSize(BODY_SIZE)
+      doc.setTextColor(COLOR_BLACK)
       let pairIdx = 0
       for (const pair of q.matchPairs) {
-        // For individual rows within a matching block, use a smaller
-        // fitBlock so a very long matching table can still break
-        // between rows (but never mid-row).
-        y = fitBlock(doc, y, 18)
-        const termLabel = `___  `
-        smartFont("normal", termLabel)
-        doc.text(termLabel, colA, y)
-        const labelW = doc.getTextWidth(termLabel)
-        // Render term (may contain math/unicode)
-        const termEndY = renderTextWithMath(pair.term, colA + labelW, y, CONTENT_WIDTH / 2 - 30 - labelW, "normal", 9)
-        // Render definition with letter prefix (A., B., C...) to match preview
-        const defPrefix = `${String.fromCharCode(65 + pairIdx)}. `
+        y = fitBlock(doc, y, 20)
+        // Numbered term (1., 2., 3...) instead of "___"
+        const termNum = `${pairIdx + 1}.  `
+        smartFont("normal", termNum)
+        doc.text(termNum, colA, y)
+        const termNumW = doc.getTextWidth(termNum)
+        const termEndY = renderTextWithMath(pair.term, colA + termNumW, y, CONTENT_WIDTH / 2 - 32 - termNumW, "normal", BODY_SIZE)
+        // Lettered definition (A., B., C...)
+        const defPrefix = `${String.fromCharCode(65 + pairIdx)}.  `
         smartFont("normal", defPrefix)
         doc.text(defPrefix, colB, y)
         const defPrefixW = doc.getTextWidth(defPrefix)
-        const defEndY = renderTextWithMath(pair.definition, colB + defPrefixW, y, CONTENT_WIDTH / 2 - 30 - defPrefixW, "normal", 9)
-        y = Math.max(termEndY, defEndY)
-        y = Math.max(y, y + 2)
+        const defEndY = renderTextWithMath(pair.definition, colB + defPrefixW, y, CONTENT_WIDTH / 2 - 40 - defPrefixW, "normal", BODY_SIZE)
+        y = Math.max(termEndY, defEndY) + 2
         pairIdx++
       }
-      y += SECTION_GAP
+      y += QUESTION_GAP
 
     } else if (q.type === "multiple-choice" && q.choices) {
-      doc.setTextColor(30)
-      // Render prompt with math support
-      y = renderTextWithMath(`${qNum}. ${q.prompt}`, MARGIN, y, CONTENT_WIDTH - 16, "bold", 10)
+      doc.setTextColor(COLOR_BLACK)
+      // Prompt with question number
+      y = renderTextWithMath(`${qNum}. ${q.prompt}`, MARGIN, y, CONTENT_WIDTH - 20, "bold", QUESTION_NUM_SIZE)
+      y += 2
 
       const letters = ["a", "b", "c", "d"]
       for (let i = 0; i < q.choices.length; i++) {
-        y = fitBlock(doc, y, 16)
+        y = fitBlock(doc, y, 18)
+        doc.setTextColor(COLOR_DARK)
         y = renderTextWithMath(
-          `${letters[i]})  ${q.choices[i]}`,
-          MARGIN + 20,
+          `${letters[i]}.  ${q.choices[i]}`,
+          MARGIN + 24,
           y,
-          CONTENT_WIDTH - 40,
+          CONTENT_WIDTH - 44,
           "normal",
-          9
+          CHOICE_SIZE
         )
       }
-      y += SECTION_GAP
+      y += QUESTION_GAP
 
     } else {
       // Short answer / fill-in-blank
-      doc.setTextColor(30)
-      // Render prompt with math support
-      y = renderTextWithMath(`${qNum}. ${q.prompt}`, MARGIN, y, CONTENT_WIDTH - 16, "bold", 10)
-      y += 2
+      doc.setTextColor(COLOR_BLACK)
+      y = renderTextWithMath(`${qNum}. ${q.prompt}`, MARGIN, y, CONTENT_WIDTH - 20, "bold", QUESTION_NUM_SIZE)
+      y += 6
 
-      // Answer line
-      doc.setDrawColor(200)
-      doc.line(MARGIN + 20, y + 10, MARGIN + CONTENT_WIDTH - 20, y + 10)
-      y += 22 + SECTION_GAP
+      // Answer line — longer, lighter
+      doc.setDrawColor(COLOR_RULE)
+      doc.setLineWidth(0.4)
+      doc.line(MARGIN + 24, y + 10, MARGIN + CONTENT_WIDTH, y + 10)
+      doc.setLineWidth(0.5)
+      y += 24 + QUESTION_GAP
     }
   }
 
   // ── Answer Key ─────────────────
   if (config.includeAnswerKey && questions.length > 0) {
-    // Estimate answer key total height — header + one line per question
-    const akHeaderH = 60
-    y += 20
-    y = fitBlock(doc, y, akHeaderH)
+    // Always start answer key on a fresh page
+    doc.addPage()
+    y = MARGIN
 
-    doc.setDrawColor(180)
-    doc.setLineWidth(1.5)
-    doc.line(MARGIN, y, PAGE_WIDTH - MARGIN, y)
+    // Thin top rule
+    doc.setDrawColor(COLOR_RULE)
     doc.setLineWidth(0.5)
-    y += 16
+    doc.line(MARGIN, y, PAGE_WIDTH - MARGIN, y)
+    y += 20
 
-    doc.setFontSize(16)
+    // Title
+    doc.setFontSize(SECTION_TITLE_SIZE)
     smartFont("bold", "Answer Key")
-    doc.setTextColor(30)
+    doc.setTextColor(COLOR_BLACK)
     doc.text("Answer Key", MARGIN, y)
-    y += 24
+    y += SECTION_TITLE_SIZE + 14
 
     let akNum = 0
     for (const q of questions) {
       akNum++
-      y = fitBlock(doc, y, 20)
-      doc.setTextColor(80)
-      y = renderTextWithMath(`${akNum}. ${q.answer}`, MARGIN, y, CONTENT_WIDTH - 16, "normal", 10)
+      y = fitBlock(doc, y, 22)
+      doc.setTextColor(COLOR_DARK)
+      y = renderTextWithMath(`${akNum}. ${q.answer}`, MARGIN, y, CONTENT_WIDTH - 20, "normal", BODY_SIZE)
+      y += 2
     }
   }
 
@@ -757,7 +801,7 @@ export async function generateHomeworkPDF(
   const totalPages = doc.getNumberOfPages()
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i)
-    addPageFooter(doc, i, totalPages)
+    addPageFooter(doc, i, totalPages, hasUnicodeFontAvailable, hasLatinFontAvailable)
   }
 
   return doc

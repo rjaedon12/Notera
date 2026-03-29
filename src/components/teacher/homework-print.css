@@ -3,7 +3,7 @@
    Print-specific styles for HomeworkSheetContent.
    Imported once in the layout / global CSS so the browser's
    native "Print → PDF" produces output that closely matches
-   the html2canvas-generated PDF.
+   the jsPDF-generated PDF.
    ────────────────────────────────────────────────────────── */
 
 @media print {
@@ -21,18 +21,18 @@
     print-color-adjust: exact;
   }
 
-  /* Root container — full page, no shadow/rounding */
+  /* Root container — clean page with generous margins */
   #homework-sheet-content {
     width: 100% !important;
     max-width: 100% !important;
-    padding: 0.75in !important;
+    padding: 0.875in !important;
     margin: 0 !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
       Helvetica, Arial, sans-serif;
-    font-size: 11pt;
-    color: #111 !important;
+    font-size: 10pt;
+    color: #1a1a1a !important;
     background: white !important;
   }
 
@@ -42,10 +42,10 @@
     page-break-inside: avoid;
   }
 
-  /* Force the answer-key divider onto a new page if it would split */
-  #homework-sheet-content .border-t-2 {
-    break-before: auto;
-    page-break-before: auto;
+  /* Answer key section — prefer starting on a new page */
+  #homework-sheet-content .border-t {
+    break-before: page;
+    page-break-before: always;
   }
 
   /* Ensure KaTeX renders in print */
@@ -55,18 +55,11 @@
     print-color-adjust: exact;
   }
 
-  /* Gray backgrounds (word bank, etc.) should print */
-  .bg-gray-50 {
-    background-color: #f9fafb !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
   /* Borders should remain visible */
-  .border-gray-300 {
-    border-color: #d1d5db !important;
-  }
   .border-gray-200 {
-    border-color: #e5e7eb !important;
+    border-color: #d2d2d2 !important;
+  }
+  .border-gray-100 {
+    border-color: #e8e8e8 !important;
   }
 }

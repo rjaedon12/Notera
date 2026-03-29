@@ -4,7 +4,13 @@ export interface StudySet {
   description: string | null
   isPublic: boolean
   isFeatured?: boolean
-  tags?: string[]
+  categoryId?: string | null
+  category?: {
+    id: string
+    name: string
+    slug: string
+    icon?: string | null
+  } | null
   createdAt: string
   updatedAt: string
   userId: string

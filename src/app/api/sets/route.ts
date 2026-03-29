@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
       include: {
         _count: { select: { cards: true } },
         user: { select: { id: true, name: true, email: true } },
+        category: { select: { id: true, name: true, slug: true } },
         ...(includeCards
           ? { cards: { orderBy: { order: "asc" as const }, select: { id: true, term: true, definition: true } } }
           : {}),
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { title, description, isPublic, tags, cards } = await request.json()
+    const { title, description, isPublic, categoryId, cards } = await request.json()
 
     if (!title) {
       return Response.json({ error: "Title is required" }, { status: 400 })
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
         title,
         description: description || null,
         isPublic: isPublic ?? false,
-        tags: tags || [],
+        categoryId: categoryId || null,
         userId: session.user.id,
         cards: {
           create: (cards || []).map(
