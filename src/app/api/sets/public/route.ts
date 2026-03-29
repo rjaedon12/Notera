@@ -56,7 +56,6 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         _count: { select: { cards: true, starredBy: true, savedBy: true, ratings: true } },
-        user: { select: { id: true, name: true } },
         category: {
           select: {
             id: true,

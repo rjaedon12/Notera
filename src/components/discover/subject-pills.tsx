@@ -39,19 +39,13 @@ export function SubjectPills({ selectedCategoryId, onSelect }: SubjectPillsProps
     <div className="space-y-2">
       {/* Top-level subject pills */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-        <PillButton
-          active={selectedCategoryId === null}
-          onClick={() => onSelect(null, null)}
-        >
-          All
-        </PillButton>
         {categories.map(cat => {
           const isActive = cat.id === selectedCategoryId || cat.children?.some(ch => ch.id === selectedCategoryId)
           return (
             <PillButton
               key={cat.id}
               active={!!isActive}
-              onClick={() => onSelect(cat.id, cat.slug)}
+              onClick={() => isActive ? onSelect(null, null) : onSelect(cat.id, cat.slug)}
             >
               {cat.icon && <span className="mr-1">{cat.icon}</span>}
               {cat.name}

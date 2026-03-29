@@ -10,7 +10,6 @@ export async function GET() {
 
     const setInclude = {
       _count: { select: { cards: true, starredBy: true, savedBy: true, ratings: true } },
-      user: { select: { id: true, name: true } },
       category: {
         select: {
           id: true,

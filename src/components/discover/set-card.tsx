@@ -69,9 +69,6 @@ export function SetCard({ set, isStarred, onToggleStar, showStar }: SetCardProps
                 <Star className="h-3 w-3" /> {starCount}
               </span>
             )}
-            {set.user?.name && (
-              <span className="ml-auto truncate max-w-[120px]">{set.user.name}</span>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -136,9 +133,6 @@ export function SetCardGrid({ set, isStarred, onToggleStar, showStar }: SetCardP
               <span className="flex items-center gap-0.5">
                 <Star className="h-3 w-3" /> {starCount}
               </span>
-            )}
-            {set.user?.name && (
-              <span className="ml-auto truncate max-w-[120px]">{set.user.name}</span>
             )}
           </div>
         </CardContent>
