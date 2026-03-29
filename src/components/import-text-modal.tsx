@@ -67,9 +67,9 @@ export function ImportTextModal({ open, onClose, onImport }: ImportTextModalProp
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleCancel()}>
-      <DialogContent className="max-w-2xl flex flex-col max-h-[90vh] p-0 overflow-hidden">
+      <DialogContent className="max-w-2xl p-0 flex flex-col">
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="p-6 pb-0">
 
         {/* Close button */}
         <button
@@ -236,8 +236,11 @@ export function ImportTextModal({ open, onClose, onImport }: ImportTextModalProp
 
         {/* Pinned footer */}
         <div
-          className="flex justify-end gap-2 px-6 py-4 flex-shrink-0"
-          style={{ borderTop: "1px solid var(--glass-border)" }}
+          className="flex justify-end gap-2 px-6 py-4 sticky bottom-0"
+          style={{
+            borderTop: "1px solid var(--glass-border)",
+            background: "var(--popover)",
+          }}
         >
           <Button variant="outline" onClick={handleCancel}>
             Cancel Import
