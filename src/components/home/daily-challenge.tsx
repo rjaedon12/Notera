@@ -23,9 +23,10 @@ export function DailyChallenge() {
     staleTime: 60_000,
   })
 
-  if (!session?.user || !data || data.totalDue === 0) return null
+  if (!session?.user) return null
 
-  const cardCount = Math.min(data.totalDue, 10)
+  const totalDue = data?.totalDue ?? 0
+  const cardCount = Math.min(Math.max(totalDue, 5), 10)
 
   return (
     <Link href="/daily-review">
@@ -51,7 +52,9 @@ export function DailyChallenge() {
             Daily challenge — 5-min blitz
           </h3>
           <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>
-            {cardCount} mixed cards from your weakest sets · Due tonight
+            {totalDue > 0
+              ? `${cardCount} mixed cards from your weakest sets · Due tonight`
+              : "Quick review to keep your knowledge fresh"}
           </p>
         </div>
 

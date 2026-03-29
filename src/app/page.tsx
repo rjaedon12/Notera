@@ -71,7 +71,7 @@ function useTimeGreeting(name?: string | null) {
 function GreetingBanner({ name }: { name?: string | null }) {
   const { heading, subtext } = useTimeGreeting(name)
   return (
-    <div className="animate-slide-up">
+    <div className="animate-slide-up text-center">
       <h1 className="text-2xl md:text-3xl font-bold tracking-[-0.03em] text-foreground font-heading">
         {heading}
       </h1>

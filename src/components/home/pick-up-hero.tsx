@@ -83,14 +83,6 @@ export function PickUpHero() {
           className="rounded-2xl p-5 flex items-center gap-5 transition-all hover:shadow-md cursor-pointer"
           style={{ background: "var(--glass-fill)", border: "1px solid var(--glass-border)" }}
         >
-          {/* Icon */}
-          <div
-            className="h-12 w-12 rounded-xl flex items-center justify-center text-lg font-bold flex-shrink-0"
-            style={{ background: "var(--primary)", color: "#fff" }}
-          >
-            {mostRecent.set.title.charAt(0).toUpperCase()}
-          </div>
-
           {/* Info */}
           <div className="flex-1 min-w-0">
             {categoryName && (
