@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -67,11 +67,14 @@ export function ImportTextModal({ open, onClose, onImport }: ImportTextModalProp
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleCancel()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl flex flex-col max-h-[90vh] p-0 overflow-hidden">
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto p-6">
+
         {/* Close button */}
         <button
           onClick={handleCancel}
-          className="absolute top-4 right-4 p-1 rounded-lg hover:bg-[var(--glass-fill)] transition-colors"
+          className="absolute top-4 right-4 p-1 rounded-lg hover:bg-[var(--glass-fill)] transition-colors z-10"
           aria-label="Close"
         >
           <X className="h-5 w-5 text-muted-foreground" />
@@ -190,7 +193,7 @@ export function ImportTextModal({ open, onClose, onImport }: ImportTextModalProp
               </span>
             </h3>
             <div
-              className="max-h-52 overflow-y-auto rounded-xl border"
+              className="rounded-xl border overflow-hidden"
               style={{ borderColor: "var(--glass-border)" }}
             >
               {preview.slice(0, 20).map((card, i) => (
@@ -229,15 +232,20 @@ export function ImportTextModal({ open, onClose, onImport }: ImportTextModalProp
           </div>
         )}
 
-        {/* Footer */}
-        <DialogFooter className="mt-6">
+        </div>{/* end scrollable body */}
+
+        {/* Pinned footer */}
+        <div
+          className="flex justify-end gap-2 px-6 py-4 flex-shrink-0"
+          style={{ borderTop: "1px solid var(--glass-border)" }}
+        >
           <Button variant="outline" onClick={handleCancel}>
             Cancel Import
           </Button>
           <Button onClick={handleImport} disabled={preview.length === 0}>
             Import
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   )
