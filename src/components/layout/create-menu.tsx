@@ -100,7 +100,7 @@ export function CreateMenu() {
       {/* Plus button */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="h-9 w-9 rounded-full flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
+        className="h-8 w-8 rounded-full flex items-center justify-center transition-all duration-200 hover:opacity-90 active:scale-95"
         style={{
           background: "var(--accent-color)",
           color: "white",
@@ -109,7 +109,7 @@ export function CreateMenu() {
         aria-expanded={open}
       >
         <Plus
-          className="h-5 w-5 transition-transform duration-200"
+          className="h-4 w-4 transition-transform duration-200"
           style={{ transform: open ? "rotate(45deg)" : "rotate(0deg)" }}
         />
       </button>

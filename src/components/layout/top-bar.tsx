@@ -106,24 +106,24 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         </form>
 
         {/* Right section */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <ThemeToggleSimple />
           <NotificationBell />
           <CreateMenu />
           
           {session ? (
             <div className="relative group">
-              <button className="h-8 w-8 rounded-full flex items-center justify-center avatar-glow transition-all"
+              <button className="h-8 w-8 rounded-full flex items-center justify-center transition-all overflow-hidden"
                 style={{ background: "var(--glass-fill)", border: "1px solid var(--glass-border)" }}
               >
                 {session.user?.image ? (
                   <img 
                     src={session.user.image} 
                     alt="" 
-                    className="h-9 w-9 rounded-full"
+                    className="h-8 w-8 rounded-full object-cover"
                   />
                 ) : (
-                  <User className="h-5 w-5 text-[var(--accent-color)]" />
+                  <User className="h-4 w-4 text-[var(--accent-color)]" />
                 )}
               </button>
               <div

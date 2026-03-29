@@ -60,8 +60,8 @@ export function ThemeToggleSimple() {
   return (
     <button
       onClick={toggleTheme}
-      className="h-9 w-9 rounded-full flex items-center justify-center transition-all hover:bg-[var(--glass-fill)]"
-      style={{ border: "1px solid transparent" }}
+      className="h-8 w-8 rounded-full flex items-center justify-center transition-all hover:bg-[var(--glass-fill)]"
+      style={{ border: "1px solid var(--glass-border)" }}
       aria-label="Toggle theme"
     >
       <span
@@ -69,9 +69,9 @@ export function ThemeToggleSimple() {
         className="theme-icon-enter"
       >
         {resolvedTheme === "dark" ? (
-          <Sun className="h-[18px] w-[18px]" />
+          <Sun className="h-4 w-4" />
         ) : (
-          <Moon className="h-[18px] w-[18px]" />
+          <Moon className="h-4 w-4" />
         )}
       </span>
     </button>
