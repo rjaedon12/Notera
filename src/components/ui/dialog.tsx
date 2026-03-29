@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { createPortal } from "react-dom"
 import { cn } from "@/lib/utils"
 
 interface DialogProps {
@@ -10,6 +11,12 @@ interface DialogProps {
 }
 
 export function Dialog({ open, onOpenChange, children }: DialogProps) {
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onOpenChange(false)
@@ -24,22 +31,23 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
     }
   }, [open, onOpenChange])
 
-  if (!open) return null
+  if (!open || !mounted) return null
 
-  return (
-    <div className="fixed inset-0 z-50">
-      <div 
-        className="fixed inset-0 backdrop-blur-md" 
+  return createPortal(
+    <div className="fixed inset-0 z-[9999]">
+      <div
+        className="fixed inset-0 backdrop-blur-md"
         style={{ background: "rgba(0,0,0,0.4)" }}
         aria-hidden="true"
       />
-      <div 
+      <div
         className="fixed inset-0 flex items-center justify-center p-4"
         onClick={() => onOpenChange(false)}
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
