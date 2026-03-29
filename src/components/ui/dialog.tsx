@@ -31,13 +31,13 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
       <div 
         className="fixed inset-0 backdrop-blur-md" 
         style={{ background: "rgba(0,0,0,0.4)" }}
-        onClick={() => onOpenChange(false)}
         aria-hidden="true"
       />
-      <div className="fixed inset-0 overflow-y-auto">
-        <div className="flex min-h-full items-center justify-center p-4">
-          {children}
-        </div>
+      <div 
+        className="fixed inset-0 flex items-center justify-center p-4"
+        onClick={() => onOpenChange(false)}
+      >
+        {children}
       </div>
     </div>
   )
