@@ -35,7 +35,7 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
         aria-hidden="true"
       />
       <div className="fixed inset-0 overflow-y-auto">
-        <div className="flex min-h-full items-start justify-center p-4 py-8">
+        <div className="flex min-h-full items-center justify-center p-4">
           {children}
         </div>
       </div>
