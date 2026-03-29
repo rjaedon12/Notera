@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -28,6 +28,14 @@ import { HomeworkBuilder } from "@/components/teacher/HomeworkBuilder"
 type Tab = "my-sets" | "saved" | "folders" | "homework"
 
 export default function LibraryPage() {
+  return (
+    <Suspense>
+      <LibraryContent />
+    </Suspense>
+  )
+}
+
+function LibraryContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -373,3 +381,4 @@ export default function LibraryPage() {
     </div>
   )
 }
+
