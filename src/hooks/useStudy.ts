@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { StudySet, Card, Folder, Progress, SetComment, AppNotification, UserAnalytics, Achievement, UserAchievement } from "@/types"
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { StudySet, Card, Folder, Progress, SetComment, AppNotification, UserAnalytics, Achievement, UserAchievement, DiscoverResponse, PaginatedSets } from "@/types"
 
 // Study Sets
 export function useStudySets() {
@@ -32,11 +32,51 @@ export function usePublicSets(search?: string, options?: { featured?: boolean; l
       const params = new URLSearchParams()
       if (search) params.set("search", search)
       if (options?.featured) params.set("featured", "true")
-      if (options?.limit) params.set("limit", String(options.limit))
+      if (options?.limit) params.set("pageSize", String(options.limit))
       const res = await fetch(`/api/sets/public?${params}`)
       if (!res.ok) throw new Error("Failed to fetch public sets")
+      const data: PaginatedSets = await res.json()
+      return data.sets
+    },
+  })
+}
+
+// Discover page — aggregated curated sections
+export function useDiscover() {
+  return useQuery<DiscoverResponse>({
+    queryKey: ["discover"],
+    queryFn: async () => {
+      const res = await fetch("/api/sets/discover")
+      if (!res.ok) throw new Error("Failed to fetch discover data")
       return res.json()
     },
+    staleTime: 60_000,
+  })
+}
+
+// Infinite scroll for browse/search mode
+export function useInfinitePublicSets(filters: {
+  search?: string
+  categoryId?: string
+  sort?: string
+  enabled?: boolean
+}) {
+  return useInfiniteQuery<PaginatedSets>({
+    queryKey: ["infinitePublicSets", filters.search, filters.categoryId, filters.sort],
+    queryFn: async ({ pageParam }) => {
+      const params = new URLSearchParams()
+      if (filters.search) params.set("search", filters.search)
+      if (filters.categoryId) params.set("categoryId", filters.categoryId)
+      if (filters.sort) params.set("sort", filters.sort)
+      params.set("pageSize", "12")
+      if (pageParam) params.set("cursor", pageParam as string)
+      const res = await fetch(`/api/sets/public?${params}`)
+      if (!res.ok) throw new Error("Failed to fetch sets")
+      return res.json()
+    },
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    enabled: filters.enabled !== false,
   })
 }
 

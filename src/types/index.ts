@@ -28,9 +28,24 @@ export interface StudySet {
   cards?: Card[]
   _count?: {
     cards: number
+    starredBy?: number
+    savedBy?: number
+    ratings?: number
   }
   averageRating?: number
   ratingsCount?: number
+}
+
+export interface DiscoverResponse {
+  featured: StudySet[]
+  trending: StudySet[]
+  forYou: StudySet[]
+  recent: StudySet[]
+}
+
+export interface PaginatedSets {
+  sets: StudySet[]
+  nextCursor: string | null
 }
 
 export interface Card {

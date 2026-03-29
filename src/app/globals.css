@@ -505,4 +505,13 @@ h1, h2, h3, .font-heading {
   background: rgba(255,255,255,0.04) !important;
 }
 
+/* Hide scrollbar for horizontal scroll containers */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 

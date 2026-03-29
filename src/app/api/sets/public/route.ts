@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-// GET /api/sets/public - Get public flashcard sets
+// GET /api/sets/public - Get public flashcard sets with sort, pagination, engagement
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const search = searchParams.get("search")
     const featured = searchParams.get("featured")
     const categoryId = searchParams.get("categoryId")
-    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "50")))
+    const sort = searchParams.get("sort") || "recent"
+    const cursor = searchParams.get("cursor")
+    const pageSize = Math.min(50, Math.max(1, parseInt(searchParams.get("pageSize") || searchParams.get("limit") || "12")))
 
     const where: Record<string, unknown> = { isPublic: true }
 
@@ -17,7 +19,13 @@ export async function GET(request: NextRequest) {
     }
 
     if (categoryId) {
-      where.categoryId = categoryId
+      // Support comma-separated category IDs for multi-category filtering
+      const ids = categoryId.split(",").filter(Boolean)
+      if (ids.length === 1) {
+        where.categoryId = ids[0]
+      } else if (ids.length > 1) {
+        where.categoryId = { in: ids }
+      }
     }
 
     if (search) {
@@ -27,22 +35,54 @@ export async function GET(request: NextRequest) {
       ]
     }
 
+    // Determine sort order
+    type OrderBy = Record<string, unknown>
+    let orderBy: OrderBy | OrderBy[]
+    switch (sort) {
+      case "popular":
+        orderBy = { starredBy: { _count: "desc" as const } }
+        break
+      case "rating":
+        orderBy = { ratings: { _count: "desc" as const } }
+        break
+      case "cards":
+        orderBy = { cards: { _count: "desc" as const } }
+        break
+      default: // "recent"
+        orderBy = { createdAt: "desc" as const }
+    }
+
     const sets = await prisma.flashcardSet.findMany({
       where,
       include: {
-        _count: { select: { cards: true } },
+        _count: { select: { cards: true, starredBy: true, savedBy: true, ratings: true } },
         user: { select: { id: true, name: true } },
         category: {
-          include: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            icon: true,
             parent: { select: { id: true, name: true, slug: true } },
           },
         },
       },
-      orderBy: { createdAt: "desc" },
-      take: limit,
+      orderBy,
+      take: pageSize + 1, // fetch one extra to determine if there's a next page
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     })
 
-    return NextResponse.json(sets)
+    // Determine next cursor
+    let nextCursor: string | null = null
+    if (sets.length > pageSize) {
+      const nextItem = sets.pop()
+      nextCursor = nextItem!.id
+    }
+
+    return NextResponse.json({
+      sets,
+      nextCursor,
+    })
   } catch (error) {
     console.error("Get public sets error:", error)
     return NextResponse.json(
