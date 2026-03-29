@@ -3,14 +3,19 @@
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
-import { usePublicSets, useStarredSets, useToggleSetStar } from "@/hooks/useStudy"
+import { usePublicSets, useStarredSets, useToggleSetStar, useDiscover } from "@/hooks/useStudy"
 import { useQuery } from "@tanstack/react-query"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { SetCardSkeleton } from "@/components/ui/skeleton"
-import { BookOpen, Users, Layers, ArrowRight, Clock, Star, TrendingUp } from "lucide-react"
+import { BookOpen, Users, Layers, ArrowRight, Clock, Star, TrendingUp, Sparkles } from "lucide-react"
 import { Suspense, useEffect, useMemo } from "react"
 import { StreakHero } from "@/components/streak/streak-hero"
+import { QuickActions } from "@/components/home/quick-actions"
+import { WelcomeChecklist } from "@/components/home/welcome-checklist"
+import { DailyProgress } from "@/components/home/daily-progress"
+import { RecentAchievement } from "@/components/home/recent-achievement"
+import { CategoryChips } from "@/components/home/category-chips"
 import toast from "react-hot-toast"
 import {
   LandingNavbar,
@@ -65,17 +70,14 @@ function useTimeGreeting(name?: string | null) {
   }, [name])
 }
 
-// ── Greeting header ────────────────────────────────────────────────────────────
+// ── Greeting header (compact) ──────────────────────────────────────────────────
 function GreetingBanner({ name }: { name?: string | null }) {
-  const { heading, subtext } = useTimeGreeting(name)
+  const { heading } = useTimeGreeting(name)
   return (
-    <div className="mb-2 animate-slide-up text-center pt-4">
-      <h1 className="text-4xl font-bold tracking-[-0.03em] text-foreground font-heading">
+    <div className="animate-slide-up">
+      <h1 className="text-2xl md:text-3xl font-bold tracking-[-0.03em] text-foreground font-heading">
         {heading}
       </h1>
-      <p className="mt-2 text-base" style={{ color: "var(--muted-foreground)" }}>
-        {subtext}
-      </p>
     </div>
   )
 }
@@ -105,10 +107,42 @@ function ContinueStudying() {
     enabled: !!session?.user
   })
 
-  if (!session?.user || recentStudies.length === 0) return null
+  if (!session?.user) return null
+
+  // New user empty state — show starter prompt instead of hiding
+  if (recentStudies.length === 0) {
+    return (
+      <section className="py-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 font-heading">
+            <Sparkles className="h-4 w-4" style={{ color: "var(--primary)" }} />
+            Start Studying
+          </h2>
+        </div>
+        <div
+          className="rounded-2xl p-6 text-center"
+          style={{ background: "var(--glass-fill)", border: "1px solid var(--glass-border)" }}
+        >
+          <BookOpen className="h-10 w-10 mx-auto mb-3" style={{ color: "var(--primary)", opacity: 0.7 }} />
+          <h3 className="font-semibold text-base mb-1 text-foreground font-heading">Pick a set to begin</h3>
+          <p className="text-sm mb-4" style={{ color: "var(--muted-foreground)" }}>
+            Browse featured study sets or create your own.
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <Link href="/discover">
+              <Button variant="outline" size="sm">Browse Sets</Button>
+            </Link>
+            <Link href="/create">
+              <Button size="sm">Create a Set</Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
-    <section className="py-10 border-b" style={{ borderColor: "var(--border)" }}>
+    <section className="py-6 border-b" style={{ borderColor: "var(--border)" }}>
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 font-heading">
           <Clock className="h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
@@ -143,8 +177,11 @@ function HomeContent() {
   const { data: session, status } = useSession()
   const searchParams = useSearchParams()
   const search = searchParams.get("search") || ""
-  // Always fetch recent public sets (no featured filter) — limited to 6 for home page
-  const { data: publicSets, isLoading } = usePublicSets(search, { limit: search ? 50 : 6 })
+  // Use discover API for personalized recommendations, public sets for search
+  const { data: discoverData, isLoading: discoverLoading } = useDiscover()
+  const { data: searchSets, isLoading: searchLoading } = usePublicSets(search, { limit: 50 })
+  const isSearchMode = !!search
+  const isLoading = isSearchMode ? searchLoading : discoverLoading
   const { data: starredSetIds = [] } = useStarredSets()
   const toggleStar = useToggleSetStar()
 
@@ -189,34 +226,58 @@ function HomeContent() {
     )
   }
 
-  // Sort: featured first, then starred, then by recency
-  const sortedSets = publicSets
-    ? [...publicSets].sort((a, b) => {
-        const aFeatured = a.isFeatured ? 2 : 0
-        const bFeatured = b.isFeatured ? 2 : 0
-        const aStarred = starredSetIds.includes(a.id) ? 1 : 0
-        const bStarred = starredSetIds.includes(b.id) ? 1 : 0
-        return (bFeatured + bStarred) - (aFeatured + aStarred)
-      })
-    : []
+  // For search: sort featured first, then starred, then recency
+  // For home: use discover API's "forYou" section (personalized), fall back to featured
+  const sortedSets = isSearchMode
+    ? (searchSets
+        ? [...searchSets].sort((a, b) => {
+            const aFeatured = a.isFeatured ? 2 : 0
+            const bFeatured = b.isFeatured ? 2 : 0
+            const aStarred = starredSetIds.includes(a.id) ? 1 : 0
+            const bStarred = starredSetIds.includes(b.id) ? 1 : 0
+            return (bFeatured + bStarred) - (aFeatured + aStarred)
+          })
+        : [])
+    : discoverData
+      ? [...(discoverData.forYou?.length ? discoverData.forYou : discoverData.featured ?? [])].slice(0, 6)
+      : []
 
   return (
-    <div className="container mx-auto px-6 py-10">
-      {/* Time-based greeting for logged-in users */}
-      {session?.user && <GreetingBanner name={session.user.name} />}
+    <div className="container mx-auto px-6 py-6">
+      {/* ── Compact header row: greeting + streak ── */}
+      {session?.user && (
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-4 mb-2">
+          <div className="flex flex-col gap-2">
+            <GreetingBanner name={session.user.name} />
+            <RecentAchievement />
+          </div>
+          <StreakHero />
+        </div>
+      )}
 
-      {/* Streak Hero - Duolingo-style streak display for logged-in users */}
-      {session?.user && <StreakHero />}
+      {/* ── Daily progress + quick actions ── */}
+      {session?.user && (
+        <div className="mb-4">
+          <DailyProgress />
+          <QuickActions />
+        </div>
+      )}
 
-      {/* Continue Studying - shown for logged-in users */}
+      {/* ── Welcome checklist for new users ── */}
+      {session?.user && <WelcomeChecklist />}
+
+      {/* ── Continue Studying ── */}
       {session?.user && <ContinueStudying />}
 
-      {/* Featured Sets */}
-      <section className="py-14">
+      {/* ── Browse by Subject ── */}
+      {session?.user && <CategoryChips />}
+
+      {/* ── Recommended / Search results ── */}
+      <section className="py-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-foreground flex items-center gap-2 font-heading">
             <TrendingUp className="h-5 w-5" style={{ color: "var(--muted-foreground)" }} />
-            {search ? `Search results for "${search}"` : "Recent Study Sets"}
+            {search ? `Search results for "${search}"` : "Recommended for You"}
           </h2>
           {!search && (
             <Link href="/discover" className="text-sm font-medium hover:underline flex items-center gap-1" style={{ color: "var(--primary)" }}>

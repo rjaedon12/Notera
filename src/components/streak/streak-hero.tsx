@@ -32,12 +32,12 @@ export function StreakHero() {
   // Loading state — compact shimmer
   if (sessionStatus === "loading" || isLoading) {
     return (
-      <div className="flex items-center justify-center gap-4 py-4 mb-6 max-w-lg mx-auto">
-        <div className="h-8 w-8 rounded-full glass-shimmer" />
-        <div className="h-5 w-20 glass-shimmer rounded-lg" />
-        <div className="flex gap-1.5">
+      <div className="flex items-center gap-3 py-2">
+        <div className="h-6 w-6 rounded-full glass-shimmer" />
+        <div className="h-4 w-16 glass-shimmer rounded-lg" />
+        <div className="flex gap-1">
           {[...Array(7)].map((_, i) => (
-            <div key={i} className="h-6 w-6 rounded-full glass-shimmer" />
+            <div key={i} className="h-5 w-5 rounded-full glass-shimmer" />
           ))}
         </div>
       </div>
@@ -68,32 +68,35 @@ export function StreakHero() {
   })
 
   return (
-    <div className="flex flex-col items-center gap-3 py-4 mb-6 max-w-lg mx-auto animate-fade-in">
-      {/* Top row: flame + count + label */}
-      <div className="flex items-center gap-3">
+    <div className="flex items-center gap-4 py-2 animate-fade-in">
+      {/* Flame + count + label */}
+      <div className="flex items-center gap-2">
         <Flame 
           className={cn(
-            "h-7 w-7 flame-breathe",
+            "h-6 w-6 flame-breathe",
             studiedToday 
               ? "text-orange-500 fill-orange-400" 
               : "text-orange-300 dark:text-orange-600"
           )} 
           strokeWidth={1.5}
         />
-        <span className="text-2xl font-bold text-foreground font-heading animate-count-up">
+        <span className="text-xl font-bold text-foreground font-heading">
           {currentStreak}
         </span>
-        <span className="text-sm font-medium" style={{ color: "var(--muted-foreground)" }}>
+        <span className="text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>
           {currentStreak === 0 ? "Start your streak" : "day streak"}
         </span>
       </div>
-      
-      {/* Weekly dots row */}
-      <div className="flex gap-1.5">
+
+      {/* Divider */}
+      <div className="h-6 w-px" style={{ background: "var(--border)" }} />
+
+      {/* Weekly dots */}
+      <div className="flex gap-1">
         {weekStatus.map((status, index) => (
-          <div key={index} className="flex flex-col items-center gap-1">
+          <div key={index} className="flex flex-col items-center gap-0.5">
             <span className={cn(
-              "text-[10px] font-medium",
+              "text-[9px] font-medium leading-none",
               status.isToday 
                 ? "text-[var(--primary)]" 
                 : "text-[var(--muted-foreground)]"
@@ -101,15 +104,13 @@ export function StreakHero() {
               {status.day}
             </span>
             <div 
-              className="w-6 h-6 rounded-full flex items-center justify-center transition-all"
+              className="w-5 h-5 rounded-full flex items-center justify-center transition-all"
               style={{
                 background: status.studied
                   ? "var(--primary)"
                   : status.isToday
                     ? "color-mix(in srgb, var(--primary) 15%, transparent)"
-                    : status.isFuture
-                      ? "var(--muted)"
-                      : "var(--muted)",
+                    : "var(--muted)",
                 border: status.studied
                   ? "none"
                   : status.isToday
@@ -119,7 +120,7 @@ export function StreakHero() {
               }}
             >
               {status.studied && (
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               )}
@@ -127,27 +128,15 @@ export function StreakHero() {
           </div>
         ))}
       </div>
-      
-      {/* Motivational message — compact */}
-      {studiedToday && (
-        <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-          Streak extended —{' '}
-          <span className="font-medium" style={{ color: "var(--primary)" }}>
-            {Math.max(1, 24 - new Date().getHours())}h
-          </span>{' '}
-          left today
-        </p>
-      )}
-      {!studiedToday && currentStreak > 0 && (
-        <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-          Study today to keep your {currentStreak} day streak
-        </p>
-      )}
-      {!studiedToday && currentStreak === 0 && (
-        <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-          Study any set to start your streak
-        </p>
-      )}
+
+      {/* Compact motivational text */}
+      <span className="text-xs hidden md:inline" style={{ color: "var(--muted-foreground)" }}>
+        {studiedToday
+          ? <>Streak extended — <span className="font-medium" style={{ color: "var(--primary)" }}>{Math.max(1, 24 - new Date().getHours())}h</span> left</>
+          : currentStreak > 0
+            ? `Study to keep your ${currentStreak} day streak`
+            : "Study any set to start"}
+      </span>
     </div>
   )
 }
