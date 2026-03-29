@@ -108,8 +108,8 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         {/* Right section */}
         <div className="flex items-center gap-1.5">
           <ThemeToggleSimple />
-          <NotificationBell />
           <CreateMenu />
+          <NotificationBell />
           
           {session ? (
             <div className="relative group">
