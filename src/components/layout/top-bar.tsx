@@ -40,8 +40,6 @@ export function TopBar({ onMenuClick }: TopBarProps) {
       style={{
         background: "var(--sidebar-bg)",
         borderColor: "var(--sidebar-border)",
-        backdropFilter: "saturate(180%) blur(48px)",
-        WebkitBackdropFilter: "saturate(180%) blur(48px)",
       }}
     >
       <div className="flex h-full items-center justify-between px-4">
@@ -49,7 +47,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         <div className="flex items-center gap-3">
           <button
             onClick={onMenuClick}
-            className="p-2 rounded-[10px] hover:bg-[var(--glass-fill)] transition-colors lg:hidden"
+            className="p-2 rounded-lg hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors lg:hidden"
             aria-label="Toggle menu"
           >
             <Menu className="h-5 w-5" />
@@ -90,15 +88,11 @@ export function TopBar({ onMenuClick }: TopBarProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-9 pl-10 pr-4 rounded-full text-sm transition-all
-                border focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:ring-offset-0
+                border-none focus:outline-none focus:ring-1 focus:ring-[var(--primary)]/30 focus:ring-offset-0
                 placeholder:text-[var(--muted-foreground)]"
               style={{
-                background: "var(--glass-fill)",
-                backdropFilter: "saturate(180%) blur(48px)",
-                WebkitBackdropFilter: "saturate(180%) blur(48px)",
-                borderColor: "var(--glass-border)",
+                background: "var(--background-tertiary)",
                 color: "var(--foreground)",
-                boxShadow: "inset 0 1px 0 var(--glass-highlight)",
               }}
               aria-label="Search"
             />
@@ -114,7 +108,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           {session ? (
             <div className="relative group">
               <button className="h-8 w-8 rounded-full flex items-center justify-center transition-all overflow-hidden"
-                style={{ background: "var(--glass-fill)", border: "1px solid var(--glass-border)" }}
+                style={{ background: "var(--muted)", border: "1px solid var(--border)" }}
               >
                 {session.user?.image ? (
                   <img 
@@ -127,17 +121,15 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                 )}
               </button>
               <div
-                className="absolute right-0 top-full mt-2 w-56 rounded-2xl py-2 opacity-0 invisible
+                className="absolute right-0 top-full mt-2 w-56 rounded-xl py-2 opacity-0 invisible
                   group-hover:opacity-100 group-hover:visible transition-all duration-200"
                 style={{
                   background: "var(--popover)",
-                  border: "1px solid var(--glass-border)",
-                  backdropFilter: "saturate(200%) blur(64px)",
-                  WebkitBackdropFilter: "saturate(200%) blur(64px)",
-                  boxShadow: "var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight)",
+                  border: "1px solid var(--border)",
+                  boxShadow: "0 4px 24px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06)",
                 }}
               >
-                <div className="px-4 py-2" style={{ borderBottom: "1px solid var(--glass-border)" }}>
+                <div className="px-4 py-2" style={{ borderBottom: "1px solid var(--border)" }}>
                   <p className="text-sm font-medium text-foreground">{session.user?.name || "User"}</p>
                   <p className="text-xs text-[var(--muted-foreground)]">{session.user?.email}</p>
                   {session.user?.role === "ADMIN" && (
@@ -153,18 +145,18 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                 </div>
                 <Link 
                   href="/settings" 
-                  className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-[var(--glass-fill)] transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
                 >
                   <Settings className="h-4 w-4" />
                   Settings
                 </Link>
-                <div className="px-3 py-2" style={{ borderTop: "1px solid var(--glass-border)" }}>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: "var(--muted-foreground)", opacity: 0.6 }}>Theme</p>
+                <div className="px-3 py-2" style={{ borderTop: "1px solid var(--border)" }}>
+                  <p className="text-[11px] font-medium uppercase tracking-wider mb-2" style={{ color: "var(--muted-foreground)" }}>Theme</p>
                   <ThemePicker />
                 </div>
                 <button
                   onClick={() => signOut()}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-[var(--glass-fill)] transition-colors text-[var(--destructive)]"
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors text-[var(--destructive)]"
                 >
                   <LogOut className="h-4 w-4" />
                   Sign out

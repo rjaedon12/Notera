@@ -31,7 +31,12 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         _count: { select: { cards: true } },
-        category: { select: { id: true, name: true, slug: true, icon: true, parent: { select: { id: true, name: true, slug: true } } } },
+        user: { select: { id: true, name: true } },
+        category: {
+          include: {
+            parent: { select: { id: true, name: true, slug: true } },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
       take: limit,

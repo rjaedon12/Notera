@@ -12,6 +12,7 @@ export async function GET() {
     const sets = await prisma.flashcardSet.findMany({
       include: {
         user: { select: { id: true, name: true, email: true } },
+        category: { select: { id: true, name: true, slug: true } },
         _count: { select: { cards: true } },
       },
       orderBy: { createdAt: "desc" },

@@ -66,17 +66,10 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="min-h-screen bg-background relative overflow-x-hidden">
-      {/* Background gradient orbs */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="bg-orb bg-orb-1" />
-        <div className="bg-orb bg-orb-2" />
-        <div className="bg-orb bg-orb-3" />
-      </div>
-
       <TopBar onMenuClick={toggleSidebar} />
       <Sidebar isCollapsed={sidebarCollapsed} onToggle={toggleSidebar} />
       <main
-        className="pt-14 transition-all duration-300 relative z-10"
+        className="pt-14 transition-all duration-300 relative"
         style={{ paddingLeft: sidebarCollapsed ? "4rem" : "14rem" }}
       >
         {/* Global Announcement Banner */}

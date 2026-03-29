@@ -8,15 +8,13 @@ export function Card({ className, style, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-2xl transition-all duration-200 glass-card-hover",
+        "rounded-xl transition-all duration-200 glass-card-hover",
         className
       )}
       style={{
-        background: "var(--glass-fill)",
-        border: "1px solid var(--glass-border)",
-        backdropFilter: "saturate(180%) blur(48px)",
-        WebkitBackdropFilter: "saturate(180%) blur(48px)",
-        boxShadow: "var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight)",
+        background: "var(--card)",
+        border: "1px solid var(--border)",
+        boxShadow: "var(--glass-shadow)",
         color: "var(--card-foreground)",
         ...style,
       }}
