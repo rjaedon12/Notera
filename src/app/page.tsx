@@ -69,22 +69,13 @@ function useTimeGreeting(name?: string | null) {
 function GreetingBanner({ name }: { name?: string | null }) {
   const { heading, subtext } = useTimeGreeting(name)
   return (
-    <div className="mb-8 animate-slide-up text-center">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground font-heading">
+    <div className="mb-2 animate-slide-up text-center pt-4">
+      <h1 className="text-4xl font-bold tracking-[-0.03em] text-foreground font-heading">
         {heading}
       </h1>
-      <p className="mt-1 text-base" style={{ color: "var(--muted-foreground)" }}>
+      <p className="mt-2 text-base" style={{ color: "var(--muted-foreground)" }}>
         {subtext}
       </p>
-      <div
-        className="mx-auto mt-3 rounded-full"
-        style={{
-          width: "2.5rem",
-          height: "3px",
-          background: "var(--primary)",
-          opacity: 0.85,
-        }}
-      />
     </div>
   )
 }
@@ -117,17 +108,17 @@ function ContinueStudying() {
   if (!session?.user || recentStudies.length === 0) return null
 
   return (
-    <section className="py-8 border-b" style={{ borderColor: "var(--glass-border)" }}>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-foreground flex items-center gap-2 font-heading">
-          <Clock className="h-5 w-5" style={{ color: "var(--primary)" }} />
+    <section className="py-10 border-b" style={{ borderColor: "var(--border)" }}>
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 font-heading">
+          <Clock className="h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
           Continue Studying
         </h2>
-        <Link href="/library" className="text-sm hover:underline" style={{ color: "var(--primary)" }}>
+        <Link href="/library" className="text-sm font-medium hover:underline" style={{ color: "var(--primary)" }}>
           View all
         </Link>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         {recentStudies.slice(0, 4).map((study) => (
           <Link key={study.id} href={`/sets/${study.setId}`}>
             <Card className="cursor-pointer">
@@ -210,7 +201,7 @@ function HomeContent() {
     : []
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-6 py-10">
       {/* Time-based greeting for logged-in users */}
       {session?.user && <GreetingBanner name={session.user.name} />}
 
@@ -221,10 +212,10 @@ function HomeContent() {
       {session?.user && <ContinueStudying />}
 
       {/* Featured Sets */}
-      <section className="py-12">
+      <section className="py-14">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2 font-heading">
-            <TrendingUp className="h-6 w-6" style={{ color: "var(--primary)" }} />
+          <h2 className="text-xl font-semibold text-foreground flex items-center gap-2 font-heading">
+            <TrendingUp className="h-5 w-5" style={{ color: "var(--muted-foreground)" }} />
             {search ? `Search results for "${search}"` : "Recent Study Sets"}
           </h2>
           {!search && (
@@ -247,11 +238,11 @@ function HomeContent() {
               const isFeatured = set.isFeatured
               return (
                 <Link key={set.id} href={`/sets/${set.id}`}>
-                  <Card className={`h-full cursor-pointer relative overflow-hidden ${isFeatured ? "ring-2 ring-amber-400/50 shadow-lg shadow-amber-400/10" : isStarred ? "ring-2 ring-[var(--primary)]/30" : ""}`}>
+                  <Card className={`h-full cursor-pointer relative overflow-hidden ${isFeatured ? "ring-1 ring-amber-400/40" : isStarred ? "ring-1 ring-[var(--primary)]/20" : ""}`}>
                     {isFeatured && (
                       <div className="absolute top-0 right-0 z-10">
-                        <div className="bg-gradient-to-l from-amber-500 to-amber-400 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-bl-lg flex items-center gap-1 shadow-md">
-                          <Star className="h-3 w-3 fill-white" />
+                        <div className="bg-amber-500 text-white text-[10px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-bl-lg flex items-center gap-1">
+                          <Star className="h-2.5 w-2.5 fill-white" />
                           Featured
                         </div>
                       </div>

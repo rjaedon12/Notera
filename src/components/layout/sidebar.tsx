@@ -99,22 +99,15 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       <Link key={item.href} href={item.href} title={isCollapsed ? item.label : undefined}>
         <div
           className={cn(
-            "relative inline-flex items-center gap-3 whitespace-nowrap rounded-[10px] text-sm font-medium transition-all w-full h-9 px-3",
+            "relative inline-flex items-center gap-3 whitespace-nowrap rounded-lg text-[13px] font-medium transition-all w-full h-8 px-2.5",
             isCollapsed && "justify-center px-0",
             isActive
-              ? "text-foreground"
-              : "hover:text-foreground hover:bg-[var(--glass-fill)]"
+              ? "text-foreground font-semibold bg-black/[0.05] dark:bg-white/[0.08]"
+              : "text-muted-foreground hover:text-foreground hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
           )}
-          style={isActive ? {
-            background: "rgba(255,255,255,0.10)",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12), 0 1px 3px rgba(0,0,0,0.10)",
-            color: "var(--foreground)",
-          } : {
-            color: "var(--muted-foreground)",
-          }}
         >
           {isActive && (
-            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full" style={{ background: "var(--accent-color)" }} />
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-3.5 rounded-full" style={{ background: "var(--primary)" }} />
           )}
           <span className={cn("shrink-0", isActive && !isCollapsed && "ml-1")}>{item.icon}</span>
           {!isCollapsed && <span>{item.label}</span>}
@@ -127,8 +120,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const renderSectionLabel = (label: string) => {
     if (isCollapsed) return <div className="h-2" />
     return (
-      <div className="px-3 pt-4 pb-1">
-        <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--muted-foreground)", opacity: 0.6 }}>
+      <div className="px-2.5 pt-5 pb-1">
+        <span className="text-[11px] font-medium uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>
           {label}
         </span>
       </div>
@@ -154,8 +147,6 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       style={{
         background: "var(--sidebar-bg)",
         borderColor: "var(--sidebar-border)",
-        backdropFilter: "saturate(180%) blur(48px)",
-        WebkitBackdropFilter: "saturate(180%) blur(48px)",
       }}
     >
       <div className="flex flex-col h-full p-3">
@@ -186,14 +177,14 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         </nav>
 
         {/* Experimental Features Section */}
-        <div className="pt-3 space-y-0.5" style={{ borderTop: "1px solid var(--glass-border)" }}>
+        <div className="pt-3 space-y-0.5" style={{ borderTop: "1px solid var(--border)" }}>
           {isCollapsed ? (
             // Collapsed mode: single icon that links to /experimental
             <Link href="/experimental">
               <div
                 className={cn(
-                  "relative inline-flex items-center justify-center rounded-[10px] text-sm font-medium transition-all w-full h-9 px-0",
-                  "hover:bg-[var(--glass-fill)]"
+                  "relative inline-flex items-center justify-center rounded-lg text-[13px] font-medium transition-all w-full h-8 px-0",
+                  "hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
                 )}
                 style={isOnExperimentalPage ? {
                   background: "color-mix(in srgb, var(--accent) 12%, transparent)",
@@ -208,7 +199,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             <>
               <button
                 onClick={toggleExperimental}
-                className="relative inline-flex items-center gap-3 whitespace-nowrap rounded-[10px] text-sm font-medium transition-all w-full h-9 px-3 hover:bg-[var(--glass-fill)]"
+                className="relative inline-flex items-center gap-3 whitespace-nowrap rounded-lg text-[13px] font-medium transition-all w-full h-8 px-2.5 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
               >
                 <span style={{ color: "var(--accent)" }}><NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg></NavIcon></span>
                 <span className="flex-1 text-left" style={{ color: "var(--accent)" }}>Experimental</span>
@@ -240,15 +231,14 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         </div>
 
         {/* Bottom Navigation */}
-        <div className="pt-3 space-y-0.5" style={{ borderTop: "1px solid var(--glass-border)" }}>
+        <div className="pt-3 space-y-0.5" style={{ borderTop: "1px solid var(--border)" }}>
           {filterItems(bottomItems).map(renderNavItem)}
         </div>
 
         {/* Collapse Toggle */}
         <button
           onClick={onToggle}
-          className="mt-3 flex items-center justify-center h-9 rounded-[10px] transition-all hover:bg-[var(--glass-fill)]"
-          style={{ border: "1px solid var(--glass-border)" }}
+          className="mt-3 flex items-center justify-center h-8 rounded-lg transition-all hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           <span className={cn("transition-transform duration-300", isCollapsed ? "rotate-0" : "rotate-180")}>

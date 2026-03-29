@@ -9,14 +9,14 @@ export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
 
   return (
-    <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: "var(--glass-fill)", border: "1px solid var(--glass-border)" }}>
+    <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: "var(--background-secondary)", border: "1px solid var(--border)" }}>
       <Button
         variant="ghost"
         size="sm"
         onClick={() => setTheme("light")}
         className={cn(
           "h-8 w-8 p-0 rounded-lg",
-          theme === "light" && "bg-[var(--glass-fill-hover)]"
+          theme === "light" && "bg-black/[0.05] dark:bg-white/[0.08]"
         )}
         aria-label="Light mode"
       >
@@ -28,7 +28,7 @@ export function ThemeToggle() {
         onClick={() => setTheme("dark")}
         className={cn(
           "h-8 w-8 p-0 rounded-lg",
-          theme === "dark" && "bg-[var(--glass-fill-hover)]"
+          theme === "dark" && "bg-black/[0.05] dark:bg-white/[0.08]"
         )}
         aria-label="Dark mode"
       >
@@ -40,7 +40,7 @@ export function ThemeToggle() {
         onClick={() => setTheme("system")}
         className={cn(
           "h-8 w-8 p-0 rounded-lg",
-          theme === "system" && "bg-[var(--glass-fill-hover)]"
+          theme === "system" && "bg-black/[0.05] dark:bg-white/[0.08]"
         )}
         aria-label="System theme"
       >
@@ -60,8 +60,8 @@ export function ThemeToggleSimple() {
   return (
     <button
       onClick={toggleTheme}
-      className="h-8 w-8 rounded-full flex items-center justify-center transition-all hover:bg-[var(--glass-fill)]"
-      style={{ border: "1px solid var(--glass-border)" }}
+      className="h-8 w-8 rounded-full flex items-center justify-center transition-all hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+      style={{ border: "1px solid var(--border)" }}
       aria-label="Toggle theme"
     >
       <span

@@ -117,14 +117,11 @@ export function CreateMenu() {
       {/* Dropdown */}
       {open && (
         <div
-          className="absolute right-0 top-full mt-2 w-56 rounded-2xl py-2 animate-slide-up"
+          className="absolute right-0 top-full mt-2 w-56 rounded-xl py-2 animate-slide-up"
           style={{
             background: "var(--popover)",
-            border: "1px solid var(--glass-border)",
-            backdropFilter: "saturate(200%) blur(64px)",
-            WebkitBackdropFilter: "saturate(200%) blur(64px)",
-            boxShadow:
-              "var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight)",
+            border: "1px solid var(--border)",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
           }}
         >
           {menuItems.map((item) => (
@@ -135,7 +132,7 @@ export function CreateMenu() {
                 router.push(item.href)
               }}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left 
-                hover:bg-[var(--glass-fill)] transition-colors"
+                hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
               style={{ color: "var(--foreground)" }}
             >
               <span className="text-[var(--muted-foreground)]">{item.icon}</span>

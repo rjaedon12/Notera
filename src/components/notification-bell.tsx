@@ -65,8 +65,8 @@ export function NotificationBell() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="relative h-8 w-8 rounded-full flex items-center justify-center transition-all hover:bg-[var(--glass-fill)]"
-        style={{ border: "1px solid var(--glass-border)" }}
+        className="relative h-8 w-8 rounded-full flex items-center justify-center transition-all hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+        style={{ border: "1px solid var(--border)" }}
         aria-label="Notifications"
       >
         <Bell className="h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
@@ -79,16 +79,14 @@ export function NotificationBell() {
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-2 w-80 rounded-2xl py-2 z-50 max-h-96 overflow-y-auto"
+          className="absolute right-0 top-full mt-2 w-80 rounded-xl py-2 z-50 max-h-96 overflow-y-auto"
           style={{
             background: "var(--popover)",
-            border: "1px solid var(--glass-border)",
-            backdropFilter: "saturate(200%) blur(64px)",
-            WebkitBackdropFilter: "saturate(200%) blur(64px)",
-            boxShadow: "var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight)",
+            border: "1px solid var(--border)",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
           }}
         >
-          <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: "1px solid var(--glass-border)" }}>
+          <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: "1px solid var(--border)" }}>
             <span className="text-sm font-semibold text-foreground">Notifications</span>
             {unreadCount > 0 && (
               <button
@@ -108,7 +106,7 @@ export function NotificationBell() {
             notifications.slice(0, 10).map((n) => (
               <div
                 key={n.id}
-                className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-[var(--glass-fill)]"
+                className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
                 style={{ opacity: n.isRead ? 0.6 : 1 }}
               >
                 <div className="flex-1 min-w-0">
@@ -119,7 +117,7 @@ export function NotificationBell() {
                 {!n.isRead && (
                   <button
                     onClick={() => markReadMutation.mutate(n.id)}
-                    className="shrink-0 p-1 rounded hover:bg-[var(--glass-fill)]"
+                    className="shrink-0 p-1 rounded hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
                     title="Mark as read"
                   >
                     <Check className="h-3 w-3 text-primary" />
