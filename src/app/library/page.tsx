@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useStudySets, useSavedSets, useFolders, useDeleteStudySet, useCreateFolder, useStarredSets, useToggleSetStar } from "@/hooks/useStudy"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,9 +30,20 @@ type Tab = "my-sets" | "saved" | "folders" | "homework"
 export default function LibraryPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<Tab>("my-sets")
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false)
   const [newFolderName, setNewFolderName] = useState("")
+
+  // Auto-open new folder dialog when arriving via ?newFolder=true
+  useEffect(() => {
+    if (searchParams.get("newFolder") === "true") {
+      setActiveTab("folders")
+      setShowNewFolderDialog(true)
+      // Clean up the URL param
+      router.replace("/library", { scroll: false })
+    }
+  }, [searchParams, router])
 
   const isTeacherOrAdmin =
     session?.user?.role === "TEACHER" || session?.user?.role === "ADMIN"

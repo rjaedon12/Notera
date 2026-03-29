@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { CreateMenu } from "@/components/layout/create-menu"
 
 interface TopBarProps {
   onMenuClick: () => void
@@ -108,6 +109,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         <div className="flex items-center gap-2">
           <ThemeToggleSimple />
           <NotificationBell />
+          <CreateMenu />
           
           {session ? (
             <div className="relative group">

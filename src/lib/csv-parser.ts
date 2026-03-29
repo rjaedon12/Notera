@@ -97,3 +97,53 @@ export function parseCSVContent(text: string): { term: string; definition: strin
 
   return cards
 }
+
+/**
+ * Parse pasted text into { term, definition }[] using configurable delimiters.
+ *
+ * @param text          Raw pasted text
+ * @param termDelimiter Separator between term and definition (e.g. "\t", ",", "|")
+ * @param cardDelimiter Separator between cards (e.g. "\n", ";")
+ */
+export function parseImportText(
+  text: string,
+  termDelimiter: string,
+  cardDelimiter: string
+): { term: string; definition: string }[] {
+  if (!text.trim()) return []
+
+  // Split into individual card strings
+  const rawCards =
+    cardDelimiter === "\n"
+      ? text.split(/\r?\n/)
+      : text.split(cardDelimiter)
+
+  const cards: { term: string; definition: string }[] = []
+
+  for (const raw of rawCards) {
+    const trimmed = raw.trim()
+    if (!trimmed) continue
+
+    let term: string
+    let definition: string
+
+    if (termDelimiter === ",") {
+      // Use RFC 4180 parser to handle quoted fields with embedded commas
+      const fields = parseCSVLine(trimmed)
+      if (fields.length < 2) continue
+      term = fields[0].trim()
+      definition = fields.slice(1).join(", ").trim()
+    } else {
+      const idx = trimmed.indexOf(termDelimiter)
+      if (idx === -1) continue
+      term = trimmed.slice(0, idx).trim()
+      definition = trimmed.slice(idx + termDelimiter.length).trim()
+    }
+
+    if (term && definition) {
+      cards.push({ term, definition })
+    }
+  }
+
+  return cards
+}

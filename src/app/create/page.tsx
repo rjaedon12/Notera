@@ -10,11 +10,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Card } from "@/components/ui/card"
-import { Plus, Trash2, Upload, Download, GripVertical, Loader2 } from "lucide-react"
+import { Plus, Trash2, Upload, Download, GripVertical, Loader2, FileText } from "lucide-react"
 import toast from "react-hot-toast"
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd"
 import { TagSelector } from "@/components/tag-selector"
 import { parseCSVContent } from "@/lib/csv-parser"
+import { ImportTextModal } from "@/components/import-text-modal"
 
 interface CardData {
   id: string
@@ -36,6 +37,7 @@ export default function CreatePage() {
     { id: "1", term: "", definition: "" },
     { id: "2", term: "", definition: "" },
   ])
+  const [importModalOpen, setImportModalOpen] = useState(false)
 
   if (status === "unauthenticated") {
     router.push("/login")
@@ -201,6 +203,14 @@ export default function CreatePage() {
           <Button
             type="button"
             variant="outline"
+            onClick={() => setImportModalOpen(true)}
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Import from Text
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
             onClick={() => fileInputRef.current?.click()}
           >
             <Upload className="h-4 w-4 mr-2" />
@@ -289,6 +299,23 @@ export default function CreatePage() {
           <Plus className="h-4 w-4 mr-2" />
           Add Card
         </Button>
+
+        {/* Import Text Modal */}
+        <ImportTextModal
+          open={importModalOpen}
+          onClose={() => setImportModalOpen(false)}
+          onImport={(imported) => {
+            const newCards: CardData[] = imported.map((c, i) => ({
+              id: `import-${i}-${Date.now()}`,
+              term: c.term,
+              definition: c.definition,
+            }))
+            if (newCards.length > 0) {
+              setCards(newCards)
+              toast.success(`Imported ${newCards.length} cards`)
+            }
+          }}
+        />
 
         {/* Submit */}
         <div className="flex justify-end gap-4 mt-8">
