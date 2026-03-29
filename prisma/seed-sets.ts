@@ -217,7 +217,7 @@ async function main() {
     admin.id,
     "Latin 2 - Vocab List 10",
     "4th and 5th declension Latin vocabulary. Front: term + genitive + gender. Back: English definition.",
-    ["Latin", "Latin 2", "Vocabulary", "Declension"],
+    ["language", "latin", "vocabulary"],
     LATIN_CARDS
   )
 
@@ -225,7 +225,7 @@ async function main() {
     admin.id,
     "German 1 - Unit 3 Vocab",
     "German 1 Unit 3 vocabulary covering school, daily routine, hobbies, weather, clothing, and shopping.",
-    ["German", "German 1", "Vocabulary", "Unit 3"],
+    ["language", "german", "vocabulary"],
     GERMAN_CARDS
   )
 

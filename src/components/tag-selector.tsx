@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
-import { Check, ChevronsUpDown, Tag as TagIcon, Plus } from "lucide-react"
+import { ChevronsUpDown, Tag as TagIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -10,13 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { TagChip } from "@/components/tag-chip"
-
-interface AggregatedTag {
-  name: string
-  slug: string
-  count: number
-}
+import { PREDEFINED_TAGS, getTagDef } from "@/data/tags"
 
 interface TagSelectorProps {
   selectedTags: string[]
@@ -24,13 +17,6 @@ interface TagSelectorProps {
   maxTags?: number
   placeholder?: string
   disabled?: boolean
-}
-
-// Cycle through colors based on tag name
-function colorForTag(name: string) {
-  const colors = ["blue", "green", "purple", "orange", "pink", "yellow", "red"]
-  const hash = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)
-  return colors[hash % colors.length]
 }
 
 export function TagSelector({
@@ -43,38 +29,23 @@ export function TagSelector({
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
 
-  // Fetch aggregated tags from public sets
-  const { data: availableTags = [] } = useQuery<AggregatedTag[]>({
-    queryKey: ["tags"],
-    queryFn: async () => {
-      const res = await fetch("/api/tags")
-      if (!res.ok) return []
-      return res.json()
-    },
-  })
-
-  const filteredTags = availableTags.filter(
+  const filteredTags = PREDEFINED_TAGS.filter(
     (tag) =>
-      tag.name.toLowerCase().includes(search.toLowerCase()) &&
-      !selectedTags.includes(tag.name)
+      (tag.label.toLowerCase().includes(search.toLowerCase()) ||
+        tag.description.toLowerCase().includes(search.toLowerCase())) &&
+      !selectedTags.includes(tag.slug)
   )
 
-  const canAddCustom =
-    search.trim().length > 0 &&
-    !selectedTags.includes(search.trim().toLowerCase()) &&
-    !availableTags.some((t) => t.name === search.trim().toLowerCase()) &&
-    selectedTags.length < maxTags
-
-  const addTag = (tagName: string) => {
-    const normalized = tagName.trim().toLowerCase()
+  const addTag = (slug: string) => {
+    const normalized = slug.toLowerCase()
     if (normalized && !selectedTags.includes(normalized) && selectedTags.length < maxTags) {
       onTagsChange([...selectedTags, normalized])
       setSearch("")
     }
   }
 
-  const removeTag = (tagName: string) => {
-    onTagsChange(selectedTags.filter((t) => t !== tagName))
+  const removeTag = (slug: string) => {
+    onTagsChange(selectedTags.filter((t) => t !== slug))
   }
 
   return (
@@ -82,16 +53,17 @@ export function TagSelector({
       {/* Selected tags */}
       {selectedTags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {selectedTags.map((tag) => (
-            <TagChip
-              key={tag}
-              name={tag}
-              color={colorForTag(tag)}
-              size="sm"
-              removable
-              onRemove={() => removeTag(tag)}
-            />
-          ))}
+          {selectedTags.map((slug) => {
+            const def = getTagDef(slug)
+            return (
+              <SelectedTag
+                key={slug}
+                label={def.label}
+                color={def.color}
+                onRemove={() => removeTag(slug)}
+              />
+            )
+          })}
         </div>
       )}
 
@@ -118,70 +90,88 @@ export function TagSelector({
           <div className="p-2">
             <input
               type="text"
-              placeholder="Search or create tags..."
+              placeholder="Search tags..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && canAddCustom) {
-                  e.preventDefault()
-                  addTag(search)
-                }
-              }}
               className="w-full px-3 py-2 text-sm border border-border rounded-md bg-input text-input-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <div className="max-h-60 overflow-auto p-1">
-            {/* Custom tag option */}
-            {canAddCustom && (
-              <button
-                onClick={() => addTag(search)}
-                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted text-foreground"
-              >
-                <Plus className="h-4 w-4 text-primary" />
-                <span>
-                  Create &quot;<span className="font-medium">{search.trim().toLowerCase()}</span>&quot;
-                </span>
-              </button>
-            )}
-
-            {filteredTags.length === 0 && !canAddCustom ? (
+            {filteredTags.length === 0 ? (
               <p className="py-4 text-center text-sm text-muted-foreground">
-                {search ? "No matching tags" : "No tags available"}
+                {search ? "No matching tags" : "No more tags available"}
               </p>
             ) : (
-              filteredTags.map((tag) => {
-                const isSelected = selectedTags.includes(tag.name)
-                return (
-                  <button
-                    key={tag.slug}
-                    onClick={() => addTag(tag.name)}
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm",
-                      "hover:bg-muted text-foreground",
-                      isSelected && "bg-primary/10"
+              filteredTags.map((tag) => (
+                <button
+                  key={tag.slug}
+                  onClick={() => addTag(tag.slug)}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm",
+                    "hover:bg-muted text-foreground"
+                  )}
+                >
+                  <TagDot color={tag.color} />
+                  <div className="flex-1 text-left">
+                    <span className="font-medium">{tag.label}</span>
+                    {tag.description && (
+                      <span className="ml-1.5 text-xs text-muted-foreground">{tag.description}</span>
                     )}
-                  >
-                    <div
-                      className={cn(
-                        "h-4 w-4 rounded border flex items-center justify-center",
-                        isSelected
-                          ? "bg-primary border-primary text-primary-foreground"
-                          : "border-border"
-                      )}
-                    >
-                      {isSelected && <Check className="h-3 w-3" />}
-                    </div>
-                    <span className="flex-1 text-left">{tag.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {tag.count} {tag.count === 1 ? "set" : "sets"}
-                    </span>
-                  </button>
-                )
-              })
+                  </div>
+                </button>
+              ))
             )}
           </div>
         </PopoverContent>
       </Popover>
     </div>
+  )
+}
+
+/* ── helpers ── */
+
+const DOT_COLORS: Record<string, string> = {
+  blue:   "bg-blue-500",
+  green:  "bg-green-500",
+  purple: "bg-purple-500",
+  orange: "bg-orange-500",
+  pink:   "bg-pink-500",
+  yellow: "bg-yellow-500",
+  red:    "bg-red-500",
+}
+
+function TagDot({ color }: { color: string }) {
+  return <span className={cn("h-2.5 w-2.5 rounded-full flex-shrink-0", DOT_COLORS[color] ?? "bg-gray-400")} />
+}
+
+const CHIP_COLORS: Record<string, string> = {
+  blue:   "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  green:  "bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  purple: "bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+  orange: "bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+  pink:   "bg-pink-50 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",
+  yellow: "bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+  red:    "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+}
+
+function SelectedTag({ label, color, onRemove }: { label: string; color: string; onRemove: () => void }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
+        CHIP_COLORS[color] ?? "bg-muted text-muted-foreground"
+      )}
+    >
+      {label}
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onRemove() }}
+        className="ml-0.5 hover:opacity-70"
+      >
+        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </span>
   )
 }

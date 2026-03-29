@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { PREDEFINED_TAGS } from "@/data/tags"
 
-// GET /api/tags — aggregate unique tags from all public sets
+// GET /api/tags — return predefined tags enriched with set counts
 export async function GET() {
   try {
     const sets = await prisma.flashcardSet.findMany({
@@ -9,7 +10,7 @@ export async function GET() {
       select: { tags: true },
     })
 
-    // Aggregate all tags and count occurrences
+    // Count occurrences of each tag
     const tagCounts = new Map<string, number>()
     for (const set of sets) {
       for (const tag of set.tags) {
@@ -20,14 +21,14 @@ export async function GET() {
       }
     }
 
-    // Convert to array sorted by frequency
-    const tags = Array.from(tagCounts.entries())
-      .map(([name, count]) => ({
-        name,
-        slug: name.replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
-        count,
-      }))
-      .sort((a, b) => b.count - a.count)
+    // Build response from predefined tags with counts
+    const tags = PREDEFINED_TAGS.map((t) => ({
+      name: t.label,
+      slug: t.slug,
+      count: tagCounts.get(t.slug) || 0,
+      color: t.color,
+      description: t.description,
+    })).sort((a, b) => b.count - a.count)
 
     return NextResponse.json(tags)
   } catch (error) {

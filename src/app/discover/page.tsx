@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Search, BookOpen, Users, Tag as TagIcon } from "lucide-react"
+import { getTagDef } from "@/data/tags"
 
 interface StudySet {
   id: string
@@ -131,22 +132,25 @@ function DiscoverContent() {
                       </p>
                     )}
                     
-                    {/* Tags - glass pills */}
+                    {/* Tags - colored pills */}
                     {set.tags && set.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mb-3">
-                        {set.tags.slice(0, 3).map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-2 py-0.5 text-xs rounded-full"
-                            style={{
-                              background: "rgba(79,142,247,0.12)",
-                              color: "var(--primary)",
-                              border: "1px solid rgba(79,142,247,0.2)",
-                            }}
-                          >
-                            {tag}
-                          </span>
-                        ))}
+                        {set.tags.slice(0, 3).map((tag) => {
+                          const def = getTagDef(tag)
+                          return (
+                            <span
+                              key={tag}
+                              className="px-2 py-0.5 text-xs rounded-full font-medium"
+                              style={{
+                                background: `color-mix(in srgb, var(--${def.color === "blue" ? "primary" : def.color === "red" ? "destructive" : "primary"}) 12%, transparent)`,
+                                color: "var(--primary)",
+                                border: "1px solid rgba(79,142,247,0.2)",
+                              }}
+                            >
+                              {def.label}
+                            </span>
+                          )
+                        })}
                         {set.tags.length > 3 && (
                           <span className="px-2 py-0.5 text-xs" style={{ color: "var(--muted-foreground)" }}>
                             +{set.tags.length - 3}

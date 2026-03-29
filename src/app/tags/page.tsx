@@ -7,31 +7,29 @@ import { Tag as TagIcon, BookOpen, TrendingUp, Search } from "lucide-react"
 import { useState, useMemo } from "react"
 import { cn } from "@/lib/utils"
 
-interface AggregatedTag {
+interface TagData {
   name: string
   slug: string
   count: number
+  color: string
+  description: string
 }
 
-// Color based on tag name hash
-function colorForTag(name: string) {
-  const colors = [
-    "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20",
-    "bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/20",
-    "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/20",
-    "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/20",
-    "bg-pink-500/15 text-pink-600 dark:text-pink-400 border-pink-500/20",
-    "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/20",
-    "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20",
-  ]
-  const hash = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)
-  return colors[hash % colors.length]
+const COLOR_CLASSES: Record<string, string> = {
+  blue:   "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20",
+  green:  "bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/20",
+  purple: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/20",
+  orange: "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/20",
+  pink:   "bg-pink-500/15 text-pink-600 dark:text-pink-400 border-pink-500/20",
+  red:    "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/20",
+  yellow: "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400 border-yellow-500/20",
+  cyan:   "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/20",
 }
 
 export default function TagsPage() {
   const [search, setSearch] = useState("")
 
-  const { data: tags, isLoading } = useQuery<AggregatedTag[]>({
+  const { data: tags, isLoading } = useQuery<TagData[]>({
     queryKey: ["tags"],
     queryFn: async () => {
       const res = await fetch("/api/tags")
@@ -112,7 +110,7 @@ export default function TagsPage() {
               href={`/tags/${tag.slug}`}
               className={cn(
                 "inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition-all hover:scale-105 hover:shadow-md",
-                colorForTag(tag.name)
+                COLOR_CLASSES[tag.color] ?? COLOR_CLASSES.blue
               )}
             >
               <span>{tag.name}</span>

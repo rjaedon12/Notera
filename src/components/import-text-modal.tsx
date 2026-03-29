@@ -67,9 +67,9 @@ export function ImportTextModal({ open, onClose, onImport }: ImportTextModalProp
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleCancel()}>
-      <DialogContent className="max-w-2xl p-0 flex flex-col">
+      <DialogContent className="max-w-2xl p-0 flex flex-col max-h-[85vh]">
         {/* Scrollable body */}
-        <div className="p-6 pb-0">
+        <div className="p-6 pb-4 overflow-y-auto flex-1 min-h-0">
 
         {/* Close button */}
         <button
@@ -236,7 +236,7 @@ export function ImportTextModal({ open, onClose, onImport }: ImportTextModalProp
 
         {/* Pinned footer */}
         <div
-          className="flex justify-end gap-2 px-6 py-4 sticky bottom-0"
+          className="flex justify-end gap-2 px-6 py-4 flex-shrink-0"
           style={{
             borderTop: "1px solid var(--glass-border)",
             background: "var(--popover)",
