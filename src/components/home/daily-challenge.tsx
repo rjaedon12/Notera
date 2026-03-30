@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
-import { Brain, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 
 interface DailyReviewData {
   totalDue: number
@@ -39,13 +39,6 @@ export function DailyChallenge() {
           borderLeftColor: "var(--primary)",
         }}
       >
-        <div
-          className="h-9 w-9 rounded-full flex items-center justify-center flex-shrink-0"
-          style={{ background: "color-mix(in srgb, var(--primary) 15%, transparent)" }}
-        >
-          <Brain className="h-4.5 w-4.5" style={{ color: "var(--primary)" }} />
-        </div>
-
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-sm text-foreground font-heading">
             Daily Review

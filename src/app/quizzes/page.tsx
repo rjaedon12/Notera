@@ -10,7 +10,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import {
   Plus,
-  Brain,
   Search,
   Trash2,
   Play,
@@ -19,6 +18,7 @@ import {
   BarChart3,
   HelpCircle,
   BookOpen,
+  FileText,
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { cn } from "@/lib/utils"
@@ -72,7 +72,7 @@ export default function QuizzesPage() {
 
   const tabs = [
     { id: "premade" as Tab, label: "Practice Tests", icon: BookOpen },
-    { id: "my-banks" as Tab, label: "My Question Banks", icon: Brain },
+    { id: "my-banks" as Tab, label: "My Question Banks", icon: FileText },
     { id: "history" as Tab, label: "Attempt History", icon: Clock },
   ]
 
@@ -83,7 +83,7 @@ export default function QuizzesPage() {
         <CardContent className="p-6">
           <div className="flex items-start justify-between mb-2">
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Brain className="h-5 w-5 shrink-0" style={{ color: "var(--primary)" }} />
+              <FileText className="h-5 w-5 shrink-0" style={{ color: "var(--primary)" }} />
               <h3 className="font-semibold text-base line-clamp-2 leading-snug font-heading">
                 {bank.title}
               </h3>
@@ -251,7 +251,7 @@ export default function QuizzesPage() {
             </div>
           ) : (
             <div className="text-center py-16">
-              <Brain className="h-16 w-16 mx-auto mb-4" style={{ color: "var(--muted-foreground)", opacity: 0.4 }} />
+              <FileText className="h-16 w-16 mx-auto mb-4" style={{ color: "var(--muted-foreground)", opacity: 0.4 }} />
               <h2 className="text-xl font-semibold mb-2 font-heading">No question banks yet</h2>
               <p className="mb-6" style={{ color: "var(--muted-foreground)" }}>
                 Create your first question bank to start building quizzes

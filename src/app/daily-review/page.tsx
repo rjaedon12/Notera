@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { useState, useCallback, useRef, useEffect } from "react"
 import {
   Brain, RotateCcw, CheckCircle2, XCircle,
-  Loader2, Sparkles, BookOpen, ArrowRight, Send, Eye
+  Loader2, Sparkles, BookOpen, ArrowRight, Send
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { matchAnswer, type MatchResult } from "@/lib/levenshtein"
@@ -68,7 +68,14 @@ export default function DailyReviewPage() {
     enabled: !!session,
     retry: false,
   })
-  const dueCards: ReviewCard[] = rawCards ?? []
+  // Snapshot cards on first load so invalidation doesn't reset the list mid-session
+  const [cards, setCards] = useState<ReviewCard[]>([])
+  useEffect(() => {
+    if (rawCards && rawCards.length > 0 && cards.length === 0) {
+      setCards(rawCards)
+    }
+  }, [rawCards, cards.length])
+  const dueCards = cards.length > 0 ? cards : (rawCards ?? [])
 
   // Auto-focus input when a new card appears
   useEffect(() => {
@@ -77,13 +84,8 @@ export default function DailyReviewPage() {
     }
   }, [currentIndex, showAnswer])
 
-  // Auto-detect self-rate mode for CJK / long definitions
-  useEffect(() => {
-    const card = dueCards[currentIndex]
-    if (card && shouldSelfRate(card)) {
-      setSelfRateMode(true)
-    }
-  }, [currentIndex, dueCards])
+  // Check if current card should suggest self-rate (CJK / long definitions)
+  const currentCardNeedsSelfRate = dueCards[currentIndex] ? shouldSelfRate(dueCards[currentIndex]) : false
 
   const reviewMutation = useMutation({
     mutationFn: async ({ cardId, quality }: { cardId: string; quality: number }) => {
@@ -294,7 +296,7 @@ export default function DailyReviewPage() {
                       background: "var(--glass-fill)",
                       color: "var(--foreground)",
                     }}
-                    disabled={selfRateMode}
+
                   />
                   <button
                     onClick={handleCheck}
@@ -308,32 +310,21 @@ export default function DailyReviewPage() {
                 </div>
 
                 <div className="flex items-center justify-center gap-4">
+                  <button
+                    onClick={handleCheck}
+                    disabled={!userAnswer.trim() && !selfRateMode}
+                    className="px-5 py-2 rounded-xl text-sm font-medium text-white transition-all disabled:opacity-50"
+                    style={{ background: "var(--primary)" }}
+                  >
+                    {selfRateMode ? "Reveal Answer" : "Check"}
+                  </button>
                   {!selfRateMode && (
                     <button
-                      onClick={handleCheck}
-                      disabled={!userAnswer.trim()}
-                      className="px-5 py-2 rounded-xl text-sm font-medium text-white transition-all disabled:opacity-50"
-                      style={{ background: "var(--primary)" }}
-                    >
-                      Check
-                    </button>
-                  )}
-                  {selfRateMode ? (
-                    <button
-                      onClick={handleCheck}
-                      className="px-5 py-2 rounded-xl text-sm font-medium text-white transition-all"
-                      style={{ background: "var(--primary)" }}
-                    >
-                      <Eye className="h-4 w-4 inline mr-1.5" />
-                      Reveal Answer
-                    </button>
-                  ) : (
-                    <button
                       onClick={handleSelfRate}
-                      className="text-xs transition-all hover:underline"
-                      style={{ color: "var(--muted-foreground)" }}
+                      className={cn("text-xs transition-all hover:underline", currentCardNeedsSelfRate && "font-medium")}
+                      style={{ color: currentCardNeedsSelfRate ? "var(--primary)" : "var(--muted-foreground)" }}
                     >
-                      I&apos;ll self-rate this one
+                      {currentCardNeedsSelfRate ? "Skip typing — I\u2019ll self-rate" : "I\u2019ll self-rate this one"}
                     </button>
                   )}
                 </div>

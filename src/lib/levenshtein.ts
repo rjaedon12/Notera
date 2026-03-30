@@ -2,7 +2,7 @@
  * Levenshtein distance + fuzzy answer matching for Learn mode.
  *
  * Design decisions (per user spec):
- * - Levenshtein ≤ 2 as the "almost correct" threshold (predictable on short strings).
+ * - Levenshtein ≤ 3 as the "almost correct" threshold (forgiving for typos/misspellings).
  * - Case + accent normalization before comparison.
  * - Expose an "almost correct" band so the UI can give learning-signal feedback
  *   rather than a binary pass/fail.
@@ -72,8 +72,8 @@ export function matchAnswer(
 
   const dist = levenshtein(a, b)
 
-  // ≤ 2 edits → "almost correct"
-  if (dist <= 2) return "close"
+  // ≤ 3 edits → "almost correct" (forgiving for typos / minor misspellings)
+  if (dist <= 3) return "close"
 
   return "wrong"
 }
