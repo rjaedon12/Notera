@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -20,17 +20,29 @@ interface QuizTrendProps {
 
 export function QuizTrend({ history, average }: QuizTrendProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [colors, setColors] = useState({ primary: "#0071E3", border: "#e5e7eb" })
+  const [colors, setColors] = useState({
+    primary: "#0071E3",
+    border: "#e5e7eb",
+    mutedFg: "#6b7280",
+  })
 
-  useEffect(() => {
+  const resolveColors = useCallback(() => {
     const el = containerRef.current
     if (!el) return
     const style = getComputedStyle(el)
     setColors({
       primary: style.getPropertyValue("--primary").trim() || "#0071E3",
       border: style.getPropertyValue("--glass-border").trim() || "#e5e7eb",
+      mutedFg: style.getPropertyValue("--muted-foreground").trim() || "#6b7280",
     })
   }, [])
+
+  useEffect(() => {
+    resolveColors()
+    const observer = new MutationObserver(resolveColors)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-theme", "style"] })
+    return () => observer.disconnect()
+  }, [resolveColors])
 
   // Reverse so oldest is first
   const sorted = [...history].reverse()
@@ -68,6 +80,11 @@ export function QuizTrend({ history, average }: QuizTrendProps) {
     maintainAspectRatio: false,
     plugins: {
       tooltip: {
+        backgroundColor: colors.primary,
+        titleColor: "#fff",
+        bodyColor: "#fff",
+        cornerRadius: 8,
+        padding: 10,
         callbacks: {
           title: (items: { dataIndex: number }[]) => sorted[items[0].dataIndex]?.bankName ?? "",
           label: (item: { raw: unknown; dataIndex: number }) => {
@@ -79,15 +96,15 @@ export function QuizTrend({ history, average }: QuizTrendProps) {
     scales: {
       x: {
         grid: { display: false },
-        ticks: { color: "var(--muted-foreground)", font: { size: 11 } },
-        border: { color: colors.border },
+        ticks: { color: colors.mutedFg, font: { size: 11 } },
+        border: { display: false },
       },
       y: {
         min: 0,
         max: 100,
-        grid: { color: `${colors.border}60` },
+        grid: { color: `${colors.border}40`, drawBorder: false },
         ticks: {
-          color: "var(--muted-foreground)",
+          color: colors.mutedFg,
           font: { size: 11 },
           callback: (v: string | number) => `${v}%`,
         },

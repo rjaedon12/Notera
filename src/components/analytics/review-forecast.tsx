@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -18,17 +18,32 @@ interface ReviewForecastProps {
 
 export function ReviewForecast({ forecast }: ReviewForecastProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [colors, setColors] = useState({ primary: "#0071E3", border: "#e5e7eb" })
+  const [colors, setColors] = useState({
+    primary: "#0071E3",
+    border: "#e5e7eb",
+    mutedFg: "#6b7280",
+    bg: "#ffffff",
+  })
 
-  useEffect(() => {
+  const resolveColors = useCallback(() => {
     const el = containerRef.current
     if (!el) return
     const style = getComputedStyle(el)
     setColors({
       primary: style.getPropertyValue("--primary").trim() || "#0071E3",
       border: style.getPropertyValue("--glass-border").trim() || "#e5e7eb",
+      mutedFg: style.getPropertyValue("--muted-foreground").trim() || "#6b7280",
+      bg: style.getPropertyValue("--glass-fill").trim() || "#ffffff",
     })
   }, [])
+
+  useEffect(() => {
+    resolveColors()
+    // Re-resolve when theme changes
+    const observer = new MutationObserver(resolveColors)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-theme", "style"] })
+    return () => observer.disconnect()
+  }, [resolveColors])
 
   const total = forecast.reduce((s, d) => s + d.count, 0)
 
@@ -41,10 +56,14 @@ export function ReviewForecast({ forecast }: ReviewForecastProps) {
     datasets: [
       {
         data: forecast.map((d) => d.count),
-        backgroundColor: `${colors.primary}60`,
+        backgroundColor: forecast.map((_, i) =>
+          i === 0 ? colors.primary : `${colors.primary}50`
+        ),
         hoverBackgroundColor: colors.primary,
-        borderRadius: 4,
+        borderRadius: 8,
         borderSkipped: false,
+        maxBarThickness: 40,
+        borderWidth: 0,
       },
     ],
   }
@@ -54,6 +73,11 @@ export function ReviewForecast({ forecast }: ReviewForecastProps) {
     maintainAspectRatio: false,
     plugins: {
       tooltip: {
+        backgroundColor: colors.primary,
+        titleColor: "#fff",
+        bodyColor: "#fff",
+        cornerRadius: 8,
+        padding: 10,
         callbacks: {
           label: (item: { raw: unknown }) => ` ${item.raw} cards due`,
         },
@@ -62,14 +86,14 @@ export function ReviewForecast({ forecast }: ReviewForecastProps) {
     scales: {
       x: {
         grid: { display: false },
-        ticks: { color: "var(--muted-foreground)", font: { size: 11 } },
-        border: { color: colors.border },
+        ticks: { color: colors.mutedFg, font: { size: 11 } },
+        border: { display: false },
       },
       y: {
         beginAtZero: true,
-        grid: { color: `${colors.border}60` },
+        grid: { color: `${colors.border}40`, drawBorder: false },
         ticks: {
-          color: "var(--muted-foreground)",
+          color: colors.mutedFg,
           font: { size: 11 },
           stepSize: 1,
         },
@@ -86,7 +110,7 @@ export function ReviewForecast({ forecast }: ReviewForecastProps) {
           {total} cards in the next 7 days
         </span>
       </div>
-      <div className="h-40">
+      <div className="h-44">
         <Bar data={chartData} options={options} />
       </div>
     </div>

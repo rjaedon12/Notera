@@ -13,7 +13,6 @@ import { Suspense, useEffect, useMemo } from "react"
 import { StreakHero } from "@/components/streak/streak-hero"
 import { PickUpHero } from "@/components/home/pick-up-hero"
 import { DailyChallenge } from "@/components/home/daily-challenge"
-import { ActivitySnapshot } from "@/components/home/activity-snapshot"
 import toast from "react-hot-toast"
 import {
   LandingNavbar,
@@ -250,13 +249,6 @@ function HomeContent() {
       {session?.user && (
         <div className="py-4">
           <DailyChallenge />
-        </div>
-      )}
-
-      {/* ── Weekly activity snapshot ── */}
-      {session?.user && (
-        <div className="py-4">
-          <ActivitySnapshot />
         </div>
       )}
 

@@ -88,16 +88,19 @@ export function StreakHero() {
       </div>
 
       {/* Weekly dots */}
-      <div className="flex gap-1.5">
+      <div className="flex gap-2">
         {weekStatus.map((status, index) => (
           <div
             key={index}
-            className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold transition-all"
+            className={cn(
+              "w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold transition-all relative",
+              status.isToday && !status.studied && "animate-pulse"
+            )}
             style={{
               background: status.studied
                 ? "var(--primary)"
                 : status.isToday
-                  ? "color-mix(in srgb, var(--primary) 12%, transparent)"
+                  ? "color-mix(in srgb, var(--primary) 15%, transparent)"
                   : "transparent",
               border: status.studied
                 ? "none"
@@ -109,10 +112,13 @@ export function StreakHero() {
                 : status.isToday
                   ? "var(--primary)"
                   : "var(--muted-foreground)",
+              boxShadow: status.studied
+                ? "0 0 8px color-mix(in srgb, var(--primary) 50%, transparent)"
+                : "none",
             }}
           >
             {status.studied ? (
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             ) : (
