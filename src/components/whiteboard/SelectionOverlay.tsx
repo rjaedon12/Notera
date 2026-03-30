@@ -235,7 +235,7 @@ export function SelectionOverlay({
       {handles.map(([key, left, top, cursor]) => (
         <div
           key={key}
-          className="absolute pointer-events-auto rounded-sm bg-white border-2 border-blue-500 shadow-sm select-none"
+          className="absolute pointer-events-auto rounded-sm bg-white dark:bg-zinc-800 border-2 border-blue-500 shadow-sm select-none"
           style={{
             left: left - HANDLE_PX / 2,
             top: top - HANDLE_PX / 2,

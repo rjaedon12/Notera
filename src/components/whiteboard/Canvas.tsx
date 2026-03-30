@@ -158,7 +158,7 @@ export function Canvas({
             className={`pointer-events-auto absolute resize-none ${
               editingElement.type === "sticky"
                 ? "border-none outline-none bg-transparent"
-                : "border border-dashed border-blue-400 outline-none bg-white/90 rounded"
+                : "border border-dashed border-blue-400 outline-none bg-white/90 dark:bg-zinc-900/90 rounded"
             }`}
             style={{
               left: editingElement.x * camera.zoom + camera.x,
@@ -177,7 +177,7 @@ export function Canvas({
               zIndex: 50,
               caretColor: editingElement.type === "sticky" ? "#1a1a1a" : editingElement.style.color,
               // Text area background: transparent for sticky (canvas-rendered bg), slight bg for text
-              background: editingElement.type === "sticky" ? "transparent" : "rgba(255,255,255,0.92)",
+              background: editingElement.type === "sticky" ? "transparent" : undefined,
               boxSizing: "border-box",
               overflowWrap: "break-word",
               wordBreak: "break-word",

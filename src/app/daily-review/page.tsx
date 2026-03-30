@@ -3,12 +3,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import {
-  Brain, RotateCcw, CheckCircle2, XCircle, ChevronRight,
-  Loader2, Sparkles, BookOpen, ArrowRight
+  Brain, RotateCcw, CheckCircle2, XCircle,
+  Loader2, Sparkles, BookOpen, ArrowRight, Send, Eye
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { matchAnswer, type MatchResult } from "@/lib/levenshtein"
 import toast from "react-hot-toast"
 
 interface ReviewCard {
@@ -22,15 +23,29 @@ interface ReviewCard {
   nextReviewAt: string | null
 }
 
+/** Detect if a string contains CJK characters (Chinese, Japanese, Korean). */
+function hasCJK(s: string): boolean {
+  return /[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]/.test(s)
+}
+
+/** Should this card skip fuzzy matching and go straight to self-rate? */
+function shouldSelfRate(card: ReviewCard): boolean {
+  return card.definition.length > 80 || hasCJK(card.definition)
+}
+
 export default function DailyReviewPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const queryClient = useQueryClient()
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showAnswer, setShowAnswer] = useState(false)
   const [completed, setCompleted] = useState<string[]>([])
   const [sessionStats, setSessionStats] = useState({ correct: 0, incorrect: 0 })
+  const [userAnswer, setUserAnswer] = useState("")
+  const [matchResult, setMatchResult] = useState<MatchResult | null>(null)
+  const [selfRateMode, setSelfRateMode] = useState(false)
 
   const { data: rawCards, isLoading } = useQuery({
     queryKey: ["dailyReview"],
@@ -55,6 +70,21 @@ export default function DailyReviewPage() {
   })
   const dueCards: ReviewCard[] = rawCards ?? []
 
+  // Auto-focus input when a new card appears
+  useEffect(() => {
+    if (!showAnswer && inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [currentIndex, showAnswer])
+
+  // Auto-detect self-rate mode for CJK / long definitions
+  useEffect(() => {
+    const card = dueCards[currentIndex]
+    if (card && shouldSelfRate(card)) {
+      setSelfRateMode(true)
+    }
+  }, [currentIndex, dueCards])
+
   const reviewMutation = useMutation({
     mutationFn: async ({ cardId, quality }: { cardId: string; quality: number }) => {
       const res = await fetch("/api/review", {
@@ -70,6 +100,26 @@ export default function DailyReviewPage() {
     },
   })
 
+  const handleCheck = useCallback(() => {
+    const card = dueCards[currentIndex]
+    if (!card || showAnswer) return
+
+    if (selfRateMode) {
+      // Skip fuzzy match — just reveal
+      setMatchResult(null)
+    } else {
+      const result = matchAnswer(userAnswer, card.definition)
+      setMatchResult(result)
+    }
+    setShowAnswer(true)
+  }, [currentIndex, dueCards, showAnswer, selfRateMode, userAnswer])
+
+  const handleSelfRate = useCallback(() => {
+    setSelfRateMode(true)
+    setShowAnswer(true)
+    setMatchResult(null)
+  }, [])
+
   const handleRate = useCallback((quality: number) => {
     const card = dueCards[currentIndex]
     if (!card || completed.includes(card.id)) return
@@ -83,15 +133,19 @@ export default function DailyReviewPage() {
       incorrect: prev.incorrect + (quality < 3 ? 1 : 0),
     }))
 
-    // If this was the last card, don't advance index — let the isFinished check handle it
     if (newCompleted.length >= dueCards.length) {
-      // Session complete — just reset answer state; the component re-render will show completion screen
       setShowAnswer(false)
+      setUserAnswer("")
+      setMatchResult(null)
+      setSelfRateMode(false)
       return
     }
 
     // Move to next un-reviewed card
     setShowAnswer(false)
+    setUserAnswer("")
+    setMatchResult(null)
+    setSelfRateMode(false)
     let nextIdx = currentIndex + 1
     while (nextIdx < dueCards.length && newCompleted.includes(dueCards[nextIdx].id)) {
       nextIdx++
@@ -117,6 +171,7 @@ export default function DailyReviewPage() {
   const remainingCards = dueCards.filter(c => !completed.includes(c.id))
   const isFinished = completed.length >= dueCards.length && dueCards.length > 0
   const currentCard = dueCards[currentIndex]
+  const isCorrect = matchResult === "exact" || matchResult === "close"
 
   // Completion screen
   if (isFinished) {
@@ -206,9 +261,12 @@ export default function DailyReviewPage() {
       {/* Card */}
       {currentCard && (
         <div
-          className="rounded-2xl border p-8 min-h-[300px] flex flex-col items-center justify-center cursor-pointer select-none"
+          className={cn(
+            "rounded-2xl border p-8 min-h-[300px] flex flex-col items-center justify-center select-none transition-all duration-300",
+            showAnswer && matchResult !== null && isCorrect && "ring-2 ring-green-500/40",
+            showAnswer && matchResult !== null && !isCorrect && "ring-2 ring-red-500/40",
+          )}
           style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}
-          onClick={() => !showAnswer && setShowAnswer(true)}
         >
           <p className="text-xs text-muted-foreground mb-4 uppercase tracking-wider">
             {currentCard.setTitle}
@@ -217,35 +275,133 @@ export default function DailyReviewPage() {
           {!showAnswer ? (
             <>
               <p className="text-xl font-semibold text-foreground text-center mb-6">{currentCard.term}</p>
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                Tap to reveal <ChevronRight className="h-4 w-4" />
-              </p>
+
+              {/* Answer input */}
+              <div className="w-full max-w-sm space-y-3">
+                <div className="relative">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={userAnswer}
+                    onChange={(e) => setUserAnswer(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && userAnswer.trim()) handleCheck()
+                    }}
+                    placeholder="Type the definition..."
+                    className="w-full px-4 py-3 pr-12 rounded-xl border text-sm outline-none transition-all focus:ring-2 focus:ring-[var(--primary)]"
+                    style={{
+                      borderColor: "var(--glass-border)",
+                      background: "var(--glass-fill)",
+                      color: "var(--foreground)",
+                    }}
+                    disabled={selfRateMode}
+                  />
+                  <button
+                    onClick={handleCheck}
+                    disabled={!userAnswer.trim() && !selfRateMode}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all disabled:opacity-30"
+                    style={{ color: "var(--primary)" }}
+                    title="Check answer"
+                  >
+                    <Send className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-center gap-4">
+                  {!selfRateMode && (
+                    <button
+                      onClick={handleCheck}
+                      disabled={!userAnswer.trim()}
+                      className="px-5 py-2 rounded-xl text-sm font-medium text-white transition-all disabled:opacity-50"
+                      style={{ background: "var(--primary)" }}
+                    >
+                      Check
+                    </button>
+                  )}
+                  {selfRateMode ? (
+                    <button
+                      onClick={handleCheck}
+                      className="px-5 py-2 rounded-xl text-sm font-medium text-white transition-all"
+                      style={{ background: "var(--primary)" }}
+                    >
+                      <Eye className="h-4 w-4 inline mr-1.5" />
+                      Reveal Answer
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleSelfRate}
+                      className="text-xs transition-all hover:underline"
+                      style={{ color: "var(--muted-foreground)" }}
+                    >
+                      I&apos;ll self-rate this one
+                    </button>
+                  )}
+                </div>
+              </div>
             </>
           ) : (
-            <>
-              <p className="text-sm text-muted-foreground mb-2">Term</p>
-              <p className="text-lg font-medium text-foreground text-center mb-4">{currentCard.term}</p>
-              <div className="w-16 h-px my-2" style={{ background: "var(--glass-border)" }} />
-              <p className="text-sm text-muted-foreground mb-2 mt-2">Definition</p>
-              <p className="text-lg text-foreground text-center">{currentCard.definition}</p>
-            </>
+            <div className="w-full space-y-4 animate-[fadeIn_0.3s_ease-out]">
+              {/* User's answer feedback (only if they typed) */}
+              {matchResult !== null && (
+                <div className={cn(
+                  "rounded-xl px-4 py-3 text-center text-sm font-medium",
+                  isCorrect ? "bg-green-500/10 text-green-600 dark:text-green-400" : "bg-red-500/10 text-red-600 dark:text-red-400",
+                )}>
+                  {isCorrect
+                    ? matchResult === "exact" ? "Correct!" : "Close enough!"
+                    : "Not quite"}
+                  <span className="block text-xs mt-0.5 opacity-70">
+                    Your answer: {userAnswer}
+                  </span>
+                </div>
+              )}
+
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-1">Term</p>
+                <p className="text-lg font-medium text-foreground">{currentCard.term}</p>
+              </div>
+
+              <div className="w-16 h-px mx-auto" style={{ background: "var(--glass-border)" }} />
+
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-1">Definition</p>
+                <p className={cn(
+                  "text-lg rounded-xl px-4 py-2 inline-block",
+                  matchResult !== null && isCorrect && "bg-green-500/10 text-green-700 dark:text-green-300",
+                  matchResult !== null && !isCorrect && "bg-red-500/10 text-red-700 dark:text-red-300",
+                  matchResult === null && "text-foreground",
+                )}>
+                  {currentCard.definition}
+                </p>
+              </div>
+            </div>
           )}
         </div>
       )}
 
       {/* Rating buttons */}
       {showAnswer && currentCard && (
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground text-center">How well did you know this?</p>
+        <div className="space-y-3 animate-[fadeIn_0.3s_ease-out_0.1s_both]">
+          <p className="text-sm text-muted-foreground text-center">
+            {matchResult !== null
+              ? isCorrect ? "Nice recall! How easy was it?" : "How well did you actually know this?"
+              : "How well did you know this?"}
+          </p>
           <div className="grid grid-cols-3 gap-3">
             <button
               onClick={() => handleRate(1)}
               disabled={reviewMutation.isPending}
-              className="flex flex-col items-center gap-1 px-4 py-3 rounded-xl border text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
+              className={cn(
+                "flex flex-col items-center gap-1 px-4 py-3 rounded-xl border text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50",
+                matchResult !== null && !isCorrect && !selfRateMode && "ring-2 ring-red-500/50 scale-[1.02]",
+              )}
               style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}
             >
               <XCircle className="h-5 w-5 text-red-500" />
               <span className="text-foreground">Forgot</span>
+              {matchResult !== null && !isCorrect && !selfRateMode && (
+                <span className="text-[10px] text-red-500 -mt-0.5">Suggested</span>
+              )}
             </button>
             <button
               onClick={() => handleRate(3)}
@@ -259,19 +415,20 @@ export default function DailyReviewPage() {
             <button
               onClick={() => handleRate(5)}
               disabled={reviewMutation.isPending}
-              className="flex flex-col items-center gap-1 px-4 py-3 rounded-xl border text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
+              className={cn(
+                "flex flex-col items-center gap-1 px-4 py-3 rounded-xl border text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50",
+                matchResult !== null && isCorrect && !selfRateMode && "ring-2 ring-green-500/50 scale-[1.02]",
+              )}
               style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}
             >
               <CheckCircle2 className="h-5 w-5 text-green-500" />
               <span className="text-foreground">Easy</span>
+              {matchResult !== null && isCorrect && !selfRateMode && (
+                <span className="text-[10px] text-green-500 -mt-0.5">Suggested</span>
+              )}
             </button>
           </div>
         </div>
-      )}
-
-      {/* Tap-to-reveal hint when answer is hidden */}
-      {!showAnswer && currentCard && (
-        <p className="text-center text-xs text-muted-foreground">Tap the card to reveal the answer</p>
       )}
     </div>
   )
