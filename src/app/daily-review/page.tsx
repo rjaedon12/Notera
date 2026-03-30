@@ -5,12 +5,11 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useState, useCallback, useRef, useEffect } from "react"
 import {
-  Brain, RotateCcw, CheckCircle2, XCircle,
+  RotateCcw, CheckCircle2, XCircle,
   Loader2, Sparkles, BookOpen, ArrowRight, Send
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { matchAnswer, type MatchResult } from "@/lib/levenshtein"
-import toast from "react-hot-toast"
 
 interface ReviewCard {
   id: string

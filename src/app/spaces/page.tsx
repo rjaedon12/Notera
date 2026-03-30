@@ -30,6 +30,8 @@ interface Space {
   description: string | null
   type: "COLLABORATIVE" | "CLASSROOM"
   inviteCode: string
+  bannerColor: string | null
+  bannerImage: string | null
   createdAt: string
   _count: { members: number; sets: number; assignments: number }
   members: { role: string; user: { id: string; name: string | null } }[]
@@ -469,7 +471,11 @@ function SpaceCard({
   copiedCode: string | null
   onCopy: (code: string, e: React.MouseEvent) => void
 }) {
-  const color = getCardColor(space.id)
+  const fallbackColor = getCardColor(space.id)
+  // Use the user-selected banner color if available, otherwise fall back to hash-based color
+  const color = space.bannerColor
+    ? { bg: space.bannerColor, text: "#fff" }
+    : fallbackColor
   const isOwner = space.members.some((m) => m.user.id === userId && m.role === "OWNER")
   const ownerName = space.owner.name || "Unknown"
 
