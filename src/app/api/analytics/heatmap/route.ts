@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 
-// GET /api/analytics/heatmap — 180-day study activity for contribution heatmap
+// GET /api/analytics/heatmap — 365-day study activity for contribution heatmap
 export async function GET() {
   try {
     const session = await auth()
@@ -10,7 +10,7 @@ export async function GET() {
     }
 
     const now = new Date()
-    const start = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000)
+    const start = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
 
     const sessions = await prisma.studySession.findMany({
       where: { userId: session.user.id, createdAt: { gte: start } },
