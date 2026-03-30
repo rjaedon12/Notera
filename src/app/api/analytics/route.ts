@@ -10,6 +10,14 @@ export async function GET() {
     }
     const userId = session.user.id
 
+    const now = new Date()
+    const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
+    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+    const startOfThisWeek = new Date(now)
+    startOfThisWeek.setDate(now.getDate() - now.getDay())
+    startOfThisWeek.setHours(0, 0, 0, 0)
+    const startOfLastWeek = new Date(startOfThisWeek.getTime() - 7 * 24 * 60 * 60 * 1000)
+
     const [
       user,
       totalSets,
@@ -18,6 +26,9 @@ export async function GET() {
       studySessions,
       quizAttempts,
       achievements,
+      sessionsByType,
+      reviewForecastRaw,
+      topSetsRaw,
     ] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
@@ -30,17 +41,40 @@ export async function GET() {
         where: { userId },
         _count: true,
       }),
-      // Real session count from StudySession table
       prisma.studySession.findMany({
         where: { userId },
-        select: { createdAt: true },
+        select: { createdAt: true, type: true },
         orderBy: { createdAt: "desc" },
       }),
       prisma.quizAttempt.findMany({
         where: { userId, completedAt: { not: null } },
-        select: { score: true },
+        select: { score: true, completedAt: true, bank: { select: { title: true } } },
+        orderBy: { completedAt: "desc" },
+        take: 20,
       }),
       prisma.userAchievement.count({ where: { userId } }),
+      prisma.studySession.groupBy({
+        by: ["type"],
+        where: { userId },
+        _count: true,
+      }),
+      prisma.cardProgress.findMany({
+        where: {
+          userId,
+          nextReviewAt: { gte: now, lte: sevenDaysFromNow },
+        },
+        select: { nextReviewAt: true },
+      }),
+      prisma.studyProgress.findMany({
+        where: { userId, masteredCount: { gt: 0 } },
+        select: {
+          masteredCount: true,
+          totalCards: true,
+          set: { select: { id: true, title: true } },
+        },
+        orderBy: { masteredCount: "desc" },
+        take: 5,
+      }),
     ])
 
     const statusMap: Record<string, number> = {}
@@ -48,10 +82,9 @@ export async function GET() {
       statusMap[cp.status] = cp._count
     }
 
-    // Validate streak (check if it's still valid)
+    // Validate streak
     let currentStreak = user?.streak ?? 0
     if (user?.lastStudied) {
-      const now = new Date()
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       const lastDate = new Date(user.lastStudied)
       const lastDay = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate())
@@ -59,10 +92,7 @@ export async function GET() {
       if (diffDays > 1) currentStreak = 0
     }
 
-    // Build 30-day study activity from real StudySession rows
-    // Include estimated minutes practiced per day (each session ≈ 10min average)
-    const now = new Date()
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+    // Build 90-day study activity from StudySession rows
     const studyActivity: { date: string; count: number; minutesPracticed: number }[] = []
     const activityMap: Record<string, number> = {}
 
@@ -71,17 +101,13 @@ export async function GET() {
       activityMap[date] = (activityMap[date] || 0) + 1
     }
 
-    for (let d = new Date(thirtyDaysAgo); d <= now; d.setDate(d.getDate() + 1)) {
+    for (let d = new Date(ninetyDaysAgo); d <= now; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split("T")[0]
       const count = activityMap[dateStr] || 0
-      studyActivity.push({
-        date: dateStr,
-        count,
-        minutesPracticed: count * 10, // ~10min per session estimate
-      })
+      studyActivity.push({ date: dateStr, count, minutesPracticed: count * 10 })
     }
 
-    // Quiz scores are now stored as percentages (0–100)
+    // Quiz scores + history
     const completedQuizScores = quizAttempts
       .filter((a) => a.score !== null)
       .map((a) => a.score as number)
@@ -90,6 +116,56 @@ export async function GET() {
         ? completedQuizScores.reduce((s, v) => s + v, 0) / completedQuizScores.length
         : 0
 
+    const quizScoreHistory = quizAttempts
+      .filter((a) => a.score !== null && a.completedAt)
+      .map((a) => ({
+        date: a.completedAt!.toISOString().split("T")[0],
+        score: Math.round((a.score as number) * 10) / 10,
+        bankName: a.bank.title,
+      }))
+
+    // Study mode breakdown
+    const studyModeBreakdown: Record<string, number> = {}
+    for (const g of sessionsByType) {
+      studyModeBreakdown[g.type] = g._count
+    }
+
+    // Review forecast — group by date for next 7 days
+    const forecastMap: Record<string, number> = {}
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(now.getTime() + i * 24 * 60 * 60 * 1000)
+      forecastMap[d.toISOString().split("T")[0]] = 0
+    }
+    for (const cp of reviewForecastRaw) {
+      if (cp.nextReviewAt) {
+        const dateStr = cp.nextReviewAt.toISOString().split("T")[0]
+        if (dateStr in forecastMap) forecastMap[dateStr]++
+      }
+    }
+    const reviewForecast = Object.entries(forecastMap).map(([date, count]) => ({ date, count }))
+
+    // Weekly comparison
+    const thisWeekSessions = studySessions.filter(
+      (s) => s.createdAt >= startOfThisWeek
+    ).length
+    const lastWeekSessions = studySessions.filter(
+      (s) => s.createdAt >= startOfLastWeek && s.createdAt < startOfThisWeek
+    ).length
+
+    // Top sets by mastery
+    const topSets = topSetsRaw.map((sp) => ({
+      id: sp.set.id,
+      title: sp.set.title,
+      mastered: sp.masteredCount,
+      total: sp.totalCards,
+    }))
+
+    // Retention rate
+    const totalReviewed = (statusMap["MASTERED"] || 0) + (statusMap["LEARNING"] || 0)
+    const retentionRate = totalReviewed > 0
+      ? Math.round(((statusMap["MASTERED"] || 0) / totalReviewed) * 100)
+      : 0
+
     return Response.json({
       totalSets,
       totalCards,
@@ -97,11 +173,18 @@ export async function GET() {
       cardsLearning: statusMap["LEARNING"] || 0,
       cardsNew: statusMap["NEW"] || 0,
       currentStreak,
+      longestStreak: user?.longestStreak ?? 0,
       totalStudySessions: studySessions.length,
       quizzesTaken: quizAttempts.length,
       averageQuizScore: Math.round(avgQuizScore * 10) / 10,
       studyActivity,
       achievementsUnlocked: achievements,
+      quizScoreHistory,
+      studyModeBreakdown,
+      reviewForecast,
+      weeklyComparison: { thisWeek: thisWeekSessions, lastWeek: lastWeekSessions },
+      topSets,
+      retentionRate,
     })
   } catch (error) {
     console.error("Analytics error:", error)

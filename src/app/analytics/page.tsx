@@ -4,9 +4,16 @@ import { useQuery } from "@tanstack/react-query"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import {
-  BarChart3, TrendingUp, Clock, Brain, BookOpen,
-  Calendar, Target, Flame, Loader2
+  BookOpen, Brain, Clock, Target, Flame, Loader2, Zap
 } from "lucide-react"
+import { StatCard } from "@/components/analytics/stat-card"
+import { ActivityChart } from "@/components/analytics/activity-chart"
+import { MasteryRing } from "@/components/analytics/mastery-ring"
+import { ContributionHeatmap } from "@/components/analytics/contribution-heatmap"
+import { QuizTrend } from "@/components/analytics/quiz-trend"
+import { ModeBreakdown } from "@/components/analytics/mode-breakdown"
+import { ReviewForecast } from "@/components/analytics/review-forecast"
+import Link from "next/link"
 
 interface AnalyticsData {
   totalSets: number
@@ -15,18 +22,25 @@ interface AnalyticsData {
   cardsLearning: number
   cardsNew: number
   currentStreak: number
+  longestStreak: number
   totalStudySessions: number
   quizzesTaken: number
   averageQuizScore: number
   studyActivity: { date: string; count: number; minutesPracticed: number }[]
   achievementsUnlocked: number
+  quizScoreHistory: { date: string; score: number; bankName: string }[]
+  studyModeBreakdown: Record<string, number>
+  reviewForecast: { date: string; count: number }[]
+  weeklyComparison: { thisWeek: number; lastWeek: number }
+  topSets: { id: string; title: string; mastered: number; total: number }[]
+  retentionRate: number
 }
 
 export default function AnalyticsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
 
-  const { data: analytics, isLoading, isError } = useQuery<AnalyticsData>({
+  const { data: analytics, isLoading } = useQuery<AnalyticsData>({
     queryKey: ["analytics"],
     queryFn: async () => {
       const res = await fetch("/api/analytics")
@@ -50,153 +64,168 @@ export default function AnalyticsPage() {
     return null
   }
 
-  const totalProgressCards = (analytics?.cardsMastered ?? 0) + (analytics?.cardsLearning ?? 0) + (analytics?.cardsNew ?? 0)
-  const masteredPct = totalProgressCards > 0 ? Math.round(((analytics?.cardsMastered ?? 0) / totalProgressCards) * 100) : 0
-  const learningPct = totalProgressCards > 0 ? Math.round(((analytics?.cardsLearning ?? 0) / totalProgressCards) * 100) : 0
-  const newPct = totalProgressCards > 0 ? Math.round(((analytics?.cardsNew ?? 0) / totalProgressCards) * 100) : 0
-
-  const stats = [
-    { label: "Study Sets", value: analytics?.totalSets ?? 0, icon: <BookOpen className="h-5 w-5" />, color: "#4F8EF7" },
-    { label: "Cards Mastered", value: analytics?.cardsMastered ?? 0, icon: <Brain className="h-5 w-5" />, color: "#42d9a0" },
-    { label: "Study Sessions", value: analytics?.totalStudySessions ?? 0, icon: <Clock className="h-5 w-5" />, color: "#a050dc" },
-    { label: "Avg Quiz Score", value: `${analytics?.averageQuizScore ?? 0}%`, icon: <Target className="h-5 w-5" />, color: "#f59e0b" },
-  ]
-
-  // Calculate max values for the activity chart
-  const activityData = analytics?.studyActivity ?? Array.from({ length: 30 }, () => ({ date: "", count: 0, minutesPracticed: 0 }))
-  const maxMinutes = Math.max(1, ...activityData.map((d) => d.minutesPracticed ?? 0))
-  // Y-axis tick values for time practiced
-  const yTicks = (() => {
-    if (maxMinutes <= 5) return [0, 1, 2, 3, 4, 5]
-    if (maxMinutes <= 15) return [0, 5, 10, 15]
-    if (maxMinutes <= 30) return [0, 10, 20, 30]
-    if (maxMinutes <= 60) return [0, 15, 30, 45, 60]
-    const step = Math.ceil(maxMinutes / 4 / 15) * 15
-    return [0, step, step * 2, step * 3, step * 4].filter(v => v <= maxMinutes + step)
-  })()
-  const yMax = yTicks[yTicks.length - 1] || 1
+  const trend = analytics?.weeklyComparison
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-5xl mx-auto px-4 py-8 space-y-6 animate-fade-in">
+      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground font-heading">Study Analytics</h1>
         <p className="text-muted-foreground mt-1">Track your learning progress and study habits</p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className="rounded-xl border p-5"
-            style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: `${stat.color}20`, color: stat.color }}>
-                {stat.icon}
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-            <p className="text-sm mt-1" style={{ color: "var(--muted-foreground)" }}>{stat.label}</p>
-          </div>
-        ))}
+      {/* Summary Stats Row */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <StatCard
+          label="Study Sets"
+          value={analytics?.totalSets ?? 0}
+          icon={<BookOpen className="h-5 w-5" />}
+          color="#4F8EF7"
+        />
+        <StatCard
+          label="Cards Mastered"
+          value={analytics?.cardsMastered ?? 0}
+          icon={<Brain className="h-5 w-5" />}
+          color="#42d9a0"
+          trend={trend}
+        />
+        <StatCard
+          label="Study Sessions"
+          value={analytics?.totalStudySessions ?? 0}
+          icon={<Clock className="h-5 w-5" />}
+          color="#a050dc"
+          trend={trend}
+        />
+        <StatCard
+          label="Avg Quiz Score"
+          value={`${analytics?.averageQuizScore ?? 0}%`}
+          icon={<Target className="h-5 w-5" />}
+          color="#f59e0b"
+        />
+        <StatCard
+          label="Retention Rate"
+          value={`${analytics?.retentionRate ?? 0}%`}
+          icon={<Zap className="h-5 w-5" />}
+          color="#FB7185"
+        />
       </div>
 
-      {/* Streak + Cards Progress */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="rounded-xl border p-6" style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}>
-          <div className="flex items-center gap-3 mb-4">
-            <Flame className="h-6 w-6 text-orange-500" />
-            <h2 className="text-lg font-semibold text-foreground">Study Streak</h2>
-          </div>
+      {/* Streak + Heatmap */}
+      <div
+        className="rounded-xl border p-6"
+        style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}
+      >
+        <div className="flex items-center gap-3 mb-5">
+          <Flame className="h-6 w-6 text-orange-500" />
+          <h2 className="text-lg font-semibold text-foreground">Study Streak</h2>
+        </div>
+        <div className="flex flex-col md:flex-row gap-6 mb-6">
           <div className="flex items-end gap-8">
             <div>
-              <p className="text-4xl font-bold text-foreground">{analytics?.currentStreak ?? 0}</p>
-              <p className="text-sm text-muted-foreground">Current streak (days)</p>
+              <p className="text-4xl font-bold text-foreground">
+                {analytics?.currentStreak ?? 0}
+              </p>
+              <p className="text-sm text-muted-foreground">Current streak</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-muted-foreground">{analytics?.quizzesTaken ?? 0}</p>
-              <p className="text-sm text-muted-foreground">Quizzes taken</p>
+              <p className="text-2xl font-bold text-muted-foreground">
+                {analytics?.longestStreak ?? 0}
+              </p>
+              <p className="text-sm text-muted-foreground">Longest streak</p>
             </div>
           </div>
         </div>
-        <div className="rounded-xl border p-6" style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}>
-          <div className="flex items-center gap-3 mb-4">
-            <TrendingUp className="h-6 w-6 text-green-500" />
-            <h2 className="text-lg font-semibold text-foreground">Cards Progress</h2>
-          </div>
-          <div className="space-y-3">
-            {[
-              { label: "Mastered", value: analytics?.cardsMastered ?? 0, pct: masteredPct, color: "#42d9a0" },
-              { label: "Learning", value: analytics?.cardsLearning ?? 0, pct: learningPct, color: "#f59e0b" },
-              { label: "New", value: analytics?.cardsNew ?? 0, pct: newPct, color: "#4F8EF7" },
-            ].map((item) => (
-              <div key={item.label}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm text-foreground">{item.label}</span>
-                  <span className="text-sm font-semibold" style={{ color: item.color }}>
-                    {item.value} ({item.pct}%)
-                  </span>
-                </div>
-                <div className="w-full h-2 rounded-full" style={{ background: "var(--muted)" }}>
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${item.pct}%`, background: item.color }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+        <ContributionHeatmap />
+      </div>
+
+      {/* Activity Chart */}
+      <div
+        className="rounded-xl border p-6"
+        style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}
+      >
+        <ActivityChart data={analytics?.studyActivity ?? []} />
+      </div>
+
+      {/* Mastery Ring + Mode Breakdown */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div
+          className="rounded-xl border p-6"
+          style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}
+        >
+          <MasteryRing
+            mastered={analytics?.cardsMastered ?? 0}
+            learning={analytics?.cardsLearning ?? 0}
+            newCards={analytics?.cardsNew ?? 0}
+          />
+        </div>
+        <div
+          className="rounded-xl border p-6"
+          style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}
+        >
+          <ModeBreakdown breakdown={analytics?.studyModeBreakdown ?? {}} />
         </div>
       </div>
 
-      {/* 30-day Activity Chart with Y-axis */}
-      <div className="rounded-xl border p-6" style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}>
-        <div className="flex items-center gap-3 mb-6">
-          <BarChart3 className="h-6 w-6 text-primary" />
-          <h2 className="text-lg font-semibold text-foreground">Last 30 Days Activity</h2>
-        </div>
-        <div className="flex">
-          {/* Y-axis labels */}
-          <div className="flex flex-col justify-between h-36 pr-3 text-xs text-muted-foreground shrink-0 py-0.5" style={{ minWidth: "40px" }}>
-            {[...yTicks].reverse().map((tick) => (
-              <span key={tick} className="text-right leading-none">{tick}m</span>
-            ))}
-          </div>
-          {/* Bars */}
-          <div className="flex-1 flex items-end gap-[2px] h-36 border-l" style={{ borderColor: "var(--glass-border)" }}>
-            {activityData.map((day, i) => {
-              const mins = day.minutesPracticed ?? 0
-              const height = Math.max(2, (mins / yMax) * 100)
+      {/* Quiz Performance */}
+      <div
+        className="rounded-xl border p-6"
+        style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}
+      >
+        <QuizTrend
+          history={analytics?.quizScoreHistory ?? []}
+          average={analytics?.averageQuizScore ?? 0}
+        />
+      </div>
+
+      {/* Review Forecast */}
+      <div
+        className="rounded-xl border p-6"
+        style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}
+      >
+        <ReviewForecast forecast={analytics?.reviewForecast ?? []} />
+      </div>
+
+      {/* Top Sets */}
+      {(analytics?.topSets?.length ?? 0) > 0 && (
+        <div
+          className="rounded-xl border p-6"
+          style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}
+        >
+          <h2 className="text-lg font-semibold text-foreground mb-4">Top Sets by Mastery</h2>
+          <div className="space-y-3">
+            {analytics!.topSets.map((set) => {
+              const pct = set.total > 0 ? Math.round((set.mastered / set.total) * 100) : 0
               return (
-                <div
-                  key={i}
-                  className="flex-1 rounded-t-sm transition-all hover:opacity-80 group relative"
-                  style={{
-                    height: `${height}%`,
-                    background: mins > 0 ? "var(--primary)" : "var(--glass-border)",
-                    opacity: mins > 0 ? 1 : 0.3,
-                  }}
-                  title={`${day.date}: ${day.count} session${day.count !== 1 ? "s" : ""}, ${mins} min`}
-                />
+                <Link
+                  key={set.id}
+                  href={`/sets/${set.id}`}
+                  className="flex items-center gap-4 group"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                      {set.title}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="flex-1 h-1.5 rounded-full" style={{ background: "var(--muted)" }}>
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${pct}%`, background: "#42d9a0" }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium shrink-0" style={{ color: "var(--muted-foreground)" }}>
+                        {set.mastered}/{set.total}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-sm font-bold" style={{ color: "#42d9a0" }}>
+                    {pct}%
+                  </span>
+                </Link>
               )
             })}
           </div>
         </div>
-        <div className="flex justify-between mt-2 text-xs text-muted-foreground" style={{ paddingLeft: "52px" }}>
-          <span>30 days ago</span>
-          <span>Today</span>
-        </div>
-        <div className="mt-2 text-center">
-          <span className="text-xs text-muted-foreground">Time Practiced (minutes)</span>
-        </div>
-      </div>
-
-      {/* Calendar heatmap hint */}
-      <div className="rounded-xl border p-6 text-center" style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}>
-        <Calendar className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-        <p className="text-sm text-muted-foreground">Keep studying daily to build your streak and improve retention!</p>
-      </div>
+      )}
     </div>
   )
 }
