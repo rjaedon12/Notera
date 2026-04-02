@@ -9,7 +9,6 @@ export interface HomeworkConfig {
   date: string
   instructions: string
   includeAnswerKey: boolean
-  includeNameField: boolean
   includeWordBank: boolean
   questionTypes: QuestionType[]
   selectedSetIds: string[]

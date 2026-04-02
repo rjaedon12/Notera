@@ -44,6 +44,46 @@ export async function GET(request: NextRequest) {
 
     const userId = session.user.id
     const now = new Date()
+    const forceAll = request.nextUrl.searchParams.get("forceAll") === "true"
+
+    // If forceAll, return ALL cards in the set (for restart after mastery)
+    if (forceAll) {
+      const allFlashcards = await prisma.flashcard.findMany({
+        where: { setId },
+        select: { id: true, term: true, definition: true },
+        orderBy: { order: "asc" },
+      })
+
+      const progressRows = await prisma.userFlashcardProgress.findMany({
+        where: { userId, flashcard: { setId } },
+      })
+      const progressMap = new Map(progressRows.map((p) => [p.flashcardId, p]))
+
+      const cards: DueCardResponse[] = allFlashcards.map((card) => {
+        const p = progressMap.get(card.id)
+        return {
+          flashcard: { id: card.id, front: card.term, back: card.definition },
+          progress: p
+            ? {
+                id: p.id,
+                userId: p.userId,
+                flashcardId: p.flashcardId,
+                due: p.due,
+                stability: p.stability,
+                difficulty: p.difficulty,
+                elapsedDays: p.elapsedDays,
+                scheduledDays: p.scheduledDays,
+                reps: p.reps,
+                lapses: p.lapses,
+                state: p.state,
+                lastReview: p.lastReview,
+              }
+            : null,
+        }
+      })
+
+      return Response.json({ cards })
+    }
 
     // 1. Cards that have progress and are due for review (due <= now)
     const dueProgress = await prisma.userFlashcardProgress.findMany({

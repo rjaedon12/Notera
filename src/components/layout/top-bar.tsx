@@ -14,9 +14,10 @@ import {
   Settings,
   LogOut,
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { CreateMenu } from "@/components/layout/create-menu"
+import { SearchResultsDropdown } from "@/components/layout/search-results-dropdown"
 
 interface TopBarProps {
   onMenuClick: () => void
@@ -25,10 +26,54 @@ interface TopBarProps {
 export function TopBar({ onMenuClick }: TopBarProps) {
   const { data: session } = useSession()
   const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState<Array<{ type: string; id: string; title: string; subtitle: string; href: string }>>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const searchContainerRef = useRef<HTMLDivElement>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const router = useRouter()
+
+  const fetchSearchResults = useCallback(async (query: string) => {
+    if (query.trim().length < 2) {
+      setSearchResults([])
+      setShowDropdown(false)
+      return
+    }
+    setIsSearching(true)
+    setShowDropdown(true)
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}`)
+      if (res.ok) {
+        const data = await res.json()
+        setSearchResults(data.results ?? [])
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setIsSearching(false)
+    }
+  }, [])
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => fetchSearchResults(value), 300)
+  }
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
+    setShowDropdown(false)
     if (searchQuery.trim()) {
       router.push(`/discover?search=${encodeURIComponent(searchQuery)}`)
     }
@@ -80,13 +125,14 @@ export function TopBar({ onMenuClick }: TopBarProps) {
 
         {/* Center - Search Bar (pill shaped glass) */}
         <form onSubmit={handleSearch} className="flex-1 max-w-md mx-6">
-          <div className="relative">
+          <div className="relative" ref={searchContainerRef}>
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "var(--muted-foreground)" }} />
             <input
               type="search"
-              placeholder="Search sets, resources…"
+              placeholder="Search sets, quizzes, notes…"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onFocus={() => { if (searchQuery.trim().length >= 2) setShowDropdown(true) }}
               className="w-full h-9 pl-10 pr-4 rounded-full text-sm transition-all
                 border-none focus:outline-none focus:ring-1 focus:ring-[var(--primary)]/30 focus:ring-offset-0
                 placeholder:text-[var(--muted-foreground)]"
@@ -96,6 +142,13 @@ export function TopBar({ onMenuClick }: TopBarProps) {
               }}
               aria-label="Search"
             />
+            {showDropdown && (
+              <SearchResultsDropdown
+                results={searchResults}
+                isLoading={isSearching}
+                onSelect={() => { setShowDropdown(false); setSearchQuery("") }}
+              />
+            )}
           </div>
         </form>
 

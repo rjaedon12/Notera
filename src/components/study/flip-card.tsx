@@ -39,23 +39,23 @@ export function FlipCard({ front, back, isFlipped, onFlip, className }: FlipCard
       >
         {/* Front */}
         <div
-          className="absolute inset-0 w-full h-full bg-white rounded-2xl shadow-lg border border-slate-200 flex items-center justify-center p-8 backface-hidden"
+          className="absolute inset-0 w-full h-full bg-card rounded-2xl shadow-lg border border-border flex items-center justify-center p-8 backface-hidden"
           style={{ backfaceVisibility: "hidden" }}
         >
-          <p className="text-2xl md:text-3xl font-medium text-center text-slate-900">
+          <p className="text-2xl md:text-3xl font-medium text-center text-foreground">
             {front}
           </p>
         </div>
         
         {/* Back */}
         <div
-          className="absolute inset-0 w-full h-full bg-white rounded-2xl shadow-lg border border-slate-200 flex items-center justify-center p-8 backface-hidden"
+          className="absolute inset-0 w-full h-full bg-card rounded-2xl shadow-lg border border-border flex items-center justify-center p-8 backface-hidden"
           style={{ 
             backfaceVisibility: "hidden",
             transform: "rotateY(180deg)"
           }}
         >
-          <p className="text-2xl md:text-3xl font-medium text-center text-slate-900">
+          <p className="text-2xl md:text-3xl font-medium text-center text-foreground">
             {back}
           </p>
         </div>

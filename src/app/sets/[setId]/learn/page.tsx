@@ -132,11 +132,14 @@ export default function LearnPage({ params }: PageProps) {
   }, [allCards, promptWithTerm])
 
   // ── Fetch due cards from SRS API ────────────────────────────────────────────
-  const fetchDueCards = useCallback(async () => {
+  const fetchDueCards = useCallback(async (forceAll = false) => {
     setIsLoadingCards(true)
     setFetchError(null)
     try {
-      const res = await fetch(`/api/srs/due?setId=${setId}`)
+      const url = forceAll
+        ? `/api/srs/due?setId=${setId}&forceAll=true`
+        : `/api/srs/due?setId=${setId}`
+      const res = await fetch(url)
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         throw new Error(data.error || "Failed to fetch cards")
@@ -370,14 +373,14 @@ export default function LearnPage({ params }: PageProps) {
     })
   }
 
-  function handleRestart() {
+  function handleRestart(forceAll = false) {
     setAllCards([])
     setRoundQueue([])
     setCurrentIdx(0)
     setRoundNumber(1)
     setIsComplete(false)
     setShowRoundSummary(false)
-    fetchDueCards()
+    fetchDueCards(forceAll)
   }
 
   function togglePromptDirection() {
@@ -487,7 +490,13 @@ export default function LearnPage({ params }: PageProps) {
             <p className="text-muted-foreground mb-6">
               No cards are due for review right now. Come back later!
             </p>
-            <Button onClick={() => router.push(`/sets/${setId}`)}>Go Back</Button>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => handleRestart(true)}>
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Practice All Cards
+              </Button>
+              <Button onClick={() => router.push(`/sets/${setId}`)}>Go Back</Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -546,7 +555,7 @@ export default function LearnPage({ params }: PageProps) {
               </div>
 
               <div className="flex gap-3">
-                <Button variant="outline" className="flex-1" onClick={handleRestart}>
+                <Button variant="outline" className="flex-1" onClick={() => handleRestart(true)}>
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Study Again
                 </Button>

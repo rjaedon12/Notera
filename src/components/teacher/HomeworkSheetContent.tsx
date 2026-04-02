@@ -39,10 +39,11 @@ export function HomeworkSheetContent({
   questions,
 }: HomeworkSheetContentProps) {
   // Build compact meta string: "Teacher: X  ·  Class: Y  ·  Date: Z"
-  const metaParts: string[] = []
-  if (config.teacherName) metaParts.push(`Teacher: ${config.teacherName}`)
-  if (config.className) metaParts.push(`Class: ${config.className}`)
-  if (config.date) metaParts.push(`Date: ${config.date}`)
+  // Build info boxes data
+  const infoBoxes: { label: string; value: string }[] = []
+  if (config.className) infoBoxes.push({ label: "CLASSROOM", value: config.className })
+  if (config.date) infoBoxes.push({ label: "DUE DATE", value: config.date })
+  if (config.teacherName) infoBoxes.push({ label: "TEACHER", value: config.teacherName })
 
   return (
     <div
@@ -60,29 +61,29 @@ export function HomeworkSheetContent({
           {config.title || "Homework Worksheet"}
         </h1>
 
-        {/* Meta — compact inline with dot separators */}
-        {metaParts.length > 0 && (
-          <p className="text-[9px] text-gray-400 mt-2">
-            {metaParts.join("   \u00b7   ")}
-          </p>
-        )}
-
-        {/* Name field */}
-        {config.includeNameField && (
-          <div className="flex items-center gap-2 mt-5">
-            <span className="text-[9px] text-gray-400 shrink-0">Name:</span>
-            <div className="flex-1 max-w-[55%] border-b border-gray-200" />
+        {/* Info boxes — three equal-width rounded rects */}
+        {infoBoxes.length > 0 && (
+          <div className="grid mt-4 gap-2" style={{ gridTemplateColumns: `repeat(${infoBoxes.length}, 1fr)` }}>
+            {infoBoxes.map((box) => (
+              <div key={box.label} className="rounded-md px-3 py-2.5" style={{ background: "#f3f3f0" }}>
+                <p className="text-[6.5px] text-gray-400 uppercase tracking-[0.06em] mb-1">{box.label}</p>
+                <p className="text-[9.5px] text-gray-900">{box.value}</p>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Divider — thin, subtle */}
-        <hr className="border-gray-200 mt-5 mb-5" />
+        {/* Divider — coral / terracotta accent */}
+        <hr className="mt-4 mb-5 border-0" style={{ height: "1.2px", background: "#C4675A" }} />
 
         {/* Instructions */}
         {config.instructions && (
-          <p className="text-[9.5px] text-gray-400 mb-5 leading-relaxed">
-            {config.instructions}
-          </p>
+          <div className="mb-5">
+            <p className="text-[7px] text-gray-400 uppercase tracking-[0.08em] mb-2">INSTRUCTIONS</p>
+            <p className="text-[9.5px] text-gray-900 leading-relaxed">
+              {config.instructions}
+            </p>
+          </div>
         )}
 
         {/* Word bank — minimal rule-based design */}
@@ -91,7 +92,7 @@ export function HomeworkSheetContent({
             <p className="text-[7.5px] font-semibold text-gray-400 uppercase tracking-[0.15em] mb-2">
               Word Bank
             </p>
-            <p className="text-[9.5px] text-gray-600 leading-relaxed">
+            <p className="text-[9.5px] text-gray-900 leading-relaxed">
               {[...new Set(questions.map((q) => q.answer))]
                 .sort()
                 .join("     \u00b7     ")}
@@ -127,11 +128,11 @@ export function HomeworkSheetContent({
                       </p>
                       {q.matchPairs.map((pair, pi) => (
                         <div key={pi} className="contents">
-                          <p className="text-[9.5px] text-gray-700">
+                          <p className="text-[9.5px] text-gray-900">
                             {pi + 1}.{" "}
                             <MathText text={pair.term} />
                           </p>
-                          <p className="text-[9.5px] text-gray-700">
+                          <p className="text-[9.5px] text-gray-900">
                             {String.fromCharCode(65 + pi)}.{" "}
                             <MathText text={pair.definition} />
                           </p>
@@ -146,7 +147,7 @@ export function HomeworkSheetContent({
                     </p>
                     <div className="pl-6 space-y-1">
                       {q.choices.map((c, ci) => (
-                        <p key={ci} className="text-[9px] text-gray-600">
+                        <p key={ci} className="text-[9px] text-gray-900">
                           {String.fromCharCode(97 + ci)}.{" "}
                           <MathText text={c} />
                         </p>
@@ -174,7 +175,7 @@ export function HomeworkSheetContent({
             </h2>
             <div className="space-y-1.5">
               {questions.map((q, i) => (
-                <p key={q.id} className="text-[9.5px] text-gray-500">
+                <p key={q.id} className="text-[9.5px] text-gray-900">
                   {i + 1}. <MathText text={q.answer} />
                 </p>
               ))}

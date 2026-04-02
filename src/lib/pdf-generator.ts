@@ -579,52 +579,65 @@ export async function generateHomeworkPDF(
   smartFont("bold", titleText)
   doc.setTextColor(COLOR_BLACK)
   doc.text(titleText, MARGIN, y)
-  y += TITLE_SIZE + 8
+  y += TITLE_SIZE + 14
 
-  // Meta line — compact inline layout: "Teacher: X  ·  Class: Y  ·  Date: Z"
-  const metaParts: string[] = []
-  if (config.teacherName) metaParts.push(`Teacher: ${safeText(config.teacherName)}`)
-  if (config.className) metaParts.push(`Class: ${safeText(config.className)}`)
-  if (config.date) metaParts.push(`Date: ${safeText(config.date)}`)
+  // Info boxes — three equal-width rounded rects with label + value
+  const infoBoxes: { label: string; value: string }[] = []
+  if (config.className) infoBoxes.push({ label: "CLASSROOM", value: safeText(config.className) })
+  if (config.date) infoBoxes.push({ label: "DUE DATE", value: safeText(config.date) })
+  if (config.teacherName) infoBoxes.push({ label: "TEACHER", value: safeText(config.teacherName) })
 
-  if (metaParts.length > 0) {
-    doc.setFontSize(META_SIZE)
-    doc.setTextColor(COLOR_MID)
-    const metaStr = metaParts.join("   \u00b7   ")
-    smartFont("normal", metaStr)
-    doc.text(metaStr, MARGIN, y)
-    y += LINE_HEIGHT + 2
+  if (infoBoxes.length > 0) {
+    const boxGap = 8
+    const totalGap = boxGap * (infoBoxes.length - 1)
+    const boxW = (CONTENT_WIDTH - totalGap) / infoBoxes.length
+    const boxH = 38
+    const boxRadius = 4
+    const boxFill = 243 // #f3f3f0 — warm light gray
+
+    for (let i = 0; i < infoBoxes.length; i++) {
+      const bx = MARGIN + i * (boxW + boxGap)
+      const by = y
+
+      // Rounded rectangle fill
+      doc.setFillColor(boxFill, boxFill, boxFill - 3)
+      doc.roundedRect(bx, by, boxW, boxH, boxRadius, boxRadius, "F")
+
+      // Label — small uppercase muted
+      doc.setFontSize(6.5)
+      doc.setTextColor(COLOR_MID)
+      smartFont("normal", infoBoxes[i].label)
+      doc.text(infoBoxes[i].label, bx + 10, by + 13, { charSpace: 0.6 })
+
+      // Value — black, normal weight
+      doc.setFontSize(9.5)
+      doc.setTextColor(COLOR_BLACK)
+      smartFont("normal", infoBoxes[i].value)
+      doc.text(infoBoxes[i].value, bx + 10, by + 27)
+    }
+    y += boxH + 14
   }
 
-  // Student name field
-  if (config.includeNameField) {
-    y += 10
-    doc.setFontSize(META_SIZE)
-    doc.setTextColor(COLOR_MID)
-    smartFont("normal", "Name:")
-    doc.text("Name:", MARGIN, y)
-    const nameX = MARGIN + doc.getTextWidth("Name:") + 8
-    doc.setDrawColor(COLOR_RULE)
-    doc.setLineWidth(0.5)
-    doc.line(nameX, y + 1, MARGIN + CONTENT_WIDTH * 0.55, y + 1)
-    doc.setLineWidth(0.5)
-    y += LINE_HEIGHT + 6
-  }
-
-  // Divider — thin, subtle rule
-  y += 6
-  doc.setDrawColor(COLOR_RULE)
-  doc.setLineWidth(0.5)
+  // Divider — coral / terracotta accent line
+  doc.setDrawColor(196, 103, 90) // #C4675A
+  doc.setLineWidth(1.2)
   doc.line(MARGIN, y, PAGE_WIDTH - MARGIN, y)
   doc.setLineWidth(0.5)
-  y += SECTION_GAP
+  y += SECTION_GAP + 4
 
   // Instructions
   if (config.instructions) {
+    // "INSTRUCTIONS" label — small uppercase muted
+    doc.setFontSize(7)
+    doc.setTextColor(COLOR_MID)
+    smartFont("normal", "INSTRUCTIONS")
+    doc.text("INSTRUCTIONS", MARGIN, y, { charSpace: 0.8 })
+    y += 14
+
     doc.setFontSize(BODY_SIZE)
     const instrText = safeText(config.instructions)
     smartFont("normal", instrText)
-    doc.setTextColor(COLOR_MID)
+    doc.setTextColor(COLOR_BLACK)
     const lines = doc.splitTextToSize(instrText, CONTENT_WIDTH)
     doc.text(lines, MARGIN, y)
     y += lines.length * 13 + SECTION_GAP
@@ -649,7 +662,7 @@ export async function generateHomeworkPDF(
 
       // Terms listed cleanly
       doc.setFontSize(BODY_SIZE)
-      doc.setTextColor(COLOR_DARK)
+      doc.setTextColor(COLOR_BLACK)
       const bankText = terms.map(t => sanitizeText(t)).join("     \u00b7     ")
       smartFont("normal", bankText)
       const bankLines = doc.splitTextToSize(bankText, CONTENT_WIDTH)
@@ -709,6 +722,7 @@ export async function generateHomeworkPDF(
       doc.setLineWidth(0.3)
       doc.line(colA, y - 4, colA + CONTENT_WIDTH / 2 - 30, y - 4)
       doc.line(colB, y - 4, colB + CONTENT_WIDTH / 2 - 40, y - 4)
+      y += 4 // spacing so rule doesn't overlap first pair text
 
       doc.setFontSize(BODY_SIZE)
       doc.setTextColor(COLOR_BLACK)
@@ -741,7 +755,7 @@ export async function generateHomeworkPDF(
       const letters = ["a", "b", "c", "d"]
       for (let i = 0; i < q.choices.length; i++) {
         y = fitBlock(doc, y, 18)
-        doc.setTextColor(COLOR_DARK)
+        doc.setTextColor(COLOR_BLACK)
         y = renderTextWithMath(
           `${letters[i]}.  ${q.choices[i]}`,
           MARGIN + 24,
@@ -791,7 +805,7 @@ export async function generateHomeworkPDF(
     for (const q of questions) {
       akNum++
       y = fitBlock(doc, y, 22)
-      doc.setTextColor(COLOR_DARK)
+      doc.setTextColor(COLOR_BLACK)
       y = renderTextWithMath(`${akNum}. ${q.answer}`, MARGIN, y, CONTENT_WIDTH - 20, "normal", BODY_SIZE)
       y += 2
     }

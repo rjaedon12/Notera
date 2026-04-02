@@ -53,16 +53,22 @@ export default function DailyReviewPage() {
       if (!res.ok) throw new Error("Failed to fetch review cards")
       const json = await res.json()
       const all = [...(json.dueCards ?? []), ...(json.newCards ?? [])]
-      return all.map((c: Record<string, unknown>) => ({
-        id: c.id as string,
-        term: c.term as string,
-        definition: c.definition as string,
-        setId: (c.setId ?? (c.set as Record<string, unknown>)?.id) as string,
-        setTitle: ((c.set as Record<string, unknown>)?.title ?? "") as string,
-        easeFactor: ((c.progress as Record<string, unknown>)?.easeFactor ?? 2.5) as number,
-        interval: ((c.progress as Record<string, unknown>)?.interval ?? 0) as number,
-        nextReviewAt: ((c.progress as Record<string, unknown>)?.nextReviewAt ?? null) as string | null,
-      }))
+      return all
+        .map((c: Record<string, unknown>) => {
+          const set = (c.set ?? {}) as Record<string, unknown>
+          const progress = (c.progress ?? {}) as Record<string, unknown>
+          return {
+            id: String(c.id ?? ""),
+            term: String(c.term ?? ""),
+            definition: String(c.definition ?? ""),
+            setId: String(c.setId ?? set?.id ?? ""),
+            setTitle: String(set?.title ?? ""),
+            easeFactor: Number(progress?.easeFactor ?? 2.5),
+            interval: Number(progress?.interval ?? 0),
+            nextReviewAt: progress?.nextReviewAt ? String(progress.nextReviewAt) : null,
+          }
+        })
+        .filter((c: ReviewCard) => c.id && c.term && c.definition)
     },
     enabled: !!session,
     retry: false,
@@ -171,7 +177,7 @@ export default function DailyReviewPage() {
 
   const remainingCards = dueCards.filter(c => !completed.includes(c.id))
   const isFinished = completed.length >= dueCards.length && dueCards.length > 0
-  const currentCard = dueCards[currentIndex]
+  const currentCard = currentIndex < dueCards.length ? dueCards[currentIndex] : null
   const isCorrect = matchResult === "exact" || matchResult === "close"
 
   // Completion screen

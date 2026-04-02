@@ -15,6 +15,7 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
+    "db:reset": "node scripts/db-guard.mjs && prisma migrate reset",
     "deploy": "npx vercel"
   },
   "prisma": {

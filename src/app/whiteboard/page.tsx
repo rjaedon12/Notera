@@ -120,7 +120,7 @@ export default function WhiteboardDashboard() {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center justify-center py-20 text-center"
         >
-          <div className="w-20 h-20 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mb-4">
+          <div className="w-20 h-20 rounded-2xl bg-blue-50 dark:bg-blue-500/15 flex items-center justify-center mb-4">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-blue-500">
               <rect x="2" y="4" width="20" height="14" rx="2" />
               <path d="M7 9l2.5 2.5L14 8" strokeWidth="1.7" />

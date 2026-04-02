@@ -37,7 +37,6 @@ export function HomeworkBuilder() {
     }),
     instructions: "Answer all questions to the best of your ability.",
     includeAnswerKey: true,
-    includeNameField: true,
     includeWordBank: false,
     questionTypes: ["term-to-definition"],
     questionsPerSet: 10,
@@ -145,7 +144,7 @@ export function HomeworkBuilder() {
           </div>
           <div>
             <label className="text-xs font-medium block mb-1" style={{ color: "var(--muted-foreground)" }}>
-              Class
+              Classroom
             </label>
             <input
               type="text"
@@ -158,7 +157,7 @@ export function HomeworkBuilder() {
           </div>
           <div>
             <label className="text-xs font-medium block mb-1" style={{ color: "var(--muted-foreground)" }}>
-              Date
+              Due Date
             </label>
             <input
               type="text"
@@ -235,7 +234,6 @@ export function HomeworkBuilder() {
         <div className="flex flex-wrap gap-4">
           {[
             { key: "includeAnswerKey" as const, label: "Include answer key" },
-            { key: "includeNameField" as const, label: "Student name field" },
             { key: "includeWordBank" as const, label: "Include word bank" },
           ].map((opt) => (
             <label key={opt.key} className="flex items-center gap-2 cursor-pointer select-none">
