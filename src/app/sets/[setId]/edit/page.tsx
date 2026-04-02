@@ -336,7 +336,7 @@ export default function EditSetPage({ params }: PageProps) {
                     <div
                       ref={provided.innerRef}
                       {...provided.draggableProps}
-                      className={`bg-white rounded-lg border p-4 transition-shadow ${
+                      className={`bg-card rounded-lg border border-border p-4 transition-shadow ${
                         snapshot.isDragging ? "shadow-lg" : ""
                       }`}
                     >

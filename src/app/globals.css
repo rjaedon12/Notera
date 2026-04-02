@@ -62,6 +62,10 @@
   --sidebar-bg: #F5F5F7;
   --sidebar-border: rgba(0, 0, 0, 0.08);
   --notes-sidebar-bg: #F5F5F7;
+
+  /* Study-specific card surface (flashcards, test option boxes) */
+  --card-study: var(--card);
+  --card-study-border: var(--border);
 }
 
 /* ---- DARK MODE ---- */
@@ -120,6 +124,10 @@
   --sidebar-bg: #1C1C1E;
   --sidebar-border: rgba(255, 255, 255, 0.08);
   --notes-sidebar-bg: #1C1C1E;
+
+  /* Study-specific card surface — elevated dark blue for Quizlet-style look */
+  --card-study: var(--bg-elevated);
+  --card-study-border: var(--glass-border);
 }
 
 @theme inline {
@@ -152,6 +160,8 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-ring: var(--ring);
+  --color-card-study: var(--card-study);
+  --color-card-study-border: var(--card-study-border);
   --font-sans: var(--font-body);
   --font-heading: var(--font-display);
 }

@@ -30,7 +30,7 @@ export function MultipleChoice({
   return (
     <div className="space-y-6">
       {/* Prompt */}
-      <div className="bg-card rounded-xl border border-border shadow-sm p-6">
+      <div className="bg-card-study rounded-xl border border-card-study-border shadow-sm p-6">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-sm text-muted-foreground">{promptLabel}</span>
           <button
@@ -52,8 +52,8 @@ export function MultipleChoice({
             const isSelected = selectedAnswer === option
             const isCorrect = option === correctAnswer
             
-            let borderColor = "border-border"
-            let bgColor = "bg-card hover:bg-muted"
+            let borderColor = "border-card-study-border"
+            let bgColor = "bg-card-study hover:bg-muted"
             
             if (showResult) {
               if (isCorrect) {

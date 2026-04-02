@@ -29,19 +29,19 @@ export function HomeworkPreview({ config, questions, onClose }: HomeworkPreviewP
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden"
+        className="bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-blue-600" />
-            <h2 className="text-sm font-bold text-gray-900">Preview</h2>
+            <FileText className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-bold text-foreground">Preview</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-muted transition-colors"
           >
-            <X className="h-4 w-4 text-gray-500" />
+            <X className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>
 

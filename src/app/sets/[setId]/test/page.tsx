@@ -234,11 +234,11 @@ export default function TestPage({ params }: PageProps) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
-            <FileText className="h-8 w-8 text-blue-600" />
+          <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mx-auto mb-4">
+            <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
           </div>
           <h1 className="text-2xl font-bold mb-2">Test Complete!</h1>
-          <p className="text-4xl font-bold text-blue-600 mb-2">{accuracy}%</p>
+          <p className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">{accuracy}%</p>
           <p className="text-muted-foreground">
             {correctCount} out of {questions.length} correct
           </p>
@@ -254,15 +254,15 @@ export default function TestPage({ params }: PageProps) {
                 key={question.id}
                 className={cn(
                   "border-2",
-                  isCorrect ? "border-green-200" : "border-red-200"
+                  isCorrect ? "border-green-200 dark:border-green-800" : "border-red-200 dark:border-red-800"
                 )}
               >
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     {isCorrect ? (
-                      <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
                     ) : (
-                      <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                      <XCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
                     )}
                     <div className="flex-1">
                       <p className="font-medium mb-1">
@@ -272,7 +272,7 @@ export default function TestPage({ params }: PageProps) {
                         Your answer: {result?.userAnswer || "(no answer)"}
                       </p>
                       {!isCorrect && (
-                        <p className="text-sm text-green-600">
+                        <p className="text-sm text-green-600 dark:text-green-400">
                           Correct answer: {question.correctAnswer}
                         </p>
                       )}
@@ -323,13 +323,13 @@ export default function TestPage({ params }: PageProps) {
                         setAnswers({ ...answers, [question.id]: option })
                       }
                       className={cn(
-                        "w-full text-left p-3 rounded-lg border-2 transition-all text-slate-900",
+                        "w-full text-left p-3 rounded-lg border-2 transition-all text-foreground",
                         answers[question.id] === option
                           ? "border-primary bg-primary/10"
-                          : "border-border bg-white hover:border-border/80"
+                          : "border-card-study-border bg-card-study hover:border-border"
                       )}
                     >
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-muted text-sm font-medium text-slate-900 mr-3">
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-muted text-sm font-medium text-foreground mr-3">
                         {optIndex + 1}
                       </span>
                       {option}

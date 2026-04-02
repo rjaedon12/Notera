@@ -211,9 +211,9 @@ export default function MatchPage({ params }: PageProps) {
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          className="w-20 h-20 rounded-full bg-yellow-100 flex items-center justify-center mx-auto mb-6"
+          className="w-20 h-20 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center mx-auto mb-6"
         >
-          <Trophy className="h-10 w-10 text-yellow-600" />
+          <Trophy className="h-10 w-10 text-yellow-600 dark:text-yellow-400" />
         </motion.div>
 
         <h1 className="text-2xl font-bold mb-2">Great job!</h1>
@@ -288,18 +288,18 @@ export default function MatchPage({ params }: PageProps) {
               disabled={tile.isMatched}
               className={cn(
                 "p-3 min-h-[80px] rounded-xl text-sm font-medium transition-all duration-200",
-                "border-2 flex items-center justify-center text-center",
+                "border-2 flex items-center justify-center text-center text-foreground",
                 tile.isMatched && "invisible",
-                tile.isSelected && "border-blue-500 bg-blue-50",
-                tile.isWrong && "border-red-500 bg-red-50 animate-shake",
+                tile.isSelected && "border-blue-500 bg-blue-50 dark:bg-blue-900/20",
+                tile.isWrong && "border-red-500 bg-red-50 dark:bg-red-900/20 animate-shake",
                 !tile.isSelected &&
                   !tile.isWrong &&
                   tile.type === "term" &&
-                  "border-border bg-card hover:border-border/80",
+                  "border-card-study-border bg-card-study hover:border-border",
                 !tile.isSelected &&
                   !tile.isWrong &&
                   tile.type === "definition" &&
-                  "border-border bg-muted hover:border-border/80"
+                  "border-card-study-border bg-card-study hover:border-border"
               )}
             >
               {tile.content}
