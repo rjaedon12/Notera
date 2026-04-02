@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { BookOpen, HelpCircle, FileText, Layout, FolderOpen, Scroll } from "lucide-react"
 
-interface SearchResult {
+export interface SearchResult {
   type: "set" | "quiz" | "dbq" | "note" | "whiteboard" | "resource"
   id: string
   title: string

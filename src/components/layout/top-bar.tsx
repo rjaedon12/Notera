@@ -17,7 +17,7 @@ import {
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { CreateMenu } from "@/components/layout/create-menu"
-import { SearchResultsDropdown } from "@/components/layout/search-results-dropdown"
+import { SearchResultsDropdown, type SearchResult } from "@/components/layout/search-results-dropdown"
 
 interface TopBarProps {
   onMenuClick: () => void
@@ -26,7 +26,7 @@ interface TopBarProps {
 export function TopBar({ onMenuClick }: TopBarProps) {
   const { data: session } = useSession()
   const [searchQuery, setSearchQuery] = useState("")
-  const [searchResults, setSearchResults] = useState<Array<{ type: string; id: string; title: string; subtitle: string; href: string }>>([])
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
   const searchContainerRef = useRef<HTMLDivElement>(null)
