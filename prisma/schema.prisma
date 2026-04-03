@@ -462,6 +462,11 @@ enum QuestionType {
   OPEN_RESPONSE
 }
 
+enum QuizFeedbackMode {
+  IMMEDIATE
+  REVEAL_AT_END
+}
+
 model QuestionBank {
   id             String   @id @default(cuid())
   title          String
@@ -472,6 +477,7 @@ model QuestionBank {
   isPremade      Boolean  @default(false)
   timerMinutes   Int?     // null = no timer; positive int = minutes allowed
   desmosEnabled  Boolean  @default(false)
+  feedbackMode   QuizFeedbackMode @default(IMMEDIATE)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

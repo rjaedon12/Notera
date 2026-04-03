@@ -1,13 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useQuestionBanks, useDeleteQuestionBank, useQuizAttempts, useDeleteAttempt } from "@/hooks/useQuiz"
+import { useDBQPrompts, useDBQEssays } from "@/hooks/useDBQ"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import {
   Plus,
   Search,
@@ -18,26 +18,66 @@ import {
   BarChart3,
   HelpCircle,
   BookOpen,
+  ScrollText,
+  FileText,
+  ChevronRight,
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { cn } from "@/lib/utils"
 
-type Tab = "my-banks" | "premade" | "history"
+type Tab = "my-banks" | "premade" | "dbq" | "history"
+type DBQTab = "prompts" | "essays"
+
+const hubTabs = [
+  { id: "premade" as Tab, label: "Practice Tests", icon: BookOpen },
+  { id: "my-banks" as Tab, label: "My Question Banks", icon: HelpCircle },
+  { id: "dbq" as Tab, label: "DBQ Arena", icon: ScrollText },
+  { id: "history" as Tab, label: "Attempt History", icon: Clock },
+]
 
 export default function QuizzesPage() {
   const { status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<Tab>("premade")
+  const [dbqTab, setDbqTab] = useState<DBQTab>("prompts")
   const [search, setSearch] = useState("")
 
   const { data: banksData, isLoading: loadingBanks } = useQuestionBanks()
   const { data: attempts, isLoading: loadingAttempts } = useQuizAttempts()
+  const { data: prompts, isLoading: loadingPrompts } = useDBQPrompts()
+  const { data: essays, isLoading: loadingEssays } = useDBQEssays()
   const deleteBank = useDeleteQuestionBank()
   const deleteAttempt = useDeleteAttempt()
+
+  useEffect(() => {
+    const nextTab = searchParams.get("tab")
+    if (nextTab === "premade" || nextTab === "my-banks" || nextTab === "dbq" || nextTab === "history") {
+      setActiveTab(nextTab)
+    }
+
+    const nextDbqTab = searchParams.get("dbqTab")
+    if (nextDbqTab === "prompts" || nextDbqTab === "essays") {
+      setDbqTab(nextDbqTab)
+    }
+  }, [searchParams])
 
   if (status === "unauthenticated") {
     router.push("/login")
     return null
+  }
+
+  const updateHubQuery = (nextTab: Tab, nextDbqTab?: DBQTab) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("tab", nextTab)
+
+    if (nextTab === "dbq") {
+      params.set("dbqTab", nextDbqTab ?? dbqTab)
+    } else {
+      params.delete("dbqTab")
+    }
+
+    router.replace(`/quizzes?${params.toString()}`)
   }
 
   const handleDelete = async (bankId: string, e: React.MouseEvent) => {
@@ -66,53 +106,75 @@ export default function QuizzesPage() {
 
   const myBanks = banksData?.myBanks ?? []
   const premadeBanks = banksData?.premadeBanks ?? []
+  const dbqPrompts = prompts ?? []
+  const dbqEssays = essays ?? []
 
   const filteredMyBanks = myBanks.filter(
-    (b) =>
-      b.title.toLowerCase().includes(search.toLowerCase()) ||
-      b.description?.toLowerCase().includes(search.toLowerCase()) ||
-      b.subject?.toLowerCase().includes(search.toLowerCase())
+    (bank) =>
+      bank.title.toLowerCase().includes(search.toLowerCase()) ||
+      bank.description?.toLowerCase().includes(search.toLowerCase()) ||
+      bank.subject?.toLowerCase().includes(search.toLowerCase())
   )
 
   const filteredPremade = premadeBanks.filter(
-    (b) =>
-      b.title.toLowerCase().includes(search.toLowerCase()) ||
-      b.description?.toLowerCase().includes(search.toLowerCase()) ||
-      b.subject?.toLowerCase().includes(search.toLowerCase())
+    (bank) =>
+      bank.title.toLowerCase().includes(search.toLowerCase()) ||
+      bank.description?.toLowerCase().includes(search.toLowerCase()) ||
+      bank.subject?.toLowerCase().includes(search.toLowerCase())
   )
 
-  const tabs = [
-    { id: "premade" as Tab, label: "Practice Tests", icon: BookOpen },
-    { id: "my-banks" as Tab, label: "My Question Banks", icon: BookOpen },
-    { id: "history" as Tab, label: "Attempt History", icon: Clock },
-  ]
+  const filteredPrompts = dbqPrompts.filter(
+    (prompt) =>
+      prompt.title.toLowerCase().includes(search.toLowerCase()) ||
+      prompt.question.toLowerCase().includes(search.toLowerCase()) ||
+      prompt.subject.toLowerCase().includes(search.toLowerCase()) ||
+      prompt.era.toLowerCase().includes(search.toLowerCase())
+  )
 
-  // Reusable bank card — no delete button for premade
+  const filteredEssays = dbqEssays.filter(
+    (essay) =>
+      essay.prompt?.title?.toLowerCase().includes(search.toLowerCase()) ||
+      essay.content.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const searchPlaceholder =
+    activeTab === "dbq"
+      ? dbqTab === "prompts"
+        ? "Search DBQ prompts..."
+        : "Search DBQ essays..."
+      : activeTab === "my-banks"
+      ? "Search your question banks..."
+      : "Search practice tests..."
+
   const BankCard = ({ bank, owned }: { bank: (typeof myBanks)[0]; owned: boolean }) => (
     <Link href={`/quizzes/${bank.id}`}>
       <Card className="h-full cursor-pointer group">
         <CardContent className="p-6">
-          <div className="flex items-start justify-between mb-2">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="flex items-start justify-between mb-2 gap-2">
+            <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-base line-clamp-2 leading-snug font-heading">
                 {bank.title}
               </h3>
             </div>
             {owned && (
               <button
-                onClick={(e) => handleDelete(bank.id, e)}
-                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-destructive/10 rounded shrink-0 ml-2"
+                onClick={(event) => handleDelete(bank.id, event)}
+                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-destructive/10 rounded shrink-0"
               >
                 <Trash2 className="h-4 w-4 text-destructive" />
               </button>
             )}
           </div>
 
-          {bank.subject && (
-            <p className="text-xs font-medium mb-1" style={{ color: "var(--primary)" }}>
-              {bank.subject}
-            </p>
-          )}
+          <div className="flex flex-wrap items-center gap-2 mb-3 text-xs font-medium">
+            <span style={{ color: "var(--primary)" }}>{bank.subject}</span>
+            <span
+              className="px-2 py-0.5 rounded-full border"
+              style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}
+            >
+              {bank.feedbackMode === "REVEAL_AT_END" ? "Reveal At Finish" : "Immediate Feedback"}
+            </span>
+          </div>
 
           {bank.description && (
             <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
@@ -120,7 +182,7 @@ export default function QuizzesPage() {
             </p>
           )}
 
-          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4 flex-wrap">
             <span className="flex items-center gap-1">
               <HelpCircle className="h-3.5 w-3.5" />
               {bank._count?.questions || 0} questions
@@ -129,11 +191,20 @@ export default function QuizzesPage() {
               <BarChart3 className="h-3.5 w-3.5" />
               {bank._count?.attempts || 0} attempts
             </span>
+            {bank.desmosEnabled && <span>Desmos</span>}
           </div>
 
           <div className="flex gap-2">
             {owned && (
-              <Button size="sm" variant="outline" className="flex-1" onClick={(e) => { e.preventDefault(); router.push(`/quizzes/${bank.id}`) }}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1"
+                onClick={(event) => {
+                  event.preventDefault()
+                  router.push(`/quizzes/${bank.id}`)
+                }}
+              >
                 <Edit className="h-3.5 w-3.5 mr-1" />
                 Manage
               </Button>
@@ -142,8 +213,8 @@ export default function QuizzesPage() {
               size="sm"
               className={cn(owned ? "flex-1" : "w-full")}
               disabled={!bank._count?.questions}
-              onClick={(e) => {
-                e.preventDefault()
+              onClick={(event) => {
+                event.preventDefault()
                 router.push(`/quizzes/${bank.id}/take`)
               }}
             >
@@ -158,8 +229,14 @@ export default function QuizzesPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold font-heading tracking-tight">Practice Tests</h1>
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold font-heading tracking-tight">Quiz Arena</h1>
+          <p className="text-sm mt-2 text-muted-foreground">
+            Practice tests and document-based questions, together in one hub.
+          </p>
+        </div>
+
         <Link href="/quizzes/create">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
@@ -168,14 +245,16 @@ export default function QuizzesPage() {
         </Link>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b" style={{ borderColor: "var(--glass-border)" }}>
-        {tabs.map(({ id, label, icon: Icon }) => (
+      <div className="flex gap-1 mb-6 border-b overflow-x-auto" style={{ borderColor: "var(--glass-border)" }}>
+        {hubTabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
-            onClick={() => setActiveTab(id)}
+            onClick={() => {
+              setActiveTab(id)
+              updateHubQuery(id)
+            }}
             className={cn(
-              "flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px",
+              "flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap",
               activeTab === id
                 ? "border-[var(--primary)] text-[var(--primary)]"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -187,17 +266,14 @@ export default function QuizzesPage() {
         ))}
       </div>
 
-      {/* Search bar (for banks tabs) */}
-      {(activeTab === "premade" || activeTab === "my-banks") && (
+      {(activeTab === "premade" || activeTab === "my-banks" || activeTab === "dbq") && (
         <div className="relative mb-6">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
           <input
-            placeholder="Search practice tests..."
+            placeholder={searchPlaceholder}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-10 pl-10 pr-4 rounded-full text-sm transition-all
-              backdrop-blur-xl border focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-0
-              placeholder:text-[var(--muted-foreground)]"
+            onChange={(event) => setSearch(event.target.value)}
+            className="w-full h-10 pl-10 pr-4 rounded-full text-sm transition-all backdrop-blur-xl border focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-0 placeholder:text-[var(--muted-foreground)]"
             style={{
               background: "var(--glass-fill)",
               borderColor: "var(--glass-border)",
@@ -207,13 +283,12 @@ export default function QuizzesPage() {
         </div>
       )}
 
-      {/* Premade / Practice Tests Tab */}
       {activeTab === "premade" && (
         <>
           {loadingBanks ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3].map((i) => (
-                <Card key={i}>
+              {[1, 2, 3].map((item) => (
+                <Card key={item}>
                   <CardContent className="p-6">
                     <div className="h-5 glass-shimmer rounded-xl w-3/4 mb-3" />
                     <div className="h-4 glass-shimmer rounded-xl w-1/2 mb-4" />
@@ -238,13 +313,12 @@ export default function QuizzesPage() {
         </>
       )}
 
-      {/* My Banks Tab */}
       {activeTab === "my-banks" && (
         <>
           {loadingBanks ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3].map((i) => (
-                <Card key={i}>
+              {[1, 2, 3].map((item) => (
+                <Card key={item}>
                   <CardContent className="p-6">
                     <div className="h-5 glass-shimmer rounded-xl w-3/4 mb-3" />
                     <div className="h-4 glass-shimmer rounded-xl w-1/2 mb-4" />
@@ -264,7 +338,7 @@ export default function QuizzesPage() {
               <HelpCircle className="h-16 w-16 mx-auto mb-4" style={{ color: "var(--muted-foreground)", opacity: 0.4 }} />
               <h2 className="text-xl font-semibold mb-2 font-heading">No question banks yet</h2>
               <p className="mb-6" style={{ color: "var(--muted-foreground)" }}>
-                Create your first practice test to get started
+                Create your first practice test to get started.
               </p>
               <Link href="/quizzes/create">
                 <Button>
@@ -277,13 +351,205 @@ export default function QuizzesPage() {
         </>
       )}
 
-      {/* History Tab */}
+      {activeTab === "dbq" && (
+        <div className="space-y-6">
+          <div
+            className="rounded-2xl p-5 border"
+            style={{ background: "var(--glass-fill)", borderColor: "var(--glass-border)" }}
+          >
+            <div className="flex items-start gap-3">
+              <ScrollText className="h-6 w-6 mt-0.5" style={{ color: "var(--primary)" }} />
+              <div>
+                <h2 className="text-lg font-semibold font-heading">DBQ Arena</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Document-based questions stay distinct from practice tests, but now live inside the same hub.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            className="inline-flex items-center gap-1 rounded-xl p-1"
+            style={{ background: "var(--glass-fill)", border: "1px solid var(--glass-border)" }}
+          >
+            {([
+              { id: "prompts", label: "DBQ Prompts", icon: BookOpen },
+              { id: "essays", label: "My Essays", icon: ScrollText },
+            ] as const).map(({ id, label, icon: Icon }) => {
+              const isActive = dbqTab === id
+              return (
+                <button
+                  key={id}
+                  onClick={() => {
+                    setDbqTab(id)
+                    updateHubQuery("dbq", id)
+                  }}
+                  className={cn(
+                    "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                    isActive
+                      ? "text-[var(--foreground)]"
+                      : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                  )}
+                  style={
+                    isActive
+                      ? {
+                          background: "var(--glass-bg)",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.1)",
+                        }
+                      : undefined
+                  }
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+
+          {dbqTab === "prompts" && (
+            <>
+              {loadingPrompts ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {[1, 2].map((item) => (
+                    <Card key={item}>
+                      <CardContent className="p-6">
+                        <div className="animate-pulse space-y-3">
+                          <div className="h-5 bg-[var(--glass-fill)] rounded w-3/4" />
+                          <div className="h-4 bg-[var(--glass-fill)] rounded w-full" />
+                          <div className="h-4 bg-[var(--glass-fill)] rounded w-1/2" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : filteredPrompts.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {filteredPrompts.map((prompt) => (
+                    <Card key={prompt.id} className="group hover:shadow-lg transition-all duration-200">
+                      <CardContent className="p-6 space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider flex-wrap">
+                            <span className="px-2 py-0.5 rounded-full border" style={{ background: "var(--glass-fill)", borderColor: "var(--glass-border)" }}>
+                              {prompt.subject}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full border" style={{ background: "var(--glass-fill)", borderColor: "var(--glass-border)" }}>
+                              {prompt.era}
+                            </span>
+                          </div>
+                          <h3 className="text-lg font-semibold">{prompt.title}</h3>
+                          <p className="text-sm text-[var(--muted-foreground)] line-clamp-2">
+                            {prompt.question}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 gap-3">
+                          <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)] flex-wrap">
+                            <span className="flex items-center gap-1">
+                              <FileText className="h-3.5 w-3.5" />
+                              {prompt._count?.documents ?? 0} docs
+                            </span>
+                            {(prompt.userEssayCount ?? 0) > 0 && (
+                              <span className="flex items-center gap-1">
+                                <ScrollText className="h-3.5 w-3.5" />
+                                {prompt.userEssayCount} {prompt.userEssayCount === 1 ? "essay" : "essays"} written
+                              </span>
+                            )}
+                          </div>
+                          <Link href={`/dbq/${prompt.id}`}>
+                            <Button size="sm" className="gap-1.5">
+                              <Play className="h-3.5 w-3.5" />
+                              Start
+                            </Button>
+                          </Link>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <FileText className="h-12 w-12 mx-auto mb-4 text-[var(--muted-foreground)]" />
+                    <h3 className="text-lg font-semibold mb-2">No DBQ prompts available</h3>
+                    <p className="text-[var(--muted-foreground)]">
+                      Check back later for new document-based questions.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+
+          {dbqTab === "essays" && (
+            <>
+              {loadingEssays ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((item) => (
+                    <Card key={item}>
+                      <CardContent className="p-5">
+                        <div className="animate-pulse space-y-2">
+                          <div className="h-4 bg-[var(--glass-fill)] rounded w-1/3" />
+                          <div className="h-3 bg-[var(--glass-fill)] rounded w-2/3" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : filteredEssays.length > 0 ? (
+                <div className="space-y-3">
+                  {filteredEssays.map((essay) => (
+                    <Link key={essay.id} href={`/dbq/${essay.promptId}/essays/${essay.id}`}>
+                      <Card className="hover:shadow-md transition-all cursor-pointer group">
+                        <CardContent className="p-5 flex items-center justify-between">
+                          <div className="space-y-1 min-w-0 flex-1">
+                            <h4 className="font-medium truncate">
+                              {essay.prompt?.title ?? "DBQ Essay"}
+                            </h4>
+                            <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)] flex-wrap">
+                              <span>{essay.wordCount} words</span>
+                              <span>•</span>
+                              <span>
+                                {new Date(essay.submittedAt).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            </div>
+                            <p className="text-sm text-[var(--muted-foreground)] line-clamp-1 mt-1">
+                              {essay.content.slice(0, 120)}...
+                            </p>
+                          </div>
+                          <ChevronRight className="h-5 w-5 text-[var(--muted-foreground)] group-hover:text-[var(--foreground)] transition-colors flex-shrink-0 ml-4" />
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <ScrollText className="h-12 w-12 mx-auto mb-4 text-[var(--muted-foreground)]" />
+                    <h3 className="text-lg font-semibold mb-2">No essays yet</h3>
+                    <p className="text-[var(--muted-foreground)]">
+                      Start a DBQ prompt to write your first essay.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       {activeTab === "history" && (
         <>
           {loadingAttempts ? (
             <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <Card key={i}>
+              {[1, 2, 3].map((item) => (
+                <Card key={item}>
                   <CardContent className="p-4">
                     <div className="h-5 glass-shimmer rounded-xl w-1/3 mb-2" />
                     <div className="h-4 glass-shimmer rounded-xl w-1/4" />
@@ -295,12 +561,10 @@ export default function QuizzesPage() {
             <div className="space-y-3">
               {attempts.map((attempt) => (
                 <Card key={attempt.id} className="group">
-                  <CardContent className="p-4 flex items-center justify-between">
+                  <CardContent className="p-4 flex items-center justify-between gap-4">
                     <div className="flex-1">
-                      <h3 className="font-medium">
-                        {attempt.bank?.title || "Unknown Bank"}
-                      </h3>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                      <h3 className="font-medium">{attempt.bank?.title || "Unknown Bank"}</h3>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1 flex-wrap">
                         <span>
                           {new Date(attempt.createdAt).toLocaleDateString()} at{" "}
                           {new Date(attempt.createdAt).toLocaleTimeString([], {
@@ -314,9 +578,7 @@ export default function QuizzesPage() {
                             {Math.round(attempt.score || 0)}%
                           </span>
                         ) : (
-                          <span className="text-yellow-600 dark:text-yellow-400">
-                            In progress
-                          </span>
+                          <span className="text-yellow-600 dark:text-yellow-400">In progress</span>
                         )}
                       </div>
                     </div>
@@ -352,7 +614,7 @@ export default function QuizzesPage() {
               <Clock className="h-16 w-16 mx-auto mb-4" style={{ color: "var(--muted-foreground)", opacity: 0.4 }} />
               <h2 className="text-xl font-semibold mb-2 font-heading">No attempts yet</h2>
               <p style={{ color: "var(--muted-foreground)" }}>
-                Take a practice test to see your results here
+                Take a practice test to see your results here.
               </p>
             </div>
           )}

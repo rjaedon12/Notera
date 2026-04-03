@@ -104,11 +104,12 @@ export async function DELETE(
 
     const { setId } = await params
     const set = await prisma.flashcardSet.findUnique({ where: { id: setId } })
+    const isAdmin = session.user.role === "ADMIN"
 
     if (!set) {
       return Response.json({ error: "Set not found" }, { status: 404 })
     }
-    if (set.userId !== session.user.id) {
+    if (set.userId !== session.user.id && !isAdmin) {
       return Response.json({ error: "Forbidden" }, { status: 403 })
     }
 

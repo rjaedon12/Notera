@@ -25,13 +25,9 @@ export async function POST(
     if (attempt.userId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     if (attempt.completedAt) return NextResponse.json({ error: "Attempt already completed" }, { status: 400 })
 
-    // Check if already answered
     const existing = await prisma.attemptAnswer.findUnique({
       where: { attemptId_questionId: { attemptId, questionId } },
     })
-    if (existing) {
-      return NextResponse.json({ error: "Already answered this question" }, { status: 400 })
-    }
 
     // Get the question to check its type
     const question = await prisma.question.findUnique({
@@ -45,18 +41,32 @@ export async function POST(
 
     if (question.type === "OPEN_RESPONSE") {
       // Open response: store text, no auto-score (graded by student self-assessment later)
-      const answer = await prisma.attemptAnswer.create({
-        data: {
-          attemptId,
-          questionId,
-          openResponseText: openResponseText || "",
-          isCorrect: false,
-          pointsEarned: 0,
-        },
-        include: {
-          question: { include: { choices: true } },
-        },
-      })
+      const include = {
+        question: { include: { choices: true } },
+      } as const
+
+      const answer = existing
+        ? await prisma.attemptAnswer.update({
+            where: { attemptId_questionId: { attemptId, questionId } },
+            data: {
+              choiceId: null,
+              openResponseText: openResponseText || "",
+              isCorrect: false,
+              pointsEarned: 0,
+            },
+            include,
+          })
+        : await prisma.attemptAnswer.create({
+            data: {
+              attemptId,
+              questionId,
+              openResponseText: openResponseText || "",
+              isCorrect: false,
+              pointsEarned: 0,
+            },
+            include,
+          })
+
       return NextResponse.json(answer)
     } else {
       // Multiple choice
@@ -69,21 +79,37 @@ export async function POST(
         include: { question: { select: { bankId: true } } },
       })
       if (!choice) return NextResponse.json({ error: "Choice not found" }, { status: 404 })
+      if (choice.questionId !== questionId) {
+        return NextResponse.json({ error: "Choice does not belong to this question" }, { status: 400 })
+      }
 
       const isCorrect = choice.isCorrect
-      const answer = await prisma.attemptAnswer.create({
-        data: {
-          attemptId,
-          questionId,
-          choiceId,
-          isCorrect,
-          pointsEarned: isCorrect ? question.pointValue : 0,
-        },
-        include: {
-          choice: true,
-          question: { include: { choices: true } },
-        },
-      })
+      const include = {
+        choice: true,
+        question: { include: { choices: true } },
+      } as const
+
+      const answer = existing
+        ? await prisma.attemptAnswer.update({
+            where: { attemptId_questionId: { attemptId, questionId } },
+            data: {
+              choiceId,
+              openResponseText: null,
+              isCorrect,
+              pointsEarned: isCorrect ? question.pointValue : 0,
+            },
+            include,
+          })
+        : await prisma.attemptAnswer.create({
+            data: {
+              attemptId,
+              questionId,
+              choiceId,
+              isCorrect,
+              pointsEarned: isCorrect ? question.pointValue : 0,
+            },
+            include,
+          })
       return NextResponse.json(answer)
     }
   } catch (error) {

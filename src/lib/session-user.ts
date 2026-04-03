@@ -28,27 +28,6 @@ export async function resolveSessionUserId(sessionUser: SessionUserLike): Promis
       select: { id: true },
     })
     if (byEmail) return byEmail.id
-
-    // Recreate user record when session exists but row is missing in current DB instance
-    try {
-      const created = await prisma.user.create({
-        data: {
-          ...(sessionId ? { id: sessionId } : {}),
-          email,
-          name: sessionUser.name ?? email.split("@")[0],
-          image: sessionUser.image ?? null,
-        },
-        select: { id: true },
-      })
-      return created.id
-    } catch {
-      // Handle race conditions / uniqueness conflicts by retrying lookup
-      const retry = await prisma.user.findUnique({
-        where: { email },
-        select: { id: true },
-      })
-      return retry?.id ?? null
-    }
   }
 
   return null

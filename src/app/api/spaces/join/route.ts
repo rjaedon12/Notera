@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import { buildRateLimitKey, createRateLimitResponse, takeRateLimit } from "@/lib/rate-limit"
 
 // POST /api/spaces/join — join space by { inviteCode }
 export async function POST(request: NextRequest) {
@@ -40,7 +41,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // NOTE: Rate limiting — this mutation endpoint is unprotected
+    const rateLimit = takeRateLimit(buildRateLimitKey("spaces-join", request, session.user.id), {
+      limit: 10,
+      windowMs: 10 * 60 * 1000,
+    })
+    if (!rateLimit.allowed) {
+      return createRateLimitResponse(rateLimit, "Too many join attempts. Please try again later.")
+    }
+
     // Auto-assign role: STUDENT for classrooms, MEMBER for collaborative spaces
     const joinRole = space.type === "CLASSROOM" ? "STUDENT" : "MEMBER"
 

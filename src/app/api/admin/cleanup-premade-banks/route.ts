@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { verifyAdminAuth } from "@/lib/admin-auth"
+import { buildRateLimitKey, createRateLimitResponse, takeRateLimit } from "@/lib/rate-limit"
 
 /**
  * DELETE /api/admin/cleanup-premade-banks
@@ -13,8 +14,7 @@ import { verifyAdminAuth } from "@/lib/admin-auth"
  * - Have isPremade = true, OR
  * - Have subjects containing "AP World History", "AP US History", "AP Government"
  */
-// NOTE: Rate limiting — this mutation endpoint is unprotected
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
     const isAdmin = await verifyAdminAuth()
     if (!isAdmin) {
@@ -23,6 +23,14 @@ export async function DELETE() {
     const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const rateLimit = takeRateLimit(buildRateLimitKey("admin-cleanup-banks", request, session.user.id), {
+      limit: 5,
+      windowMs: 60 * 60 * 1000,
+    })
+    if (!rateLimit.allowed) {
+      return createRateLimitResponse(rateLimit, "Too many cleanup requests. Please try again later.")
     }
 
     // Find all premade AP-related question banks

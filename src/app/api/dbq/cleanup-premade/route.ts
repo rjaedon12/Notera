@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyAdminAuth } from "@/lib/admin-auth"
+import { auth } from "@/lib/auth"
+import { buildRateLimitKey, createRateLimitResponse, takeRateLimit } from "@/lib/rate-limit"
 
 // IDs of the seeded AP History DBQ prompts that should be removed
 const PREMADE_PROMPT_IDS = [
@@ -18,12 +20,24 @@ const PREMADE_PROMPT_IDS = [
  * Removes all pre-seeded AP History DBQ prompts from the database.
  * This is a one-time cleanup operation.
  */
-// NOTE: Rate limiting — this mutation endpoint is unprotected
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
     const isAdmin = await verifyAdminAuth()
     if (!isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const session = await auth()
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const rateLimit = takeRateLimit(buildRateLimitKey("dbq-cleanup-premade", request, session.user.id), {
+      limit: 5,
+      windowMs: 60 * 60 * 1000,
+    })
+    if (!rateLimit.allowed) {
+      return createRateLimitResponse(rateLimit, "Too many cleanup requests. Please try again later.")
     }
 
     // First, delete associated documents (due to foreign key constraints)

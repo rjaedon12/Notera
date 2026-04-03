@@ -57,7 +57,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, subject, description, imageUrl, isPublic, timerMinutes, desmosEnabled, questions } = body
+    const {
+      title,
+      subject,
+      description,
+      imageUrl,
+      isPublic,
+      timerMinutes,
+      desmosEnabled,
+      feedbackMode,
+      questions,
+    } = body
 
     if (!title || !subject) {
       return NextResponse.json({ error: "Title and subject are required" }, { status: 400 })
@@ -72,6 +82,7 @@ export async function POST(request: NextRequest) {
         isPublic: isPublic ?? false,
         timerMinutes: timerMinutes != null ? Number(timerMinutes) : null,
         desmosEnabled: desmosEnabled ?? false,
+        feedbackMode: feedbackMode === "REVEAL_AT_END" ? "REVEAL_AT_END" : "IMMEDIATE",
         userId: session.user.id,
         ...(questions && questions.length > 0
           ? {

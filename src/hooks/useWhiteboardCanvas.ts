@@ -33,12 +33,13 @@ export function useWhiteboardCanvas({
   const [elements, setElements] = useState<WhiteboardElement[]>(initialElements)
   const [tool, setTool] = useState<ToolType>("pen")
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, zoom: DEFAULT_ZOOM })
-  const [style, setStyle] = useState<StrokeStyle>({ color: "#1a1a1a", size: 4, opacity: 1 })
+  const [style, setStyle] = useState<StrokeStyle>({ color: LIGHT_CANVAS_TEXT_COLOR, size: 4, opacity: 1 })
   const [background, setBackground] = useState<BackgroundType>("plain")
   const [bgColor, setBgColor] = useState("#ffffff")
   const [isDrawing, setIsDrawing] = useState(false)
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null)
   const [editingTextId, setEditingTextId] = useState<string | null>(null)
+  const [isDarkTheme, setIsDarkTheme] = useState(false)
 
   // Undo/redo stacks
   const undoStack = useRef<WhiteboardElement[][]>([])
@@ -61,6 +62,32 @@ export function useWhiteboardCanvas({
   // Sync elements ref for callbacks
   const elementsRef = useRef(elements)
   elementsRef.current = elements
+
+  useEffect(() => {
+    if (typeof document === "undefined") return
+
+    const syncTheme = () => {
+      setIsDarkTheme(document.documentElement.classList.contains("dark"))
+    }
+
+    syncTheme()
+    const observer = new MutationObserver(syncTheme)
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    })
+
+    return () => observer.disconnect()
+  }, [])
+
+  const getActiveStyle = useCallback(
+    (overrides: Partial<StrokeStyle> = {}): StrokeStyle => ({
+      ...style,
+      color: resolveCanvasElementColor(style.color, isDarkTheme),
+      ...overrides,
+    }),
+    [style, isDarkTheme]
+  )
 
   // ─── Coordinate Transforms ──────────────────────────────
 
@@ -120,7 +147,7 @@ export function useWhiteboardCanvas({
         id: uuid(),
         type: "image",
         points: [],
-        style: { ...style },
+        style: getActiveStyle(),
         x,
         y,
         width,
@@ -132,7 +159,7 @@ export function useWhiteboardCanvas({
       }
       updateElements([...elementsRef.current, el])
     },
-    [style, userId, pushHistory, updateElements]
+    [getActiveStyle, userId, pushHistory, updateElements]
   )
 
   // ─── Pointer Handlers ──────────────────────────────────
@@ -236,7 +263,7 @@ export function useWhiteboardCanvas({
           id: uuid(),
           type: "text",
           points: [],
-          style: { ...style },
+          style: getActiveStyle(),
           x: point.x,
           y: point.y,
           width: 200,
@@ -257,7 +284,7 @@ export function useWhiteboardCanvas({
           id: uuid(),
           type: "sticky",
           points: [],
-          style: { ...style },
+          style: getActiveStyle(),
           x: point.x - 100,
           y: point.y - 100,
           width: 200,
@@ -321,7 +348,7 @@ export function useWhiteboardCanvas({
           id: newShapeId,
           type: tool as ToolType,
           points: [],
-          style: { ...style },
+          style: getActiveStyle(),
           x: point.x,
           y: point.y,
           width: 0,
@@ -343,10 +370,9 @@ export function useWhiteboardCanvas({
           id: uuid(),
           type: tool,
           points: [{ ...point, pressure }],
-          style: {
-            ...style,
+          style: getActiveStyle({
             opacity: tool === "highlighter" ? 0.4 : style.opacity,
-          },
+          }),
           x: point.x,
           y: point.y,
           width: 0,
@@ -359,7 +385,7 @@ export function useWhiteboardCanvas({
         updateElements([...elementsRef.current, newEl])
       }
     },
-    [tool, camera.zoom, style, screenToCanvas, pushHistory, updateElements, userId, addImage]
+    [tool, camera.zoom, style, screenToCanvas, pushHistory, updateElements, userId, addImage, getActiveStyle]
   )
 
   const handlePointerMove = useCallback(
@@ -475,7 +501,7 @@ export function useWhiteboardCanvas({
         updateElements(updated)
       }
     },
-    [isDrawing, tool, camera.zoom, style, screenToCanvas, updateElements, userId, selectedElementId]
+    [isDrawing, tool, camera.zoom, style, screenToCanvas, updateElements, selectedElementId]
   )
 
   const handlePointerUp = useCallback(
@@ -725,6 +751,8 @@ export function useWhiteboardCanvas({
     ctx.translate(camera.x, camera.y)
     ctx.scale(camera.zoom, camera.zoom)
 
+    const themeColors = getCanvasThemeColors(isDarkTheme)
+
     for (const el of elementsRef.current) {
       ctx.save()
       ctx.globalAlpha = el.style.opacity
@@ -779,17 +807,17 @@ export function useWhiteboardCanvas({
           // Only draw canvas text when NOT actively editing this element
           // (the overlay textarea handles display during editing)
           if (el.id !== editingTextId) {
-            ctx.fillStyle = el.style.color
+            ctx.fillStyle = resolveCanvasElementColor(el.style.color, isDarkTheme)
             ctx.font = "18px Inter, sans-serif"
             ctx.fillText(el.content, el.x, el.y + 20)
           }
         } else if (el.id !== editingTextId) {
           // Placeholder for empty text elements
-          ctx.fillStyle = "rgba(0,0,0,0.25)"
+          ctx.fillStyle = themeColors.placeholderText
           ctx.font = "18px Inter, sans-serif"
           ctx.fillText("Type...", el.x, el.y + 20)
           // Dashed bounding box so user sees where to double-click
-          ctx.strokeStyle = "rgba(0,0,0,0.15)"
+          ctx.strokeStyle = themeColors.placeholderOutline
           ctx.lineWidth = 1
           ctx.setLineDash([4, 3])
           ctx.strokeRect(el.x - 2, el.y - 2, (el.width || 200) + 4, (el.height || 30) + 4)
@@ -800,16 +828,17 @@ export function useWhiteboardCanvas({
         ctx.fillStyle = el.stickyColor || "#fff3bf"
         const w = el.width || 200
         const h = el.height || 200
+        const stickyTextColor = resolveStickyTextColor(el.stickyColor)
         ctx.beginPath()
         ctx.roundRect(el.x, el.y, w, h, 8)
         ctx.fill()
-        ctx.strokeStyle = "rgba(0,0,0,0.08)"
+        ctx.strokeStyle = withOpacity(stickyTextColor, 0.08)
         ctx.lineWidth = 1
         ctx.stroke()
 
         // Sticky text — skip canvas rendering while textarea overlay is active
         if (el.content && el.id !== editingTextId) {
-          ctx.fillStyle = "#1a1a1a"
+          ctx.fillStyle = stickyTextColor
           ctx.font = "14px Inter, sans-serif"
           const lines = wrapText(ctx, el.content, w - 32)
           lines.forEach((line: string, i: number) => {
@@ -819,7 +848,7 @@ export function useWhiteboardCanvas({
 
         // Show placeholder when empty and not editing
         if (!el.content && el.id !== editingTextId) {
-          ctx.fillStyle = "rgba(0,0,0,0.25)"
+          ctx.fillStyle = withOpacity(stickyTextColor, 0.35)
           ctx.font = "14px Inter, sans-serif"
           ctx.fillText("Click to type...", el.x + 16, el.y + 28)
         }
@@ -835,12 +864,12 @@ export function useWhiteboardCanvas({
           ctx.drawImage(img, el.x, el.y, el.width, el.height)
         } else {
           // Placeholder while loading
-          ctx.fillStyle = "rgba(0,0,0,0.05)"
+          ctx.fillStyle = themeColors.loadingFill
           ctx.fillRect(el.x, el.y, el.width, el.height)
-          ctx.strokeStyle = "rgba(0,0,0,0.15)"
+          ctx.strokeStyle = themeColors.placeholderOutline
           ctx.lineWidth = 1
           ctx.strokeRect(el.x, el.y, el.width, el.height)
-          ctx.fillStyle = "rgba(0,0,0,0.3)"
+          ctx.fillStyle = themeColors.loadingText
           ctx.font = "14px Inter, sans-serif"
           ctx.textAlign = "center"
           ctx.fillText("Loading...", el.x + el.width / 2, el.y + el.height / 2)
@@ -850,7 +879,7 @@ export function useWhiteboardCanvas({
 
       // Selection highlight
       if (el.id === selectedElementId) {
-        ctx.strokeStyle = "#1971c2"
+        ctx.strokeStyle = themeColors.selection
         ctx.lineWidth = 2 / camera.zoom
         ctx.setLineDash([6 / camera.zoom, 4 / camera.zoom])
         if (el.type === "pen" || el.type === "highlighter") {
@@ -873,7 +902,7 @@ export function useWhiteboardCanvas({
     }
 
     ctx.restore()
-  }, [camera, bgColor, background, selectedElementId, editingTextId])
+  }, [camera, bgColor, background, selectedElementId, editingTextId, isDarkTheme])
 
   // Render loop
   useEffect(() => {
@@ -895,7 +924,7 @@ export function useWhiteboardCanvas({
         id: uuid(),
         type: "text",
         points: [],
-        style: { ...style },
+        style: getActiveStyle(),
         x, y, width: 200, height: 30, rotation: 0,
         content,
         createdBy: userId,
@@ -903,7 +932,7 @@ export function useWhiteboardCanvas({
       }
       updateElements([...elementsRef.current, el])
     },
-    [style, userId, pushHistory, updateElements]
+    [getActiveStyle, userId, pushHistory, updateElements]
   )
 
   const addSticky = useCallback(
@@ -913,7 +942,7 @@ export function useWhiteboardCanvas({
         id: uuid(),
         type: "sticky",
         points: [],
-        style: { ...style },
+        style: getActiveStyle(),
         x, y, width: 200, height: 200, rotation: 0,
         content: "",
         stickyColor: color,
@@ -923,7 +952,7 @@ export function useWhiteboardCanvas({
       updateElements([...elementsRef.current, el])
       setEditingTextId(el.id)
     },
-    [style, userId, pushHistory, updateElements]
+    [getActiveStyle, userId, pushHistory, updateElements]
   )
 
   const deleteSelected = useCallback(() => {
@@ -1022,6 +1051,7 @@ export function useWhiteboardCanvas({
     setBackground,
     bgColor,
     setBgColor,
+    isDarkTheme,
     isDrawing,
     selectedElementId,
     setSelectedElementId,
@@ -1051,6 +1081,62 @@ export function useWhiteboardCanvas({
 }
 
 // ─── Helpers ──────────────────────────────────────────────
+
+const LIGHT_CANVAS_TEXT_COLOR = "#1a1a1a"
+const DARK_CANVAS_TEXT_COLOR = "#ffffff"
+
+function getCanvasThemeColors(isDarkTheme: boolean) {
+  return {
+    placeholderText: isDarkTheme ? "rgba(255,255,255,0.42)" : "rgba(0,0,0,0.25)",
+    placeholderOutline: isDarkTheme ? "rgba(255,255,255,0.24)" : "rgba(0,0,0,0.15)",
+    loadingFill: isDarkTheme ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
+    loadingText: isDarkTheme ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.30)",
+    selection: isDarkTheme ? "#93c5fd" : "#1971c2",
+  }
+}
+
+function resolveCanvasElementColor(color: string | undefined, isDarkTheme: boolean) {
+  if (!color || isDefaultCanvasTextColor(color)) {
+    return isDarkTheme ? DARK_CANVAS_TEXT_COLOR : LIGHT_CANVAS_TEXT_COLOR
+  }
+
+  return color
+}
+
+function resolveStickyTextColor(stickyColor?: string) {
+  return isColorDark(stickyColor ?? "#fff3bf") ? DARK_CANVAS_TEXT_COLOR : LIGHT_CANVAS_TEXT_COLOR
+}
+
+function isDefaultCanvasTextColor(color: string) {
+  const normalized = normalizeHexColor(color)
+  return normalized === LIGHT_CANVAS_TEXT_COLOR || normalized === DARK_CANVAS_TEXT_COLOR
+}
+
+function normalizeHexColor(color: string) {
+  const normalized = color.trim().toLowerCase()
+
+  if (!normalized.startsWith("#")) {
+    return normalized
+  }
+
+  if (normalized.length === 4) {
+    return `#${normalized[1]}${normalized[1]}${normalized[2]}${normalized[2]}${normalized[3]}${normalized[3]}`
+  }
+
+  return normalized
+}
+
+function withOpacity(color: string, opacity: number) {
+  const normalized = normalizeHexColor(color)
+  if (!normalized.startsWith("#") || normalized.length !== 7) {
+    return color
+  }
+
+  const r = parseInt(normalized.slice(1, 3), 16)
+  const g = parseInt(normalized.slice(3, 5), 16)
+  const b = parseInt(normalized.slice(5, 7), 16)
+  return `rgba(${r},${g},${b},${opacity})`
+}
 
 function drawBackground(
   ctx: CanvasRenderingContext2D,

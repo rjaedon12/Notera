@@ -38,6 +38,7 @@ import {
 import toast from "react-hot-toast"
 import { cn } from "@/lib/utils"
 import { ImageUploader } from "@/components/image-uploader"
+import type { QuizFeedbackMode } from "@/types"
 
 interface ChoiceDraft {
   text: string
@@ -79,6 +80,7 @@ export default function QuestionBankPage({
   const [editPublic, setEditPublic] = useState(false)
   const [editTimerMinutes, setEditTimerMinutes] = useState<string>("")
   const [editDesmosEnabled, setEditDesmosEnabled] = useState(false)
+  const [editFeedbackMode, setEditFeedbackMode] = useState<QuizFeedbackMode>("IMMEDIATE")
 
   // New question form
   const [newQ, setNewQ] = useState<QuestionDraft>({
@@ -269,6 +271,7 @@ export default function QuestionBankPage({
     setEditPublic(bank.isPublic)
     setEditTimerMinutes(bank.timerMinutes != null ? String(bank.timerMinutes) : "")
     setEditDesmosEnabled(bank.desmosEnabled ?? false)
+    setEditFeedbackMode(bank.feedbackMode ?? "IMMEDIATE")
     setShowEditDialog(true)
   }
 
@@ -290,6 +293,7 @@ export default function QuestionBankPage({
         isPublic: editPublic,
         timerMinutes: editTimerMinutes ? parseInt(editTimerMinutes) : null,
         desmosEnabled: editDesmosEnabled,
+        feedbackMode: editFeedbackMode,
       })
       toast.success("Updated")
       setShowEditDialog(false)
@@ -361,6 +365,9 @@ export default function QuestionBankPage({
             {bank.desmosEnabled && (
               <Badge variant="outline" className="text-xs">Desmos</Badge>
             )}
+            <Badge variant="outline" className="text-xs">
+              {bank.feedbackMode === "REVEAL_AT_END" ? "Reveal At Finish" : "Immediate Feedback"}
+            </Badge>
           </div>
         </div>
         <div className="flex gap-2">
@@ -924,6 +931,35 @@ export default function QuestionBankPage({
             <div className="flex items-center gap-3">
               <Switch checked={editDesmosEnabled} onCheckedChange={setEditDesmosEnabled} />
               <Label>Enable Desmos calculator</Label>
+            </div>
+            <div className="space-y-2">
+              <Label>Feedback timing</Label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditFeedbackMode("IMMEDIATE")}
+                  className={cn(
+                    "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                    editFeedbackMode === "IMMEDIATE"
+                      ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950/40 dark:text-blue-200"
+                      : "border-border bg-background text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Show after each question
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditFeedbackMode("REVEAL_AT_END")}
+                  className={cn(
+                    "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                    editFeedbackMode === "REVEAL_AT_END"
+                      ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950/40 dark:text-blue-200"
+                      : "border-border bg-background text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Reveal at finish
+                </button>
+              </div>
             </div>
           </div>
           <DialogFooter>

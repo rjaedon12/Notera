@@ -1,13 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { Fragment } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { 
   Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle 
+  DialogContent 
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { 
@@ -21,7 +19,6 @@ import {
   ExternalLink,
   Edit
 } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 interface TimelineEvent {
   id: string
@@ -82,6 +79,37 @@ export function ResourceViewer({
   
   const Icon = resourceTypeIcons[resource.type] || FileIcon
   const canEdit = currentUserId === (resource.ownerId || resource.userId) || isAdmin
+
+  const renderInlineToken = (token: string, index: number) => {
+    if (token.startsWith("**") && token.endsWith("**") && token.length > 4) {
+      return <strong key={index}>{token.slice(2, -2)}</strong>
+    }
+
+    if (token.startsWith("`") && token.endsWith("`") && token.length > 2) {
+      return (
+        <code key={index} className="bg-muted px-1 py-0.5 rounded text-sm">
+          {token.slice(1, -1)}
+        </code>
+      )
+    }
+
+    if (
+      token.startsWith("*") &&
+      token.endsWith("*") &&
+      !token.startsWith("**") &&
+      !token.endsWith("**") &&
+      token.length > 2
+    ) {
+      return <em key={index}>{token.slice(1, -1)}</em>
+    }
+
+    return <Fragment key={index}>{token}</Fragment>
+  }
+
+  const formatInline = (text: string) => {
+    const tokens = text.split(/(\*\*[^*]+\*\*|`[^`]+`|(?<!\*)\*[^*]+\*(?!\*))/g)
+    return tokens.map((token, index) => renderInlineToken(token, index))
+  }
   
   // Simple markdown rendering (handles basic formatting)
   const renderContent = (content: string) => {
@@ -110,30 +138,6 @@ export function ResourceViewer({
       // Regular paragraph
       return <p key={i} className="mb-2">{formatInline(line)}</p>
     })
-  }
-
-  // Escape HTML entities to prevent XSS
-  const escapeHtml = (str: string): string => {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;')
-  }
-
-  // Format inline elements (bold, italic, links, images)
-  const formatInline = (text: string) => {
-    // First escape HTML to prevent XSS, then apply markdown formatting
-    let result = escapeHtml(text)
-    // Handle bold **text**
-    result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    // Handle italic *text*
-    result = result.replace(/\*(.+?)\*/g, '<em>$1</em>')
-    // Handle inline code `code`
-    result = result.replace(/`(.+?)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-sm">$1</code>')
-    
-    return <span dangerouslySetInnerHTML={{ __html: result }} />
   }
 
   const handleOpenTimeline = () => {

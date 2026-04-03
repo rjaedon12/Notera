@@ -1,8 +1,11 @@
 "use client"
 
-import { useRef, useEffect, useCallback, useState } from "react"
-import type { WhiteboardElement, Camera, BackgroundType, ToolType, StrokeStyle } from "@/lib/whiteboard/types"
+import { useRef, useEffect, useCallback } from "react"
+import type { WhiteboardElement, Camera, ToolType } from "@/lib/whiteboard/types"
 import { SelectionOverlay } from "./SelectionOverlay"
+
+const LIGHT_CANVAS_TEXT_COLOR = "#1a1a1a"
+const DARK_CANVAS_TEXT_COLOR = "#ffffff"
 
 interface CanvasProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>
@@ -15,6 +18,7 @@ interface CanvasProps {
   camera: Camera
   onCursorMove?: (x: number, y: number) => void
   elements?: WhiteboardElement[]
+  isDarkTheme?: boolean
   editingTextId?: string | null
   onTextChange?: (elementId: string, content: string) => void
   onTextBlur?: () => void
@@ -37,6 +41,7 @@ export function Canvas({
   camera,
   onCursorMove,
   elements = [],
+  isDarkTheme = false,
   editingTextId,
   onTextChange,
   onTextBlur,
@@ -169,13 +174,17 @@ export function Canvas({
                 ? `${14 * camera.zoom}px`
                 : `${18 * camera.zoom}px`,
               fontFamily: "Inter, sans-serif",
-              color: editingElement.type === "sticky" ? "#1a1a1a" : editingElement.style.color,
+              color: editingElement.type === "sticky"
+                ? resolveStickyEditorColor(editingElement.stickyColor)
+                : resolveCanvasEditorColor(editingElement.style.color, isDarkTheme),
               padding: editingElement.type === "sticky"
                 ? `${16 * camera.zoom}px`
                 : `${2 * camera.zoom}px`,
               lineHeight: 1.5,
               zIndex: 50,
-              caretColor: editingElement.type === "sticky" ? "#1a1a1a" : editingElement.style.color,
+              caretColor: editingElement.type === "sticky"
+                ? resolveStickyEditorColor(editingElement.stickyColor)
+                : resolveCanvasEditorColor(editingElement.style.color, isDarkTheme),
               // Text area background: transparent for sticky (canvas-rendered bg), slight bg for text
               background: editingElement.type === "sticky" ? "transparent" : undefined,
               boxSizing: "border-box",
@@ -202,4 +211,47 @@ export function Canvas({
       )}
     </div>
   )
+}
+
+function resolveCanvasEditorColor(color: string | undefined, isDarkTheme: boolean) {
+  if (!color || isDefaultCanvasTextColor(color)) {
+    return isDarkTheme ? DARK_CANVAS_TEXT_COLOR : LIGHT_CANVAS_TEXT_COLOR
+  }
+
+  return color
+}
+
+function resolveStickyEditorColor(stickyColor?: string) {
+  return isColorDarkHex(stickyColor ?? "#fff3bf") ? DARK_CANVAS_TEXT_COLOR : LIGHT_CANVAS_TEXT_COLOR
+}
+
+function isDefaultCanvasTextColor(color: string) {
+  const normalized = normalizeHexColor(color)
+  return normalized === LIGHT_CANVAS_TEXT_COLOR || normalized === DARK_CANVAS_TEXT_COLOR
+}
+
+function normalizeHexColor(color: string) {
+  const normalized = color.trim().toLowerCase()
+
+  if (!normalized.startsWith("#")) {
+    return normalized
+  }
+
+  if (normalized.length === 4) {
+    return `#${normalized[1]}${normalized[1]}${normalized[2]}${normalized[2]}${normalized[3]}${normalized[3]}`
+  }
+
+  return normalized
+}
+
+function isColorDarkHex(hex: string) {
+  const normalized = normalizeHexColor(hex)
+  if (!normalized.startsWith("#") || normalized.length !== 7) {
+    return false
+  }
+
+  const r = parseInt(normalized.slice(1, 3), 16)
+  const g = parseInt(normalized.slice(3, 5), 16)
+  const b = parseInt(normalized.slice(5, 7), 16)
+  return (r * 299 + g * 587 + b * 114) / 1000 < 128
 }

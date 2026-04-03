@@ -136,6 +136,13 @@ export function usePyodide() {
     return w
   }, [])
 
+  const disposeWorker = useCallback(() => {
+    pendingRef.current.forEach(({ timer }) => clearTimeout(timer))
+    pendingRef.current.clear()
+    workerRef.current?.terminate()
+    workerRef.current = null
+  }, [])
+
   /* ── Initialise ────────────────────────────────────────────────────── */
 
   const init = useCallback(() => {
@@ -208,7 +215,7 @@ export function usePyodide() {
           timer,
         })
 
-        workerRef.current.postMessage({ type: "execute", id, code })
+        workerRef.current.postMessage({ type: "execute", id, code, timeout: EXECUTION_TIMEOUT })
       })
     },
     [status, createWorker],
@@ -243,13 +250,8 @@ export function usePyodide() {
   /* ── Cleanup on unmount ────────────────────────────────────────────── */
 
   useEffect(() => {
-    return () => {
-      pendingRef.current.forEach(({ timer }) => clearTimeout(timer))
-      pendingRef.current.clear()
-      workerRef.current?.terminate()
-      workerRef.current = null
-    }
-  }, [])
+    return disposeWorker
+  }, [disposeWorker])
 
   return {
     status,

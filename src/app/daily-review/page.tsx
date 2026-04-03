@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useState, useCallback, useRef, useEffect } from "react"
+import { useState, useCallback, useRef, useEffect, useMemo } from "react"
 import {
   RotateCcw, CheckCircle2, XCircle,
   Loader2, Sparkles, BookOpen, ArrowRight, Send
@@ -46,11 +46,16 @@ export default function DailyReviewPage() {
   const [matchResult, setMatchResult] = useState<MatchResult | null>(null)
   const [selfRateMode, setSelfRateMode] = useState(false)
 
-  const { data: rawCards, isLoading } = useQuery({
-    queryKey: ["dailyReview"],
+  const { data: rawCards, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["dailyReview", session?.user?.id],
     queryFn: async (): Promise<ReviewCard[]> => {
-      const res = await fetch("/api/daily-review")
-      if (!res.ok) throw new Error("Failed to fetch review cards")
+      const res = await fetch("/api/daily-review", { cache: "no-store" })
+      if (!res.ok) {
+        const message = res.status === 401
+          ? "Your session is still starting. Retrying should recover automatically."
+          : "Failed to fetch review cards"
+        throw new Error(message)
+      }
       const json = await res.json()
       const all = [...(json.dueCards ?? []), ...(json.newCards ?? [])]
       return all
@@ -70,8 +75,9 @@ export default function DailyReviewPage() {
         })
         .filter((c: ReviewCard) => c.id && c.term && c.definition)
     },
-    enabled: !!session,
-    retry: false,
+    enabled: status === "authenticated",
+    retry: 2,
+    retryDelay: (attempt) => attempt * 750,
   })
   // Snapshot cards on first load so invalidation doesn't reset the list mid-session
   const [cards, setCards] = useState<ReviewCard[]>([])
@@ -80,7 +86,16 @@ export default function DailyReviewPage() {
       setCards(rawCards)
     }
   }, [rawCards, cards.length])
-  const dueCards = cards.length > 0 ? cards : (rawCards ?? [])
+  const dueCards = useMemo(
+    () => (cards.length > 0 ? cards : (rawCards ?? [])),
+    [cards, rawCards]
+  )
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login")
+    }
+  }, [status, router])
 
   // Auto-focus input when a new card appears
   useEffect(() => {
@@ -162,7 +177,7 @@ export default function DailyReviewPage() {
     }
   }, [currentIndex, dueCards, reviewMutation, completed])
 
-  if (status === "loading" || isLoading) {
+  if (status === "loading" || (status === "authenticated" && isLoading)) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -170,8 +185,45 @@ export default function DailyReviewPage() {
     )
   }
 
-  if (!session) {
-    router.push("/login")
+  if (status === "unauthenticated") {
+    return null
+  }
+
+  if (isError && cards.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-16 text-center">
+        <div className="rounded-2xl border p-10" style={{ borderColor: "var(--glass-border)", background: "var(--glass-fill)" }}>
+          <XCircle className="h-16 w-16 text-red-500 mx-auto mb-6" />
+          <h1 className="text-3xl font-bold text-foreground mb-3 font-heading">Couldn&apos;t start daily review</h1>
+          <p className="text-muted-foreground mb-6">
+            {error instanceof Error ? error.message : "Something went wrong while loading your cards."}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={() => void refetch()}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-white transition-all"
+              style={{ background: "var(--primary)" }}
+            >
+              <RotateCcw className="h-4 w-4" /> Try Again
+            </button>
+            <button
+              onClick={() => router.push("/library")}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all"
+              style={{
+                background: "var(--glass-fill)",
+                border: "1px solid var(--glass-border)",
+                color: "var(--foreground)",
+              }}
+            >
+              <BookOpen className="h-4 w-4" /> Back to Library
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!session?.user) {
     return null
   }
 

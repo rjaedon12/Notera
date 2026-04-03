@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { QuestionBank, QuizAttempt } from "@/types"
+import { QuestionBank, QuizAttempt, QuizFeedbackMode } from "@/types"
 
 // ============================================
 // Question Banks
@@ -44,6 +44,7 @@ export function useCreateQuestionBank() {
       isPublic?: boolean
       timerMinutes?: number | null
       desmosEnabled?: boolean
+      feedbackMode?: QuizFeedbackMode
       questions?: {
         prompt: string
         imageUrl?: string
@@ -88,6 +89,7 @@ export function useUpdateQuestionBank() {
       isPublic?: boolean
       timerMinutes?: number | null
       desmosEnabled?: boolean
+      feedbackMode?: QuizFeedbackMode
     }) => {
       const res = await fetch(`/api/quizzes/banks/${id}`, {
         method: "PATCH",

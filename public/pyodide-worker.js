@@ -79,7 +79,7 @@ def _to_plain(expr):
 
 /* ── Execution ─────────────────────────────────────────────────────────── */
 
-async function executeCode(id, code) {
+async function executeCode(id, code, timeout = 15000) {
   if (!pyodide) {
     postMessage({ type: "error", id, error: "Pyodide not initialised yet." });
     return;
@@ -142,7 +142,12 @@ except Exception as _cas_e:
 (_cas_latex, _cas_plain)
 `;
 
-    const result = await pyodide.runPythonAsync(wrappedCode);
+    const result = await Promise.race([
+      pyodide.runPythonAsync(wrappedCode),
+      new Promise((_, reject) => {
+        setTimeout(() => reject(new Error(`Execution timed out after ${timeout} ms.`)), timeout);
+      }),
+    ]);
     const [latex, plain] = result.toJs();
 
     postMessage({
@@ -162,14 +167,14 @@ except Exception as _cas_e:
 /* ── Message handler ───────────────────────────────────────────────────── */
 
 onmessage = async function (e) {
-  const { type, id, code } = e.data;
+  const { type, id, code, timeout } = e.data;
 
   switch (type) {
     case "init":
       await initPyodide();
       break;
     case "execute":
-      await executeCode(id, code);
+      await executeCode(id, code, timeout);
       break;
     default:
       postMessage({ type: "error", id, error: `Unknown message type: ${type}` });

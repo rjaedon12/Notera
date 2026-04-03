@@ -43,6 +43,7 @@ function BoardCanvas() {
     setBackground,
     bgColor,
     setBgColor,
+    isDarkTheme,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
@@ -92,7 +93,6 @@ function BoardCanvas() {
       lastBroadcastTime.current = now
       isLocallyDrawing.current = true
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         broadcastEvent({ type: "elements-update", elements: newElements, senderId: userId } as any)
       } catch {
         // Silent broadcast failure
@@ -105,7 +105,6 @@ function BoardCanvas() {
 
   // Listen for element updates from collaborators
   useEventListener(({ event }) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const e = event as any
     if (e.type === "elements-update" && e.elements) {
       // Don't apply our own broadcasts back, and don't overwrite while actively drawing
@@ -139,8 +138,8 @@ function BoardCanvas() {
         background,
         bgColor,
       })
-    } catch {
-      // Silent save failure — don't disrupt the user
+    } catch (error) {
+      console.error("Whiteboard autosave failed:", error)
     }
   }, 2000)
 
@@ -166,7 +165,7 @@ function BoardCanvas() {
         setBackground(board.background)
         setBgColor(board.bgColor)
         setInitialLoaded(true)
-      } catch (err) {
+      } catch {
         toast.error("Failed to load board")
       }
     }
@@ -178,7 +177,10 @@ function BoardCanvas() {
   const handleTitleChange = useCallback(
     (newTitle: string) => {
       setBoardTitle(newTitle)
-      updateBoard(boardId, { title: newTitle }).catch(() => {})
+      updateBoard(boardId, { title: newTitle }).catch((error) => {
+        console.error("Failed to save whiteboard title:", error)
+        toast.error("Failed to save board title")
+      })
     },
     [boardId]
   )
@@ -187,7 +189,10 @@ function BoardCanvas() {
   const handleBackgroundChange = useCallback(
     (bg: BackgroundType) => {
       setBackground(bg)
-      updateBoard(boardId, { background: bg }).catch(() => {})
+      updateBoard(boardId, { background: bg }).catch((error) => {
+        console.error("Failed to save whiteboard background:", error)
+        toast.error("Failed to save board background")
+      })
     },
     [boardId, setBackground]
   )
@@ -279,6 +284,7 @@ function BoardCanvas() {
         camera={camera}
         onCursorMove={handleCursorMove}
         elements={elements}
+        isDarkTheme={isDarkTheme}
         editingTextId={editingTextId}
         onTextChange={updateTextContent}
         onTextBlur={() => setEditingTextId(null)}

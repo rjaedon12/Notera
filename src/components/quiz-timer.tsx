@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect } from "react"
 import { Clock, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -12,12 +12,10 @@ interface QuizTimerProps {
 
 export function QuizTimer({ totalMinutes, onTimeUp, className }: QuizTimerProps) {
   const [secondsLeft, setSecondsLeft] = useState(totalMinutes * 60)
-  const onTimeUpRef = useRef(onTimeUp)
-  onTimeUpRef.current = onTimeUp
 
   useEffect(() => {
     if (secondsLeft <= 0) {
-      onTimeUpRef.current()
+      onTimeUp()
       return
     }
 
@@ -32,7 +30,7 @@ export function QuizTimer({ totalMinutes, onTimeUp, className }: QuizTimerProps)
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [secondsLeft])
+  }, [onTimeUp, secondsLeft])
 
   const minutes = Math.floor(secondsLeft / 60)
   const seconds = secondsLeft % 60

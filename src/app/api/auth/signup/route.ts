@@ -4,9 +4,18 @@ import bcrypt from "bcryptjs"
 import { signupSchema } from "@/lib/validations"
 import { logSignupToGoogleSheets } from "@/lib/google-sheets"
 import { encryptPassword } from "@/lib/encryption"
+import { buildRateLimitKey, createRateLimitResponse, takeRateLimit } from "@/lib/rate-limit"
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimit = takeRateLimit(buildRateLimitKey("signup", request), {
+      limit: 5,
+      windowMs: 15 * 60 * 1000,
+    })
+    if (!rateLimit.allowed) {
+      return createRateLimitResponse(rateLimit, "Too many signup attempts. Please try again later.")
+    }
+
     const body = await request.json()
     
     const parsed = signupSchema.safeParse(body)
@@ -67,7 +76,6 @@ export async function POST(request: NextRequest) {
     }).catch(console.error)
 
     return NextResponse.json(user, { status: 201 })
-  // NOTE: Rate limiting — this mutation endpoint is unprotected
   } catch (error) {
     // Handle unique constraint violation (email already registered, race condition)
     if (

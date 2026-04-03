@@ -1,8 +1,7 @@
 "use client"
 
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import { useState, useMemo, useCallback, useEffect, useRef } from "react"
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
   BookOpen,
@@ -11,7 +10,6 @@ import {
   ChevronRight,
   BarChart3,
   Highlighter,
-  StickyNote,
   RotateCcw,
   Menu,
   X,
@@ -33,7 +31,6 @@ type SidePanel = "none" | "highlights" | "stats"
 
 export default function StudyGuideReaderPage() {
   const params = useParams()
-  const router = useRouter()
   const guideId = params.guideId as string
   const guide = getStudyGuideById(guideId)
 
@@ -119,6 +116,7 @@ export default function StudyGuideReaderPage() {
 
   const stats = getStats()
   const allComplete = totalProblems > 0 && totalCorrect === totalProblems
+  const showDesktopSidePanel = sidePanel !== "none" && !desmosOpen
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
@@ -254,7 +252,7 @@ export default function StudyGuideReaderPage() {
         {/* Scrollable content + optional right panel */}
         <div className="flex-1 flex min-h-0 overflow-hidden">
           {/* Content */}
-          <div ref={contentRef} className="flex-1 overflow-y-auto">
+          <div ref={contentRef} className="flex-1 overflow-y-auto min-w-0">
             <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
               {/* Completion banner */}
               {allComplete && (
@@ -332,7 +330,7 @@ export default function StudyGuideReaderPage() {
 
           {/* ====== RIGHT SIDE PANEL ====== */}
           <AnimatePresence>
-            {sidePanel !== "none" && (
+            {showDesktopSidePanel && (
               <motion.aside
                 initial={{ width: 0, opacity: 0 }}
                 animate={{ width: 280, opacity: 1 }}
@@ -425,12 +423,20 @@ export default function StudyGuideReaderPage() {
             )}
           </AnimatePresence>
 
-          {/* ====== DESMOS CALCULATOR PANEL (desktop) ====== */}
-          <AnimatePresence>
-            {showDesmos && desmosOpen && (
-              <DesmosPanel isOpen={desmosOpen} onClose={() => setDesmosOpen(false)} />
-            )}
-          </AnimatePresence>
+          {/* ====== DESMOS CALCULATOR PANEL (desktop inline) ====== */}
+          {showDesmos && (
+            <div
+              className="hidden lg:block overflow-hidden border-l shrink-0"
+              style={{
+                borderColor: "var(--glass-border)",
+                width: desmosOpen ? "32%" : "0%",
+                minWidth: desmosOpen ? "320px" : "0px",
+                transition: "width 300ms ease-in-out, min-width 300ms ease-in-out",
+              }}
+            >
+              <DesmosPanel isOpen={desmosOpen} onClose={() => setDesmosOpen(false)} inline />
+            </div>
+          )}
         </div>
       </main>
 
@@ -443,6 +449,9 @@ export default function StudyGuideReaderPage() {
       )}
 
       {/* ====== DESMOS MOBILE OVERLAY ====== */}
+      <div className="lg:hidden">
+        <DesmosPanel isOpen={showDesmos && desmosOpen} onClose={() => setDesmosOpen(false)} />
+      </div>
     </div>
   )
 }

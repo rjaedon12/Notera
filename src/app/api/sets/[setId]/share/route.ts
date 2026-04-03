@@ -2,10 +2,11 @@ import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
+import { buildRateLimitKey, createRateLimitResponse, takeRateLimit } from "@/lib/rate-limit"
 
 // POST /api/sets/[setId]/share — generate a share link
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ setId: string }> }
 ) {
   try {
@@ -24,8 +25,15 @@ export async function POST(
       return Response.json({ error: "Forbidden" }, { status: 403 })
     }
 
+    const rateLimit = takeRateLimit(buildRateLimitKey("sets-share", request, session.user.id), {
+      limit: 30,
+      windowMs: 60 * 1000,
+    })
+    if (!rateLimit.allowed) {
+      return createRateLimitResponse(rateLimit, "Too many share link requests. Please try again later.")
+    }
+
     // Build the share URL
-    // NOTE: Rate limiting — this mutation endpoint is unprotected
     const headerList = await headers()
     const host = headerList.get("host") || "localhost:3000" // dev-only fallback
     const protocol = host.includes("localhost") ? "http" : "https"

@@ -148,6 +148,7 @@ export interface TestResult {
 // ============================================
 
 export type QuestionType = "MULTIPLE_CHOICE" | "OPEN_RESPONSE"
+export type QuizFeedbackMode = "IMMEDIATE" | "REVEAL_AT_END"
 
 export interface QuestionChoice {
   id: string
@@ -183,6 +184,7 @@ export interface QuestionBank {
   isPublic: boolean
   timerMinutes: number | null
   desmosEnabled: boolean
+  feedbackMode: QuizFeedbackMode
   createdAt: string
   updatedAt: string
   userId: string
@@ -211,7 +213,13 @@ export interface QuizAttempt {
   createdAt: string
   userId: string
   bankId: string
-  bank?: { id: string; title: string; timerMinutes?: number | null; desmosEnabled?: boolean }
+  bank?: {
+    id: string
+    title: string
+    timerMinutes?: number | null
+    desmosEnabled?: boolean
+    feedbackMode?: QuizFeedbackMode
+  }
   answers?: QuizAnswer[]
   _count?: { answers: number }
 }

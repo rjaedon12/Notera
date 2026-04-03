@@ -90,8 +90,11 @@ export async function DELETE(
     const { resourceId } = await params
 
     const resource = await prisma.resource.findUnique({ where: { id: resourceId } })
+    const isAdmin = session.user.role === "ADMIN"
     if (!resource) return NextResponse.json({ error: "Not found" }, { status: 404 })
-    if (resource.userId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    if (resource.userId !== session.user.id && !isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
     await prisma.resource.delete({ where: { id: resourceId } })
     return NextResponse.json({ success: true })

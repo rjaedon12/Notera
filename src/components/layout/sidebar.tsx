@@ -42,8 +42,7 @@ const navItems: NavItem[] = [
   { href: "/notes", label: "Notes", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3h14a1 1 0 011 1v16l-3-2-2 2-2-2-2 2-2-2-3 2V4a1 1 0 011-1z"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/></svg></NavIcon>, requiresAuth: true },
   { href: "/studyguides", label: "Study Guides", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></NavIcon>, requiresAuth: true },
   { href: "/whiteboard", label: "Whiteboard", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M15 18v2M9 18v2M6 20h12"/><path d="M7 9l2.5 2.5L14 8" strokeWidth="1.7"/></svg></NavIcon>, requiresAuth: true },
-  { href: "/quizzes", label: "Practice Tests", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><path d="M9 10l1.5 1.5L14 8" strokeWidth="1.7"/></svg></NavIcon>, requiresAuth: true },
-  { href: "/dbq", label: "DBQ Practice", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M10 12a2 2 0 100 4 2 2 0 000-4z"/><path d="M16 18l-2.5-2.5"/></svg></NavIcon>, requiresAuth: true },
+  { href: "/quizzes", label: "Quiz Arena", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><path d="M9 10l1.5 1.5L14 8" strokeWidth="1.7"/></svg></NavIcon>, requiresAuth: true },
   { href: "/daily-review", label: "Daily Review", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg></NavIcon>, requiresAuth: true },
   { href: "/spaces", label: "Spaces", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="15" cy="8" r="3"/><path d="M3 20a6 6 0 0112 0"/><path d="M15 11a5 5 0 015 5v4"/></svg></NavIcon>, requiresAuth: true },
   // Progress
@@ -92,7 +91,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   }
 
   const renderNavItem = (item: NavItem) => {
-    const isActive = pathname === item.href || 
+    const isQuizArenaRoute = item.href === "/quizzes" && (pathname.startsWith("/quizzes") || pathname.startsWith("/dbq"))
+    const isActive = isQuizArenaRoute || pathname === item.href || 
       (item.href !== "/" && pathname.startsWith(item.href))
 
     return (
@@ -130,7 +130,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
 
   // Split navItems into sections for better organization
   const coreItems = filterItems(navItems.filter(i => ["/", "/discover", "/library", "/forum"].includes(i.href)))
-  const studyItems = filterItems(navItems.filter(i => ["/notes", "/studyguides", "/whiteboard", "/quizzes", "/dbq", "/daily-review", "/spaces"].includes(i.href)))
+  const studyItems = filterItems(navItems.filter(i => ["/notes", "/studyguides", "/whiteboard", "/quizzes", "/daily-review", "/spaces"].includes(i.href)))
   const progressItems = filterItems(navItems.filter(i => ["/analytics", "/achievements"].includes(i.href)))
 
   const isOnExperimentalPage = experimentalItems.some(

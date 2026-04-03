@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import { buildRateLimitKey, createRateLimitResponse, takeRateLimit } from "@/lib/rate-limit"
 
 // PUT /api/timeline/[resourceId] — save timeline events + arrows
 export async function PUT(
@@ -21,9 +22,16 @@ export async function PUT(
       return NextResponse.json({ error: "Missing data payload" }, { status: 400 })
     }
 
+    const rateLimit = takeRateLimit(buildRateLimitKey("timeline-save", request, session.user.id), {
+      limit: 120,
+      windowMs: 60 * 1000,
+    })
+    if (!rateLimit.allowed) {
+      return createRateLimitResponse(rateLimit, "Too many timeline save requests. Please slow down and try again.")
+    }
+
     const resource = await prisma.resource.findUnique({ where: { id: resourceId } })
     if (!resource) return NextResponse.json({ error: "Not found" }, { status: 404 })
-    // NOTE: Rate limiting — this mutation endpoint is unprotected
     if (resource.userId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
     // Delete existing events and arrows, then recreate — wrapped in transaction for atomicity

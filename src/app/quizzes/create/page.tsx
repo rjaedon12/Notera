@@ -28,7 +28,7 @@ import Link from "next/link"
 import { ImageUploader } from "@/components/image-uploader"
 import { ImportQuestionsModal } from "@/components/import-questions-modal"
 import type { ParsedQuestion } from "@/lib/question-parser"
-import type { QuestionType } from "@/types"
+import type { QuestionType, QuizFeedbackMode } from "@/types"
 
 interface ChoiceDraft {
   text: string
@@ -85,6 +85,7 @@ export default function CreateQuestionBankPage() {
   const [isPublic, setIsPublic] = useState(false)
   const [timerMinutes, setTimerMinutes] = useState<string>("")
   const [desmosEnabled, setDesmosEnabled] = useState(false)
+  const [feedbackMode, setFeedbackMode] = useState<QuizFeedbackMode>("IMMEDIATE")
   const [questions, setQuestions] = useState<QuestionDraft[]>([emptyQuestion()])
   const [activeQ, setActiveQ] = useState(0)
   const [showImport, setShowImport] = useState(false)
@@ -223,6 +224,7 @@ export default function CreateQuestionBankPage() {
         isPublic,
         timerMinutes: timerMinutes ? Number(timerMinutes) : null,
         desmosEnabled,
+        feedbackMode,
         questions: filledQuestions.map((q) => {
           if (q.type === "OPEN_RESPONSE") {
             return {
@@ -333,6 +335,35 @@ export default function CreateQuestionBankPage() {
                 <Calculator className="h-4 w-4" />
                 Desmos Calculator
               </Label>
+            </div>
+            <div className="space-y-2 min-w-[280px]">
+              <Label className="text-sm">Feedback timing</Label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFeedbackMode("IMMEDIATE")}
+                  className={cn(
+                    "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                    feedbackMode === "IMMEDIATE"
+                      ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950/40 dark:text-blue-200"
+                      : "border-border bg-background text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Show after each question
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFeedbackMode("REVEAL_AT_END")}
+                  className={cn(
+                    "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                    feedbackMode === "REVEAL_AT_END"
+                      ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950/40 dark:text-blue-200"
+                      : "border-border bg-background text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Reveal at finish
+                </button>
+              </div>
             </div>
           </div>
         </CardContent>

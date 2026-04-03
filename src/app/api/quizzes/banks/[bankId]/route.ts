@@ -79,6 +79,9 @@ export async function PATCH(
         ...(body.isPublic !== undefined && { isPublic: body.isPublic }),
         ...(body.timerMinutes !== undefined && { timerMinutes: body.timerMinutes === null ? null : Number(body.timerMinutes) }),
         ...(body.desmosEnabled !== undefined && { desmosEnabled: body.desmosEnabled }),
+        ...(body.feedbackMode !== undefined && {
+          feedbackMode: body.feedbackMode === "REVEAL_AT_END" ? "REVEAL_AT_END" : "IMMEDIATE",
+        }),
       },
       include: {
         _count: { select: { questions: true, attempts: true } },
