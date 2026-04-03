@@ -78,16 +78,10 @@ export function OpenResponseEditor({
           </ToolbarButton>
           <div className="w-px h-4 bg-border mx-1" />
           <ToolbarButton
-            onClick={() => editor.chain().focus().setInlineMath().run()}
-            title="Insert Math (inline)"
-          >
-            <Sigma className="h-4 w-4" />
-          </ToolbarButton>
-          <ToolbarButton
             onClick={() => editor.chain().focus().setMathBlock().run()}
             title="Insert Math Block"
           >
-            <span className="text-xs font-mono font-bold">∑</span>
+            <Sigma className="h-4 w-4" />
           </ToolbarButton>
         </div>
       )}

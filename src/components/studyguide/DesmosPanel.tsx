@@ -1,7 +1,6 @@
 "use client"
 
 import { useRef, useEffect } from "react"
-import { motion } from "framer-motion"
 import { X, LineChart, Loader2, AlertCircle } from "lucide-react"
 import { useDesmos } from "@/hooks/useDesmos"
 
@@ -28,8 +27,7 @@ export function DesmosPanel({ isOpen, onClose }: DesmosPanelProps) {
   // Resize calculator when panel opens
   useEffect(() => {
     if (isOpen && isLoaded) {
-      // Small delay so the animation finishes
-      const timer = setTimeout(() => resize(), 320)
+      const timer = setTimeout(() => resize(), 50)
       return () => clearTimeout(timer)
     }
   }, [isOpen, isLoaded, resize])
@@ -42,25 +40,26 @@ export function DesmosPanel({ isOpen, onClose }: DesmosPanelProps) {
     return () => window.removeEventListener("resize", handler)
   }, [isOpen, isLoaded, resize])
 
+  if (!isOpen) return null
+
   return (
-    <motion.div
-      initial={{ x: "100%", opacity: 0 }}
-      animate={{ x: isOpen ? 0 : "100%", opacity: isOpen ? 1 : 0 }}
-      exit={{ x: "100%", opacity: 0 }}
-      transition={{ type: "spring", damping: 28, stiffness: 320 }}
-      className="fixed top-0 right-0 h-full w-[420px] z-50 hidden md:flex flex-col shadow-2xl"
+    <div
+      className="fixed z-50 flex flex-col border border-[#E8E8ED] shadow-lg overflow-hidden"
       style={{
-        borderLeft: "1px solid var(--glass-border)",
+        bottom: "1.5rem",
+        right: "1.5rem",
+        width: "360px",
+        height: "420px",
+        borderRadius: "12px",
         background: "var(--popover)",
       }}
     >
       {/* Header */}
       <div
-        className="flex items-center justify-between px-4 py-3 border-b shrink-0"
-        style={{ borderColor: "var(--glass-border)" }}
+        className="flex items-center justify-between px-4 py-2.5 border-b border-[#E8E8ED] shrink-0"
       >
         <div className="flex items-center gap-2">
-          <LineChart className="h-4 w-4" style={{ color: "var(--accent-color)" }} />
+          <LineChart className="h-4 w-4" style={{ color: "#0071E3" }} />
           <h3 className="text-sm font-semibold font-heading">Graphing Calculator</h3>
         </div>
         <button
@@ -68,7 +67,7 @@ export function DesmosPanel({ isOpen, onClose }: DesmosPanelProps) {
           className="p-1.5 rounded-lg hover:bg-[var(--glass-fill)] transition-colors"
           aria-label="Close calculator"
         >
-          <X className="h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
+          <X className="h-4 w-4" style={{ color: "#0071E3" }} />
         </button>
       </div>
 
@@ -79,7 +78,7 @@ export function DesmosPanel({ isOpen, onClose }: DesmosPanelProps) {
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-10"
             style={{ background: "var(--popover)" }}
           >
-            <Loader2 className="h-6 w-6 animate-spin" style={{ color: "var(--accent-color)" }} />
+            <Loader2 className="h-6 w-6 animate-spin" style={{ color: "#0071E3" }} />
             <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
               Loading calculator…
             </p>
@@ -99,7 +98,7 @@ export function DesmosPanel({ isOpen, onClose }: DesmosPanelProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs underline hover:no-underline"
-                style={{ color: "var(--accent-color)" }}
+                style={{ color: "#0071E3" }}
               >
                 Get a free Desmos API key
               </a>
@@ -111,66 +110,9 @@ export function DesmosPanel({ isOpen, onClose }: DesmosPanelProps) {
         <div
           ref={containerRef}
           className="w-full h-full"
-          style={{ minHeight: "400px" }}
+          style={{ minHeight: "300px" }}
         />
       </div>
-    </motion.div>
-  )
-}
-
-/**
- * Mobile-friendly full-screen overlay version of the Desmos panel
- */
-export function DesmosMobileOverlay({ isOpen, onClose }: DesmosPanelProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const { isLoaded, error, resize } = useDesmos(containerRef, { enabled: isOpen })
-
-  useEffect(() => {
-    if (isOpen && isLoaded) {
-      const timer = setTimeout(() => resize(), 320)
-      return () => clearTimeout(timer)
-    }
-  }, [isOpen, isLoaded, resize])
-
-  if (!isOpen) return null
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: "100%" }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: "100%" }}
-      transition={{ type: "spring", damping: 25, stiffness: 300 }}
-      className="fixed inset-0 z-50 md:hidden flex flex-col"
-      style={{ background: "var(--popover)" }}
-    >
-      {/* Header */}
-      <div
-        className="flex items-center justify-between px-4 py-3 border-b shrink-0"
-        style={{ borderColor: "var(--glass-border)" }}
-      >
-        <div className="flex items-center gap-2">
-          <LineChart className="h-4 w-4" style={{ color: "var(--accent-color)" }} />
-          <h3 className="text-sm font-semibold font-heading">Graphing Calculator</h3>
-        </div>
-        <button
-          onClick={onClose}
-          className="p-1.5 rounded-lg hover:bg-[var(--glass-fill)] transition-colors"
-          aria-label="Close calculator"
-        >
-          <X className="h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
-        </button>
-      </div>
-
-      {/* Calculator */}
-      <div className="flex-1 relative">
-        {!isLoaded && !error && (
-          <div className="absolute inset-0 flex items-center justify-center"
-            style={{ background: "var(--popover)" }}>
-            <Loader2 className="h-6 w-6 animate-spin" style={{ color: "var(--accent-color)" }} />
-          </div>
-        )}
-        <div ref={containerRef} className="w-full h-full" />
-      </div>
-    </motion.div>
+    </div>
   )
 }

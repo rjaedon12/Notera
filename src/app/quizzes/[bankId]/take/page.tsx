@@ -363,19 +363,50 @@ export default function TakeQuizPage({
                 <Label className="text-base font-semibold">
                   How many points would you give yourself? (out of {gradeQuestion.pointValue})
                 </Label>
-                <div className="flex gap-2 flex-wrap">
-                  {Array.from({ length: gradeQuestion.pointValue + 1 }, (_, i) => (
-                    <Button
-                      key={i}
-                      variant={selfGradePoints[gradeQuestion.id] === i ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleSelfGrade(gradeQuestion.id, i)}
-                      disabled={updateAnswerPoints.isPending}
-                    >
-                      {i}
-                    </Button>
-                  ))}
+                <div className="text-2xl font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] text-center">
+                  {selfGradePoints[gradeQuestion.id] ?? 0}
                 </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-[#6E6E73]">0</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={gradeQuestion.pointValue}
+                    step={1}
+                    value={selfGradePoints[gradeQuestion.id] ?? 0}
+                    onChange={(e) =>
+                      setSelfGradePoints((prev) => ({
+                        ...prev,
+                        [gradeQuestion.id]: Number(e.target.value),
+                      }))
+                    }
+                    disabled={updateAnswerPoints.isPending}
+                    className="flex-1 h-2 appearance-none rounded-full bg-[#E8E8ED] cursor-pointer
+                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#0071E3] [&::-webkit-slider-thumb]:shadow-md
+                      [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[#0071E3] [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:shadow-md
+                      [&::-moz-range-progress]:bg-[#0071E3] [&::-moz-range-progress]:rounded-full"
+                    style={{
+                      background: `linear-gradient(to right, #0071E3 ${
+                        ((selfGradePoints[gradeQuestion.id] ?? 0) / gradeQuestion.pointValue) * 100
+                      }%, #E8E8ED ${
+                        ((selfGradePoints[gradeQuestion.id] ?? 0) / gradeQuestion.pointValue) * 100
+                      }%)`,
+                    }}
+                  />
+                  <span className="text-sm text-[#6E6E73]">{gradeQuestion.pointValue}</span>
+                </div>
+                <Button
+                  onClick={() =>
+                    handleSelfGrade(
+                      gradeQuestion.id,
+                      selfGradePoints[gradeQuestion.id] ?? 0
+                    )
+                  }
+                  disabled={updateAnswerPoints.isPending}
+                  className="w-full mt-2"
+                >
+                  {updateAnswerPoints.isPending ? "Saving..." : "Confirm Score"}
+                </Button>
               </div>
             </div>
           </div>

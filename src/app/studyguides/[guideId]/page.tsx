@@ -24,7 +24,7 @@ import { GuideSectionRenderer } from "@/components/studyguide/GuideSectionRender
 import { LessonNav } from "@/components/studyguide/LessonNav"
 import { GuideProgressBar } from "@/components/studyguide/GuideProgressBar"
 import { HighlightsPanel } from "@/components/studyguide/AnnotationTools"
-import { DesmosPanel, DesmosMobileOverlay } from "@/components/studyguide/DesmosPanel"
+import { DesmosPanel } from "@/components/studyguide/DesmosPanel"
 import { DesmosToggleButton, shouldShowDesmos } from "@/components/studyguide/DesmosToggleButton"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
@@ -443,11 +443,6 @@ export default function StudyGuideReaderPage() {
       )}
 
       {/* ====== DESMOS MOBILE OVERLAY ====== */}
-      <AnimatePresence>
-        {showDesmos && desmosOpen && (
-          <DesmosMobileOverlay isOpen={desmosOpen} onClose={() => setDesmosOpen(false)} />
-        )}
-      </AnimatePresence>
     </div>
   )
 }
