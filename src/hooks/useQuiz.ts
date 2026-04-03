@@ -40,13 +40,18 @@ export function useCreateQuestionBank() {
       description?: string
       imageUrl?: string
       isPublic?: boolean
+      timerMinutes?: number | null
+      desmosEnabled?: boolean
       questions?: {
         prompt: string
         imageUrl?: string
         passage?: string
         explanation: string
-        correctChoiceIndex: number
-        choices: { text: string }[]
+        type?: string
+        pointValue?: number
+        exampleAnswer?: string
+        correctChoiceIndex?: number
+        choices?: { text: string }[]
       }[]
     }) => {
       const res = await fetch("/api/quizzes/banks", {
@@ -79,6 +84,8 @@ export function useUpdateQuestionBank() {
       description?: string
       imageUrl?: string
       isPublic?: boolean
+      timerMinutes?: number | null
+      desmosEnabled?: boolean
     }) => {
       const res = await fetch(`/api/quizzes/banks/${id}`, {
         method: "PATCH",
@@ -129,9 +136,12 @@ export function useAddQuestion() {
       imageUrl?: string
       passage?: string
       explanation: string
-      correctChoiceIndex: number
+      type?: string
+      pointValue?: number
+      exampleAnswer?: string
+      correctChoiceIndex?: number
       orderIndex: number
-      choices: { text: string; orderIndex: number }[]
+      choices?: { text: string; orderIndex: number }[]
     }) => {
       const res = await fetch(`/api/quizzes/banks/${bankId}/questions`, {
         method: "POST",
@@ -166,8 +176,11 @@ export function useUpdateQuestion() {
       imageUrl?: string
       passage?: string
       explanation: string
+      type?: string
+      pointValue?: number
+      exampleAnswer?: string
       orderIndex: number
-      choices: { text: string; isCorrect: boolean; orderIndex: number }[]
+      choices?: { text: string; isCorrect: boolean; orderIndex: number }[]
     }) => {
       const res = await fetch(
         `/api/quizzes/banks/${bankId}/questions/${questionId}`,
@@ -253,20 +266,47 @@ export function useSubmitAnswer() {
       attemptId,
       questionId,
       choiceId,
+      openResponseText,
     }: {
       attemptId: string
       questionId: string
-      choiceId: string
+      choiceId?: string
+      openResponseText?: string
     }) => {
       const res = await fetch(
         `/api/quizzes/attempts/${attemptId}/answer`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ questionId, choiceId }),
+          body: JSON.stringify({ questionId, choiceId, openResponseText }),
         }
       )
       if (!res.ok) throw new Error("Failed to submit answer")
+      return res.json()
+    },
+  })
+}
+
+export function useUpdateAnswerPoints() {
+  return useMutation({
+    mutationFn: async ({
+      attemptId,
+      questionId,
+      pointsEarned,
+    }: {
+      attemptId: string
+      questionId: string
+      pointsEarned: number
+    }) => {
+      const res = await fetch(
+        `/api/quizzes/attempts/${attemptId}/answer`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ questionId, pointsEarned }),
+        }
+      )
+      if (!res.ok) throw new Error("Failed to update answer points")
       return res.json()
     },
   })

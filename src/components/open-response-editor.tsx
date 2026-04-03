@@ -1,0 +1,149 @@
+"use client"
+
+import { useEditor, EditorContent } from "@tiptap/react"
+import StarterKit from "@tiptap/starter-kit"
+import Placeholder from "@tiptap/extension-placeholder"
+import { MathBlock, InlineMath } from "@/components/notes/extensions/Mathematics"
+import { Bold, Italic, List, ListOrdered, Indent, Outdent, Sigma } from "lucide-react"
+import { cn } from "@/lib/utils"
+
+interface OpenResponseEditorProps {
+  value?: string
+  onChange?: (html: string) => void
+  placeholder?: string
+  readOnly?: boolean
+  className?: string
+}
+
+export function OpenResponseEditor({
+  value,
+  onChange,
+  placeholder = "Type your response here...",
+  readOnly = false,
+  className,
+}: OpenResponseEditorProps) {
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: false,
+        codeBlock: false,
+        blockquote: false,
+        horizontalRule: false,
+      }),
+      Placeholder.configure({ placeholder }),
+      MathBlock,
+      InlineMath,
+    ],
+    content: value || "",
+    editable: !readOnly,
+    onUpdate: ({ editor }) => {
+      onChange?.(editor.getHTML())
+    },
+    editorProps: {
+      attributes: {
+        class: "prose prose-sm dark:prose-invert max-w-none min-h-[120px] p-3 focus:outline-none",
+      },
+    },
+  })
+
+  if (!editor) return null
+
+  return (
+    <div
+      className={cn(
+        "border rounded-lg overflow-hidden transition-colors",
+        readOnly ? "border-border bg-muted/30" : "border-border focus-within:border-[var(--primary)]",
+        className
+      )}
+    >
+      {/* Toolbar */}
+      {!readOnly && (
+        <div className="flex items-center gap-0.5 px-2 py-1.5 border-b bg-muted/30">
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            active={editor.isActive("bold")}
+            title="Bold"
+          >
+            <Bold className="h-4 w-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            active={editor.isActive("italic")}
+            title="Italic"
+          >
+            <Italic className="h-4 w-4" />
+          </ToolbarButton>
+          <div className="w-px h-4 bg-border mx-1" />
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            active={editor.isActive("bulletList")}
+            title="Bullet List"
+          >
+            <List className="h-4 w-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            active={editor.isActive("orderedList")}
+            title="Numbered List"
+          >
+            <ListOrdered className="h-4 w-4" />
+          </ToolbarButton>
+          <div className="w-px h-4 bg-border mx-1" />
+          <ToolbarButton
+            onClick={() => editor.chain().focus().sinkListItem("listItem").run()}
+            title="Indent"
+          >
+            <Indent className="h-4 w-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => editor.chain().focus().liftListItem("listItem").run()}
+            title="Outdent"
+          >
+            <Outdent className="h-4 w-4" />
+          </ToolbarButton>
+          <div className="w-px h-4 bg-border mx-1" />
+          <ToolbarButton
+            onClick={() => editor.chain().focus().setInlineMath().run()}
+            title="Insert Math (inline)"
+          >
+            <Sigma className="h-4 w-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => editor.chain().focus().setMathBlock().run()}
+            title="Insert Math Block"
+          >
+            <span className="text-xs font-mono font-bold">∑</span>
+          </ToolbarButton>
+        </div>
+      )}
+
+      <EditorContent editor={editor} />
+    </div>
+  )
+}
+
+function ToolbarButton({
+  onClick,
+  active,
+  title,
+  children,
+}: {
+  onClick: () => void
+  active?: boolean
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={cn(
+        "p-1.5 rounded hover:bg-muted transition-colors",
+        active && "bg-muted text-[var(--primary)]"
+      )}
+    >
+      {children}
+    </button>
+  )
+}

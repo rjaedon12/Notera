@@ -136,7 +136,7 @@ export default function QuizzesPage() {
               }}
             >
               <Play className="h-3.5 w-3.5 mr-1" />
-              Take Quiz
+              Take Test
             </Button>
           </div>
         </CardContent>
@@ -147,11 +147,11 @@ export default function QuizzesPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold font-heading tracking-tight">Quizzes</h1>
+        <h1 className="text-3xl font-bold font-heading tracking-tight">Practice Tests</h1>
         <Link href="/quizzes/create">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
-            New Question Bank
+            New Practice Test
           </Button>
         </Link>
       </div>
@@ -180,7 +180,7 @@ export default function QuizzesPage() {
         <div className="relative mb-6">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
           <input
-            placeholder="Search question banks..."
+            placeholder="Search practice tests..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full h-10 pl-10 pr-4 rounded-full text-sm transition-all
@@ -252,12 +252,12 @@ export default function QuizzesPage() {
               <HelpCircle className="h-16 w-16 mx-auto mb-4" style={{ color: "var(--muted-foreground)", opacity: 0.4 }} />
               <h2 className="text-xl font-semibold mb-2 font-heading">No question banks yet</h2>
               <p className="mb-6" style={{ color: "var(--muted-foreground)" }}>
-                Create your first question bank to start building quizzes
+                Create your first practice test to get started
               </p>
               <Link href="/quizzes/create">
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
-                  Create Question Bank
+                  Create Practice Test
                 </Button>
               </Link>
             </div>
@@ -331,7 +331,7 @@ export default function QuizzesPage() {
               <Clock className="h-16 w-16 mx-auto mb-4" style={{ color: "var(--muted-foreground)", opacity: 0.4 }} />
               <h2 className="text-xl font-semibold mb-2 font-heading">No attempts yet</h2>
               <p style={{ color: "var(--muted-foreground)" }}>
-                Take a quiz to see your results here
+                Take a practice test to see your results here
               </p>
             </div>
           )}

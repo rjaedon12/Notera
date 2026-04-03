@@ -144,8 +144,10 @@ export interface TestResult {
 }
 
 // ============================================
-// QUIZZES
+// QUIZZES / PRACTICE TESTS
 // ============================================
+
+export type QuestionType = "MULTIPLE_CHOICE" | "OPEN_RESPONSE"
 
 export interface QuestionChoice {
   id: string
@@ -162,6 +164,9 @@ export interface Question {
   passage: string | null
   explanation: string
   correctChoiceId: string
+  type: QuestionType
+  pointValue: number
+  exampleAnswer: string | null
   orderIndex: number
   bankId: string
   createdAt: string
@@ -176,6 +181,8 @@ export interface QuestionBank {
   description: string | null
   imageUrl: string | null
   isPublic: boolean
+  timerMinutes: number | null
+  desmosEnabled: boolean
   createdAt: string
   updatedAt: string
   userId: string
@@ -189,9 +196,11 @@ export interface QuizAnswer {
   isCorrect: boolean
   attemptId: string
   questionId: string
-  choiceId: string
+  choiceId: string | null
+  openResponseText: string | null
+  pointsEarned: number | null
   question?: Question
-  choice?: QuestionChoice
+  choice?: QuestionChoice | null
 }
 
 export interface QuizAttempt {
@@ -202,7 +211,7 @@ export interface QuizAttempt {
   createdAt: string
   userId: string
   bankId: string
-  bank?: { id: string; title: string }
+  bank?: { id: string; title: string; timerMinutes?: number | null; desmosEnabled?: boolean }
   answers?: QuizAnswer[]
   _count?: { answers: number }
 }

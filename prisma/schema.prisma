@@ -455,18 +455,25 @@ model TimelineArrow {
   resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
 }
 
-// ─── Quizzes ─────────────────────────────────────────────
+// ─── Quizzes / Practice Tests ────────────────────────────
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  OPEN_RESPONSE
+}
 
 model QuestionBank {
-  id          String   @id @default(cuid())
-  title       String
-  subject     String
-  description String?
-  imageUrl    String?
-  isPublic    Boolean  @default(false)
-  isPremade   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(cuid())
+  title          String
+  subject        String
+  description    String?
+  imageUrl       String?
+  isPublic       Boolean  @default(false)
+  isPremade      Boolean  @default(false)
+  timerMinutes   Int?     // null = no timer; positive int = minutes allowed
+  desmosEnabled  Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   userId String
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -482,12 +489,15 @@ model QuestionBank {
 }
 
 model Question {
-  id          String  @id @default(cuid())
-  prompt      String
-  imageUrl    String?
-  passage     String?
-  explanation String
-  orderIndex  Int     @default(0)
+  id            String       @id @default(cuid())
+  prompt        String
+  imageUrl      String?
+  passage       String?
+  explanation   String
+  orderIndex    Int          @default(0)
+  type          QuestionType @default(MULTIPLE_CHOICE)
+  pointValue    Int          @default(1)
+  exampleAnswer String?      // model answer for open-response questions
 
   bankId String
   bank   QuestionBank @relation(fields: [bankId], references: [id], onDelete: Cascade)
@@ -524,8 +534,10 @@ model QuizAttempt {
 }
 
 model AttemptAnswer {
-  id        String  @id @default(cuid())
-  isCorrect Boolean
+  id               String  @id @default(cuid())
+  isCorrect        Boolean
+  openResponseText String? // student's free-text answer (Tiptap JSON or plain text)
+  pointsEarned     Float?  // null until scored; MC auto-scores, open-response self-graded
 
   attemptId String
   attempt   QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
@@ -533,8 +545,8 @@ model AttemptAnswer {
   questionId String
   question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
-  choiceId String
-  choice   Choice @relation(fields: [choiceId], references: [id], onDelete: Cascade)
+  choiceId String?
+  choice   Choice? @relation(fields: [choiceId], references: [id], onDelete: Cascade)
 
   @@unique([attemptId, questionId])
 }

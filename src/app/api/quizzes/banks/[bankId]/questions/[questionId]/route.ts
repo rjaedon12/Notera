@@ -29,6 +29,9 @@ export async function PATCH(
         ...(body.passage !== undefined && { passage: body.passage }),
         ...(body.explanation !== undefined && { explanation: body.explanation }),
         ...(body.orderIndex !== undefined && { orderIndex: body.orderIndex }),
+        ...(body.type !== undefined && { type: body.type === "OPEN_RESPONSE" ? "OPEN_RESPONSE" : "MULTIPLE_CHOICE" }),
+        ...(body.pointValue !== undefined && { pointValue: body.pointValue }),
+        ...(body.exampleAnswer !== undefined && { exampleAnswer: body.exampleAnswer }),
       },
     })
 

@@ -18,11 +18,17 @@ import {
   Circle,
   ImageIcon,
   FileText,
+  FileUp,
+  Clock,
+  Calculator,
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { ImageUploader } from "@/components/image-uploader"
+import { ImportQuestionsModal } from "@/components/import-questions-modal"
+import type { ParsedQuestion } from "@/lib/question-parser"
+import type { QuestionType } from "@/types"
 
 interface ChoiceDraft {
   text: string
@@ -37,26 +43,35 @@ interface QuestionDraft {
   choices: ChoiceDraft[]
   showPassage: boolean
   showImage: boolean
+  type: QuestionType
+  pointValue: number
+  exampleAnswer: string
 }
 
 function emptyChoice(): ChoiceDraft {
   return { text: "", isCorrect: false }
 }
 
-function emptyQuestion(): QuestionDraft {
+function emptyQuestion(type: QuestionType = "MULTIPLE_CHOICE"): QuestionDraft {
   return {
     prompt: "",
     imageUrl: "",
     passage: "",
     explanation: "",
-    choices: [
-      { text: "", isCorrect: true },
-      { text: "", isCorrect: false },
-      { text: "", isCorrect: false },
-      { text: "", isCorrect: false },
-    ],
+    choices:
+      type === "MULTIPLE_CHOICE"
+        ? [
+            { text: "", isCorrect: true },
+            { text: "", isCorrect: false },
+            { text: "", isCorrect: false },
+            { text: "", isCorrect: false },
+          ]
+        : [],
     showPassage: false,
     showImage: false,
+    type,
+    pointValue: 1,
+    exampleAnswer: "",
   }
 }
 
@@ -68,8 +83,11 @@ export default function CreateQuestionBankPage() {
   const [subject, setSubject] = useState("")
   const [description, setDescription] = useState("")
   const [isPublic, setIsPublic] = useState(false)
+  const [timerMinutes, setTimerMinutes] = useState<string>("")
+  const [desmosEnabled, setDesmosEnabled] = useState(false)
   const [questions, setQuestions] = useState<QuestionDraft[]>([emptyQuestion()])
   const [activeQ, setActiveQ] = useState(0)
+  const [showImport, setShowImport] = useState(false)
 
   const updateQuestion = (index: number, updates: Partial<QuestionDraft>) => {
     setQuestions((prev) => prev.map((q, i) => (i === index ? { ...q, ...updates } : q)))
@@ -116,7 +134,6 @@ export default function CreateQuestionBankPage() {
       prev.map((q, qi) => {
         if (qi !== qIndex || q.choices.length <= 2) return q
         const newChoices = q.choices.filter((_, ci) => ci !== cIndex)
-        // If we removed the correct answer, make the first one correct
         if (!newChoices.some((c) => c.isCorrect)) {
           newChoices[0].isCorrect = true
         }
@@ -125,8 +142,8 @@ export default function CreateQuestionBankPage() {
     )
   }
 
-  const addQuestion = () => {
-    setQuestions((prev) => [...prev, emptyQuestion()])
+  const addQuestion = (type: QuestionType = "MULTIPLE_CHOICE") => {
+    setQuestions((prev) => [...prev, emptyQuestion(type)])
     setActiveQ(questions.length)
   }
 
@@ -138,21 +155,41 @@ export default function CreateQuestionBankPage() {
     }
   }
 
+  const handleImport = (parsed: ParsedQuestion[]) => {
+    const imported: QuestionDraft[] = parsed.map((p) => ({
+      prompt: p.prompt,
+      imageUrl: "",
+      passage: "",
+      explanation: "",
+      choices: p.choices.map((c) => ({ text: c.text, isCorrect: c.isCorrect })),
+      showPassage: false,
+      showImage: false,
+      type: "MULTIPLE_CHOICE" as QuestionType,
+      pointValue: 1,
+      exampleAnswer: "",
+    }))
+    // Replace empty first question or append
+    if (questions.length === 1 && !questions[0].prompt.trim()) {
+      setQuestions(imported)
+    } else {
+      setQuestions((prev) => [...prev, ...imported])
+    }
+    setActiveQ(questions.length === 1 && !questions[0].prompt.trim() ? 0 : questions.length)
+    toast.success(`Imported ${imported.length} question${imported.length !== 1 ? "s" : ""}`)
+  }
+
   const handleSubmit = async () => {
     if (!title.trim()) {
       toast.error("Title is required")
       return
     }
-
     if (!subject.trim()) {
       toast.error("Subject is required")
       return
     }
 
-    // Filter to only questions that have content (allow creating a blank set)
     const filledQuestions = questions.filter((q) => q.prompt.trim())
 
-    // Validate only the filled-in questions
     for (let i = 0; i < filledQuestions.length; i++) {
       const q = filledQuestions[i]
       const displayIndex = questions.indexOf(q)
@@ -161,16 +198,18 @@ export default function CreateQuestionBankPage() {
         setActiveQ(displayIndex)
         return
       }
-      const filledChoices = q.choices.filter((c) => c.text.trim())
-      if (filledChoices.length < 2) {
-        toast.error(`Question ${displayIndex + 1}: At least 2 choices are required`)
-        setActiveQ(displayIndex)
-        return
-      }
-      if (!filledChoices.some((c) => c.isCorrect)) {
-        toast.error(`Question ${displayIndex + 1}: Mark one choice as correct`)
-        setActiveQ(displayIndex)
-        return
+      if (q.type === "MULTIPLE_CHOICE") {
+        const filledChoices = q.choices.filter((c) => c.text.trim())
+        if (filledChoices.length < 2) {
+          toast.error(`Question ${displayIndex + 1}: At least 2 choices are required`)
+          setActiveQ(displayIndex)
+          return
+        }
+        if (!filledChoices.some((c) => c.isCorrect)) {
+          toast.error(`Question ${displayIndex + 1}: Mark one choice as correct`)
+          setActiveQ(displayIndex)
+          return
+        }
       }
     }
 
@@ -180,27 +219,38 @@ export default function CreateQuestionBankPage() {
         subject: subject.trim(),
         description: description.trim() || undefined,
         isPublic,
+        timerMinutes: timerMinutes ? Number(timerMinutes) : null,
+        desmosEnabled,
         questions: filledQuestions.map((q) => {
+          if (q.type === "OPEN_RESPONSE") {
+            return {
+              prompt: q.prompt.trim(),
+              imageUrl: q.imageUrl.trim() || undefined,
+              passage: q.passage.trim() || undefined,
+              explanation: q.explanation.trim(),
+              type: "OPEN_RESPONSE",
+              pointValue: q.pointValue,
+              exampleAnswer: q.exampleAnswer.trim() || undefined,
+            }
+          }
           const filledChoices = q.choices.filter((c) => c.text.trim())
           const correctChoiceIndex = filledChoices.findIndex((c) => c.isCorrect)
-          
           return {
             prompt: q.prompt.trim(),
             imageUrl: q.imageUrl.trim() || undefined,
             passage: q.passage.trim() || undefined,
             explanation: q.explanation.trim(),
+            type: "MULTIPLE_CHOICE",
+            pointValue: q.pointValue,
             correctChoiceIndex,
-            choices: filledChoices.map((c) => ({
-              text: c.text.trim(),
-            })),
+            choices: filledChoices.map((c) => ({ text: c.text.trim() })),
           }
         }),
       })
-      toast.success("Question set created!")
+      toast.success("Practice test created!")
       router.push(`/quizzes/${bank.id}`)
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to create question set"
+      const message = err instanceof Error ? err.message : "Failed to create practice test"
       toast.error(message)
     }
   }
@@ -217,46 +267,71 @@ export default function CreateQuestionBankPage() {
             Back
           </Button>
         </Link>
-        <h1 className="text-2xl font-bold">Create Question Bank</h1>
+        <h1 className="text-2xl font-bold">Create Practice Test</h1>
       </div>
 
       {/* Bank Details */}
       <Card className="mb-6">
         <CardContent className="p-6 space-y-4">
-          <div>
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              placeholder="e.g., World History – Empires & Religions"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label htmlFor="subject">Subject</Label>
-            <Input
-              id="subject"
-              placeholder="e.g., World History"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              className="mt-1"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                placeholder="e.g., Unit 3 – Empires & Religions"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="subject">Subject</Label>
+              <Input
+                id="subject"
+                placeholder="e.g., World History"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                className="mt-1"
+              />
+            </div>
           </div>
           <div>
             <Label htmlFor="description">Description (optional)</Label>
             <Textarea
               id="description"
-              placeholder="A short description of this question bank..."
+              placeholder="A short description of this practice test..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="mt-1"
               rows={2}
             />
           </div>
-          <div className="flex items-center gap-3">
-            <Switch checked={isPublic} onCheckedChange={setIsPublic} />
-            <Label>Make public</Label>
+
+          {/* Settings row */}
+          <div className="flex items-center gap-6 pt-2 flex-wrap">
+            <div className="flex items-center gap-3">
+              <Switch checked={isPublic} onCheckedChange={setIsPublic} />
+              <Label>Make public</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <Label className="text-sm">Timer (minutes)</Label>
+              <Input
+                type="number"
+                min={0}
+                placeholder="None"
+                value={timerMinutes}
+                onChange={(e) => setTimerMinutes(e.target.value)}
+                className="w-24 h-8 text-sm"
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <Switch checked={desmosEnabled} onCheckedChange={setDesmosEnabled} />
+              <Label className="flex items-center gap-1">
+                <Calculator className="h-4 w-4" />
+                Desmos Calculator
+              </Label>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -280,38 +355,85 @@ export default function CreateQuestionBankPage() {
               )}
             >
               <GripVertical className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <span className="truncate">
+              <span className="truncate flex-1">
                 {questionItem.prompt.trim() || `Question ${i + 1}`}
+              </span>
+              <span className="text-[10px] uppercase text-muted-foreground shrink-0">
+                {questionItem.type === "OPEN_RESPONSE" ? "OR" : "MC"}
               </span>
             </button>
           ))}
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={addQuestion}
-          >
-            <Plus className="h-3.5 w-3.5 mr-1" />
-            Add Question
-          </Button>
+          <div className="space-y-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() => addQuestion("MULTIPLE_CHOICE")}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              MC Question
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() => addQuestion("OPEN_RESPONSE")}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              Open Response
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() => setShowImport(true)}
+            >
+              <FileUp className="h-3.5 w-3.5 mr-1" />
+              Import from Text
+            </Button>
+          </div>
         </div>
 
         {/* Active Question Editor */}
         <Card className="flex-1">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold">Question {activeQ + 1}</h3>
-              {questions.length > 1 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => removeQuestion(activeQ)}
+              <div className="flex items-center gap-3">
+                <h3 className="font-semibold">Question {activeQ + 1}</h3>
+                <span
+                  className={cn(
+                    "text-xs px-2 py-0.5 rounded-full font-medium",
+                    q.type === "OPEN_RESPONSE"
+                      ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                      : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                  )}
                 >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Remove
-                </Button>
-              )}
+                  {q.type === "OPEN_RESPONSE" ? "Open Response" : "Multiple Choice"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground">Points:</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={q.pointValue}
+                  onChange={(e) =>
+                    updateQuestion(activeQ, { pointValue: Math.max(1, Number(e.target.value) || 1) })
+                  }
+                  className="w-16 h-8 text-sm"
+                />
+                {questions.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => removeQuestion(activeQ)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Remove
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Toggle buttons for optional fields */}
@@ -335,7 +457,6 @@ export default function CreateQuestionBankPage() {
             </div>
 
             <div className="space-y-4">
-              {/* Passage (optional) */}
               {q.showPassage && (
                 <div>
                   <Label>Passage / Stimulus</Label>
@@ -349,7 +470,6 @@ export default function CreateQuestionBankPage() {
                 </div>
               )}
 
-              {/* Image upload (optional) */}
               {q.showImage && (
                 <div>
                   <Label>Image</Label>
@@ -360,7 +480,6 @@ export default function CreateQuestionBankPage() {
                 </div>
               )}
 
-              {/* Prompt */}
               <div>
                 <Label>Question Prompt</Label>
                 <Textarea
@@ -372,68 +491,84 @@ export default function CreateQuestionBankPage() {
                 />
               </div>
 
-              {/* Choices */}
-              <div>
-                <Label className="mb-2 block">
-                  Answer Choices{" "}
-                  <span className="text-muted-foreground font-normal">
-                    (click to mark correct)
-                  </span>
-                </Label>
-                <div className="space-y-2">
-                  {q.choices.map((choice, ci) => (
-                    <div key={ci} className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setCorrectChoice(activeQ, ci)}
-                        className="shrink-0"
-                        title={choice.isCorrect ? "Correct answer" : "Click to mark as correct"}
-                      >
-                        {choice.isCorrect ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-500" />
-                        ) : (
-                          <Circle className="h-5 w-5 text-muted-foreground hover:text-green-400 transition-colors" />
-                        )}
-                      </button>
-                      <span className="text-sm font-medium text-muted-foreground w-6">
-                        {String.fromCharCode(65 + ci)}.
-                      </span>
-                      <Input
-                        placeholder={`Choice ${String.fromCharCode(65 + ci)}`}
-                        value={choice.text}
-                        onChange={(e) =>
-                          updateChoice(activeQ, ci, { text: e.target.value })
-                        }
-                        className={cn(
-                          "flex-1",
-                          choice.isCorrect && "border-green-300 dark:border-green-700"
-                        )}
-                      />
-                      {q.choices.length > 2 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeChoice(activeQ, ci)}
-                          className="shrink-0 h-8 w-8 p-0"
+              {/* Multiple Choice: Choices */}
+              {q.type === "MULTIPLE_CHOICE" && (
+                <div>
+                  <Label className="mb-2 block">
+                    Answer Choices{" "}
+                    <span className="text-muted-foreground font-normal">
+                      (click to mark correct)
+                    </span>
+                  </Label>
+                  <div className="space-y-2">
+                    {q.choices.map((choice, ci) => (
+                      <div key={ci} className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setCorrectChoice(activeQ, ci)}
+                          className="shrink-0"
+                          title={choice.isCorrect ? "Correct answer" : "Click to mark as correct"}
                         >
-                          <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
+                          {choice.isCorrect ? (
+                            <CheckCircle2 className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <Circle className="h-5 w-5 text-muted-foreground hover:text-green-400 transition-colors" />
+                          )}
+                        </button>
+                        <span className="text-sm font-medium text-muted-foreground w-6">
+                          {String.fromCharCode(65 + ci)}.
+                        </span>
+                        <Input
+                          placeholder={`Choice ${String.fromCharCode(65 + ci)}`}
+                          value={choice.text}
+                          onChange={(e) =>
+                            updateChoice(activeQ, ci, { text: e.target.value })
+                          }
+                          className={cn(
+                            "flex-1",
+                            choice.isCorrect && "border-green-300 dark:border-green-700"
+                          )}
+                        />
+                        {q.choices.length > 2 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeChoice(activeQ, ci)}
+                            className="shrink-0 h-8 w-8 p-0"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {q.choices.length < 6 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => addChoice(activeQ)}
+                      className="mt-2"
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      Add Choice
+                    </Button>
+                  )}
                 </div>
-                {q.choices.length < 6 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => addChoice(activeQ)}
-                    className="mt-2"
-                  >
-                    <Plus className="h-3.5 w-3.5 mr-1" />
-                    Add Choice
-                  </Button>
-                )}
-              </div>
+              )}
+
+              {/* Open Response: Example Answer */}
+              {q.type === "OPEN_RESPONSE" && (
+                <div>
+                  <Label>Example Answer (shown after student submits)</Label>
+                  <Textarea
+                    placeholder="Provide an example of a strong response..."
+                    value={q.exampleAnswer}
+                    onChange={(e) => updateQuestion(activeQ, { exampleAnswer: e.target.value })}
+                    className="mt-1"
+                    rows={4}
+                  />
+                </div>
+              )}
 
               {/* Explanation */}
               <div>
@@ -459,9 +594,16 @@ export default function CreateQuestionBankPage() {
           <Button variant="outline">Cancel</Button>
         </Link>
         <Button onClick={handleSubmit} disabled={createBank.isPending}>
-          {createBank.isPending ? "Creating..." : "Create Question Bank"}
+          {createBank.isPending ? "Creating..." : "Create Practice Test"}
         </Button>
       </div>
+
+      {/* Import Modal */}
+      <ImportQuestionsModal
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onImport={handleImport}
+      />
     </div>
   )
 }

@@ -102,7 +102,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ...attempt,
       totalQuestions: questions.length,
-      bank: { ...attempt.bank, questions },
+      bank: {
+        ...attempt.bank,
+        questions,
+      },
     }, { status: 201 })
   } catch (error) {
     console.error("Create attempt error:", error)

@@ -72,6 +72,8 @@ export default function QuestionBankPage({
   const [editSubject, setEditSubject] = useState("")
   const [editDesc, setEditDesc] = useState("")
   const [editPublic, setEditPublic] = useState(false)
+  const [editTimerMinutes, setEditTimerMinutes] = useState<string>("")
+  const [editDesmosEnabled, setEditDesmosEnabled] = useState(false)
 
   // New question form
   const [newQ, setNewQ] = useState<QuestionDraft>({
@@ -177,6 +179,8 @@ export default function QuestionBankPage({
     setEditSubject(bank.subject || "")
     setEditDesc(bank.description || "")
     setEditPublic(bank.isPublic)
+    setEditTimerMinutes(bank.timerMinutes != null ? String(bank.timerMinutes) : "")
+    setEditDesmosEnabled(bank.desmosEnabled ?? false)
     setShowEditDialog(true)
   }
 
@@ -196,6 +200,8 @@ export default function QuestionBankPage({
         subject: editSubject.trim(),
         description: editDesc.trim() || undefined,
         isPublic: editPublic,
+        timerMinutes: editTimerMinutes ? parseInt(editTimerMinutes) : null,
+        desmosEnabled: editDesmosEnabled,
       })
       toast.success("Updated")
       setShowEditDialog(false)
@@ -221,7 +227,7 @@ export default function QuestionBankPage({
       <div className="container mx-auto px-4 py-8 text-center">
         <h2 className="text-xl font-semibold">Question bank not found</h2>
         <Link href="/quizzes" className="text-blue-500 hover:underline mt-2 block">
-          Back to Quizzes
+          Back to Practice Tests
         </Link>
       </div>
     )
@@ -252,13 +258,21 @@ export default function QuestionBankPage({
           {bank.description && (
             <p className="text-muted-foreground mt-1">{bank.description}</p>
           )}
-          <div className="flex items-center gap-3 mt-2">
+          <div className="flex items-center gap-3 mt-2 flex-wrap">
             <Badge variant={bank.isPublic ? "default" : "secondary"}>
               {bank.isPublic ? "Public" : "Private"}
             </Badge>
             <span className="text-sm text-muted-foreground">
               {questionCount} question{questionCount !== 1 ? "s" : ""}
             </span>
+            {bank.timerMinutes && (
+              <span className="text-sm text-muted-foreground">
+                ⏱ {bank.timerMinutes} min
+              </span>
+            )}
+            {bank.desmosEnabled && (
+              <Badge variant="outline" className="text-xs">Desmos</Badge>
+            )}
           </div>
         </div>
         <div className="flex gap-2">
@@ -281,7 +295,7 @@ export default function QuestionBankPage({
             onClick={() => router.push(`/quizzes/${bankId}/take`)}
           >
             <Play className="h-4 w-4 mr-1" />
-            Take Quiz
+            Take Test
           </Button>
         </div>
       </div>
@@ -320,6 +334,12 @@ export default function QuestionBankPage({
                       {i + 1}.
                     </span>
                     <span className="font-medium">{question.prompt}</span>
+                    {question.type === "OPEN_RESPONSE" && (
+                      <Badge variant="secondary" className="text-xs">Open Response</Badge>
+                    )}
+                    {(question.pointValue ?? 1) > 1 && (
+                      <Badge variant="outline" className="text-xs">{question.pointValue} pts</Badge>
+                    )}
                     {question.imageUrl && (
                       <ImageIcon className="h-4 w-4 text-muted-foreground" />
                     )}
@@ -351,27 +371,38 @@ export default function QuestionBankPage({
                     )}
 
                     <div className="space-y-1.5">
-                      {question.choices.map((choice, ci) => (
-                        <div
-                          key={choice.id}
-                          className={cn(
-                            "flex items-center gap-2 text-sm px-3 py-1.5 rounded",
-                            choice.isCorrect
-                              ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
-                              : "text-foreground"
-                          )}
-                        >
-                          {choice.isCorrect ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                          ) : (
-                            <Circle className="h-4 w-4 text-muted-foreground" />
-                          )}
-                          <span className="font-medium">
-                            {String.fromCharCode(65 + ci)}.
-                          </span>
-                          {choice.text}
-                        </div>
-                      ))}
+                      {question.type === "OPEN_RESPONSE" ? (
+                        question.exampleAnswer && (
+                          <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg text-sm">
+                            <span className="font-medium text-green-700 dark:text-green-400">
+                              Example Answer:
+                            </span>{" "}
+                            {question.exampleAnswer}
+                          </div>
+                        )
+                      ) : (
+                        question.choices?.map((choice, ci) => (
+                          <div
+                            key={choice.id}
+                            className={cn(
+                              "flex items-center gap-2 text-sm px-3 py-1.5 rounded",
+                              choice.isCorrect
+                                ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+                                : "text-foreground"
+                            )}
+                          >
+                            {choice.isCorrect ? (
+                              <CheckCircle2 className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Circle className="h-4 w-4 text-muted-foreground" />
+                            )}
+                            <span className="font-medium">
+                              {String.fromCharCode(65 + ci)}.
+                            </span>
+                            {choice.text}
+                          </div>
+                        ))
+                      )}
                     </div>
 
                     <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg text-sm">
@@ -605,6 +636,22 @@ export default function QuestionBankPage({
             <div className="flex items-center gap-3">
               <Switch checked={editPublic} onCheckedChange={setEditPublic} />
               <Label>Make public</Label>
+            </div>
+            <div>
+              <Label>Timer (minutes)</Label>
+              <Input
+                type="number"
+                min="1"
+                value={editTimerMinutes}
+                onChange={(e) => setEditTimerMinutes(e.target.value)}
+                placeholder="No time limit"
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Leave blank for no timer</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Switch checked={editDesmosEnabled} onCheckedChange={setEditDesmosEnabled} />
+              <Label>Enable Desmos calculator</Label>
             </div>
           </div>
           <DialogFooter>

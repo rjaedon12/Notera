@@ -77,6 +77,8 @@ export async function PATCH(
         ...(body.description !== undefined && { description: body.description }),
         ...(body.imageUrl !== undefined && { imageUrl: body.imageUrl }),
         ...(body.isPublic !== undefined && { isPublic: body.isPublic }),
+        ...(body.timerMinutes !== undefined && { timerMinutes: body.timerMinutes === null ? null : Number(body.timerMinutes) }),
+        ...(body.desmosEnabled !== undefined && { desmosEnabled: body.desmosEnabled }),
       },
       include: {
         _count: { select: { questions: true, attempts: true } },

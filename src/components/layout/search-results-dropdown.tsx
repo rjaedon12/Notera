@@ -16,7 +16,7 @@ const typeConfig: Record<
   { label: string; icon: typeof BookOpen; color: string }
 > = {
   set: { label: "Sets", icon: BookOpen, color: "text-blue-500" },
-  quiz: { label: "Quizzes", icon: HelpCircle, color: "text-purple-500" },
+  quiz: { label: "Practice Tests", icon: HelpCircle, color: "text-purple-500" },
   dbq: { label: "DBQs", icon: Scroll, color: "text-amber-500" },
   note: { label: "Notes", icon: FileText, color: "text-green-500" },
   whiteboard: { label: "Whiteboards", icon: Layout, color: "text-pink-500" },

@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, subject, description, imageUrl, isPublic, questions } = body
+    const { title, subject, description, imageUrl, isPublic, timerMinutes, desmosEnabled, questions } = body
 
     if (!title || !subject) {
       return NextResponse.json({ error: "Title and subject are required" }, { status: 400 })
@@ -70,6 +70,8 @@ export async function POST(request: NextRequest) {
         description: description || null,
         imageUrl: imageUrl || null,
         isPublic: isPublic ?? false,
+        timerMinutes: timerMinutes != null ? Number(timerMinutes) : null,
+        desmosEnabled: desmosEnabled ?? false,
         userId: session.user.id,
         ...(questions && questions.length > 0
           ? {
@@ -80,21 +82,31 @@ export async function POST(request: NextRequest) {
                     imageUrl?: string
                     passage?: string
                     explanation: string
-                    correctChoiceIndex: number
-                    choices: { text: string }[]
+                    type?: string
+                    pointValue?: number
+                    exampleAnswer?: string
+                    correctChoiceIndex?: number
+                    choices?: { text: string }[]
                   }, qi: number) => ({
                     prompt: q.prompt,
                     imageUrl: q.imageUrl || null,
                     passage: q.passage || null,
                     explanation: q.explanation,
+                    type: q.type === "OPEN_RESPONSE" ? "OPEN_RESPONSE" : "MULTIPLE_CHOICE",
+                    pointValue: q.pointValue ?? 1,
+                    exampleAnswer: q.exampleAnswer || null,
                     orderIndex: qi,
-                    choices: {
-                      create: q.choices.map((c: { text: string }, ci: number) => ({
-                        text: c.text,
-                        isCorrect: ci === q.correctChoiceIndex,
-                        orderIndex: ci,
-                      })),
-                    },
+                    ...(q.type !== "OPEN_RESPONSE" && q.choices && q.choices.length > 0
+                      ? {
+                          choices: {
+                            create: q.choices.map((c: { text: string }, ci: number) => ({
+                              text: c.text,
+                              isCorrect: ci === (q.correctChoiceIndex ?? 0),
+                              orderIndex: ci,
+                            })),
+                          },
+                        }
+                      : {}),
                   })
                 ),
               },

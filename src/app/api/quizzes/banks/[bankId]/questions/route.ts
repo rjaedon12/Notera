@@ -20,10 +20,16 @@ export async function POST(
     if (!bank) return NextResponse.json({ error: "Bank not found" }, { status: 404 })
     if (bank.userId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
-    const { prompt, imageUrl, passage, explanation, correctChoiceIndex, orderIndex, choices } = body
+    const { prompt, imageUrl, passage, explanation, correctChoiceIndex, orderIndex, choices, type, pointValue, exampleAnswer } = body
 
-    if (!prompt || !explanation || !choices || choices.length < 2) {
-      return NextResponse.json({ error: "Prompt, explanation, and at least 2 choices required" }, { status: 400 })
+    if (!prompt || !explanation) {
+      return NextResponse.json({ error: "Prompt and explanation are required" }, { status: 400 })
+    }
+
+    const questionType = type === "OPEN_RESPONSE" ? "OPEN_RESPONSE" : "MULTIPLE_CHOICE"
+
+    if (questionType === "MULTIPLE_CHOICE" && (!choices || choices.length < 2)) {
+      return NextResponse.json({ error: "Multiple choice questions need at least 2 choices" }, { status: 400 })
     }
 
     const question = await prisma.question.create({
@@ -32,15 +38,22 @@ export async function POST(
         imageUrl: imageUrl || null,
         passage: passage || null,
         explanation,
+        type: questionType,
+        pointValue: pointValue ?? 1,
+        exampleAnswer: exampleAnswer || null,
         orderIndex: orderIndex ?? 0,
         bankId,
-        choices: {
-          create: choices.map((c: { text: string; orderIndex?: number }, i: number) => ({
-            text: c.text,
-            isCorrect: i === (correctChoiceIndex ?? 0),
-            orderIndex: c.orderIndex ?? i,
-          })),
-        },
+        ...(questionType === "MULTIPLE_CHOICE" && choices
+          ? {
+              choices: {
+                create: choices.map((c: { text: string; orderIndex?: number }, i: number) => ({
+                  text: c.text,
+                  isCorrect: i === (correctChoiceIndex ?? 0),
+                  orderIndex: c.orderIndex ?? i,
+                })),
+              },
+            }
+          : {}),
       },
       include: { choices: { orderBy: { orderIndex: "asc" } } },
     })

@@ -25,10 +25,14 @@ export async function POST(
     if (attempt.userId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     if (attempt.completedAt) return NextResponse.json({ error: "Already completed" }, { status: 400 })
 
-    // Calculate score as a percentage (0–100)
-    const correctCount = attempt.answers.filter((a) => a.isCorrect).length
-    const totalQ = await prisma.question.count({ where: { bankId: attempt.bankId } })
-    const scorePercent = totalQ > 0 ? (correctCount / totalQ) * 100 : 0
+    // Calculate score using weighted points
+    const questions = await prisma.question.findMany({
+      where: { bankId: attempt.bankId },
+      select: { id: true, pointValue: true },
+    })
+    const totalPoints = questions.reduce((sum, q) => sum + q.pointValue, 0)
+    const earnedPoints = attempt.answers.reduce((sum, a) => sum + (a.pointsEarned ?? 0), 0)
+    const scorePercent = totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0
 
     const completed = await prisma.quizAttempt.update({
       where: { id: attemptId },
@@ -52,7 +56,9 @@ export async function POST(
 
     return NextResponse.json({
       ...completed,
-      totalQuestions: totalQ,
+      totalQuestions: questions.length,
+      totalPoints,
+      earnedPoints,
       streak: streakResult.streak,
     })
   } catch (error) {
