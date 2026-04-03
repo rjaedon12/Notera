@@ -30,8 +30,8 @@ export function PDFRenderer({ config, questions, disabled }: PDFRendererProps) {
       let cjkFont: string | null = null
       try {
         cjkFont = await loadCJKFont()
-      } catch (err) {
-        console.warn("CJK font not available, falling back to Helvetica:", err)
+      } catch {
+        // CJK font not available, falling back to Helvetica
       }
 
       setProgress("Rendering PDF…")

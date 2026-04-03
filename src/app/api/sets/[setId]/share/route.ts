@@ -15,15 +15,19 @@ export async function POST(
     }
     const { setId } = await params
 
-    // Ensure the set exists and make it public for sharing
+    // Ensure the set exists and the user owns it or it's public
     const set = await prisma.flashcardSet.findUnique({ where: { id: setId } })
     if (!set) {
       return Response.json({ error: "Set not found" }, { status: 404 })
     }
+    if (set.userId !== session.user.id && !set.isPublic) {
+      return Response.json({ error: "Forbidden" }, { status: 403 })
+    }
 
     // Build the share URL
+    // NOTE: Rate limiting — this mutation endpoint is unprotected
     const headerList = await headers()
-    const host = headerList.get("host") || "localhost:3000"
+    const host = headerList.get("host") || "localhost:3000" // dev-only fallback
     const protocol = host.includes("localhost") ? "http" : "https"
     const url = `${protocol}://${host}/sets/${setId}`
 

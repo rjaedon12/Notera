@@ -96,7 +96,10 @@ export async function exportAsPng(
       URL.revokeObjectURL(url)
       resolve(canvas.toDataURL("image/png"))
     }
-    img.onerror = reject
+    img.onerror = (err) => {
+      URL.revokeObjectURL(url)
+      reject(err)
+    }
     img.src = url
   })
 }
@@ -143,7 +146,10 @@ export async function generateThumbnail(
       URL.revokeObjectURL(url)
       resolve(canvas.toDataURL("image/png", 0.7))
     }
-    img.onerror = reject
+    img.onerror = (err) => {
+      URL.revokeObjectURL(url)
+      reject(err)
+    }
     img.src = url
   })
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { verifyAdminAuth } from "@/lib/admin-auth"
 
 // IDs of the seeded AP History DBQ prompts that should be removed
 const PREMADE_PROMPT_IDS = [
@@ -18,11 +18,12 @@ const PREMADE_PROMPT_IDS = [
  * Removes all pre-seeded AP History DBQ prompts from the database.
  * This is a one-time cleanup operation.
  */
+// NOTE: Rate limiting — this mutation endpoint is unprotected
 export async function DELETE() {
   try {
-    const session = await auth()
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const isAdmin = await verifyAdminAuth()
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     // First, delete associated documents (due to foreign key constraints)
@@ -70,9 +71,9 @@ export async function DELETE() {
  */
 export async function GET() {
   try {
-    const session = await auth()
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const isAdmin = await verifyAdminAuth()
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     const count = await prisma.dBQPrompt.count({

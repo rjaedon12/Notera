@@ -166,34 +166,37 @@ export async function renderLatexToImage(
   const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" })
   const svgUrl = URL.createObjectURL(svgBlob)
 
-  const result = await new Promise<RenderedEquation>((resolve, reject) => {
-    const img = new Image()
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0)
-      URL.revokeObjectURL(svgUrl)
+  try {
+    const result = await new Promise<RenderedEquation>((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0)
+        URL.revokeObjectURL(svgUrl)
 
-      // Convert px to pt (1px ≈ 0.75pt at 96dpi)
-      const ptWidth = pxWidth * 0.75
-      const ptHeight = pxHeight * 0.75
+        // Convert px to pt (1px ≈ 0.75pt at 96dpi)
+        const ptWidth = pxWidth * 0.75
+        const ptHeight = pxHeight * 0.75
 
-      const eq: RenderedEquation = {
-        dataUrl: canvas.toDataURL("image/png"),
-        width: ptWidth,
-        height: ptHeight,
+        const eq: RenderedEquation = {
+          dataUrl: canvas.toDataURL("image/png"),
+          width: ptWidth,
+          height: ptHeight,
+        }
+        equationCache.set(cacheKey, eq)
+        resolve(eq)
       }
-      equationCache.set(cacheKey, eq)
-      resolve(eq)
-    }
-    img.onerror = () => {
-      URL.revokeObjectURL(svgUrl)
-      // Fallback: use a simpler canvas text rendering
-      reject(new Error(`SVG rendering failed for: ${latex}`))
-    }
-    img.src = svgUrl
-  })
+      img.onerror = () => {
+        URL.revokeObjectURL(svgUrl)
+        // Fallback: use a simpler canvas text rendering
+        reject(new Error(`SVG rendering failed for: ${latex}`))
+      }
+      img.src = svgUrl
+    })
 
-  document.body.removeChild(container)
-  return result
+    return result
+  } finally {
+    document.body.removeChild(container)
+  }
 }
 
 /**
@@ -273,7 +276,7 @@ export async function preRenderAllLatex(
       try {
         await renderLatexFallback(latex, displayMode)
       } catch {
-        console.warn(`Failed to render LaTeX: ${latex}`)
+        // LaTeX rendering failed for this expression, skip silently
       }
     }
     rendered++

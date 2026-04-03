@@ -25,6 +25,18 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(category, { status: 201 })
   } catch (error) {
+    // Handle unique constraint violation on slug
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code: string }).code === "P2002"
+    ) {
+      return NextResponse.json(
+        { error: "A category with this slug already exists" },
+        { status: 409 }
+      )
+    }
     console.error("Create category error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }

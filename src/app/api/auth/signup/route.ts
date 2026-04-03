@@ -67,7 +67,20 @@ export async function POST(request: NextRequest) {
     }).catch(console.error)
 
     return NextResponse.json(user, { status: 201 })
+  // NOTE: Rate limiting — this mutation endpoint is unprotected
   } catch (error) {
+    // Handle unique constraint violation (email already registered, race condition)
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code: string }).code === "P2002"
+    ) {
+      return NextResponse.json(
+        { error: "Email already registered" },
+        { status: 409 }
+      )
+    }
     console.error("Signup error:", error)
     return NextResponse.json(
       { error: "Internal server error" },

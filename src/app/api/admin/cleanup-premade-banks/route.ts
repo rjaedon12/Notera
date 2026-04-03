@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import { verifyAdminAuth } from "@/lib/admin-auth"
 
 /**
  * DELETE /api/admin/cleanup-premade-banks
@@ -12,8 +13,13 @@ import { auth } from "@/lib/auth"
  * - Have isPremade = true, OR
  * - Have subjects containing "AP World History", "AP US History", "AP Government"
  */
+// NOTE: Rate limiting — this mutation endpoint is unprotected
 export async function DELETE() {
   try {
+    const isAdmin = await verifyAdminAuth()
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
     const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -93,6 +99,10 @@ export async function DELETE() {
  */
 export async function GET() {
   try {
+    const isAdmin = await verifyAdminAuth()
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
     const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

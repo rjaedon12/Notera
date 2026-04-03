@@ -95,9 +95,22 @@ export async function POST() {
 
     for (const [key, condition] of checks) {
       if (condition && !unlocked.has(key)) {
-        await prisma.userAchievement.create({
-          data: { userId, achieveKey: key },
-        })
+        try {
+          await prisma.userAchievement.create({
+            data: { userId, achieveKey: key },
+          })
+        } catch (createErr) {
+          // P2002: unique constraint — achievement already exists (race condition), skip
+          if (
+            typeof createErr === "object" &&
+            createErr !== null &&
+            "code" in createErr &&
+            (createErr as { code: string }).code === "P2002"
+          ) {
+            continue
+          }
+          throw createErr
+        }
         newlyUnlocked.push(key)
 
         // Create notification for newly unlocked achievements

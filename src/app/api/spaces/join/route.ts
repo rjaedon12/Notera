@@ -40,27 +40,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // NOTE: Rate limiting — this mutation endpoint is unprotected
     // Auto-assign role: STUDENT for classrooms, MEMBER for collaborative spaces
     const joinRole = space.type === "CLASSROOM" ? "STUDENT" : "MEMBER"
 
-    await prisma.spaceMember.create({
-      data: {
-        userId: session.user.id,
-        spaceId: space.id,
-        role: joinRole,
-      },
-    })
-
-    // Send notification to space owner
-    await prisma.notification.create({
-      data: {
-        userId: space.ownerId,
-        type: "SPACE_INVITE",
-        title: "New member joined",
-        message: `${session.user.name || "Someone"} joined your space "${space.name}"`,
-        link: `/spaces/${space.id}`,
-      },
-    })
+    // Atomic: create member + send notification to space owner
+    await prisma.$transaction([
+      prisma.spaceMember.create({
+        data: {
+          userId: session.user.id,
+          spaceId: space.id,
+          role: joinRole,
+        },
+      }),
+      prisma.notification.create({
+        data: {
+          userId: space.ownerId,
+          type: "SPACE_INVITE",
+          title: "New member joined",
+          message: `${session.user.name || "Someone"} joined your space "${space.name}"`,
+          link: `/spaces/${space.id}`,
+        },
+      }),
+    ])
 
     const updated = await prisma.space.findUnique({
       where: { id: space.id },

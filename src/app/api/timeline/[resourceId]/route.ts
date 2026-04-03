@@ -23,47 +23,48 @@ export async function PUT(
 
     const resource = await prisma.resource.findUnique({ where: { id: resourceId } })
     if (!resource) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    // NOTE: Rate limiting — this mutation endpoint is unprotected
     if (resource.userId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
-    // Delete existing events and arrows, then recreate
-    await prisma.timelineArrow.deleteMany({ where: { resourceId } })
-    await prisma.timelineEvent.deleteMany({ where: { resourceId } })
-
-    // Create events
+    // Delete existing events and arrows, then recreate — wrapped in transaction for atomicity
     const eventIdMap = new Map<string, string>()
     const events = data.events || []
-
-    for (const evt of events) {
-      const created = await prisma.timelineEvent.create({
-        data: {
-          dateLabel: evt.date || evt.dateLabel || "",
-          title: evt.title || "",
-          body: evt.description || evt.body || null,
-          sortOrder: evt.sortOrder ?? 0,
-          posX: evt.x ?? evt.posX ?? 0,
-          posY: evt.y ?? evt.posY ?? 0,
-          resourceId,
-        },
-      })
-      eventIdMap.set(evt.id, created.id)
-    }
-
-    // Create arrows (edges)
     const edges = data.edges || []
-    for (const edge of edges) {
-      const fromId = eventIdMap.get(edge.fromEventId)
-      const toId = eventIdMap.get(edge.toEventId)
-      if (fromId && toId) {
-        await prisma.timelineArrow.create({
+
+    await prisma.$transaction(async (tx) => {
+      await tx.timelineArrow.deleteMany({ where: { resourceId } })
+      await tx.timelineEvent.deleteMany({ where: { resourceId } })
+
+      for (const evt of events) {
+        const created = await tx.timelineEvent.create({
           data: {
-            label: edge.label || null,
-            fromEventId: fromId,
-            toEventId: toId,
+            dateLabel: evt.date || evt.dateLabel || "",
+            title: evt.title || "",
+            body: evt.description || evt.body || null,
+            sortOrder: evt.sortOrder ?? 0,
+            posX: evt.x ?? evt.posX ?? 0,
+            posY: evt.y ?? evt.posY ?? 0,
             resourceId,
           },
         })
+        eventIdMap.set(evt.id, created.id)
       }
-    }
+
+      for (const edge of edges) {
+        const fromId = eventIdMap.get(edge.fromEventId)
+        const toId = eventIdMap.get(edge.toEventId)
+        if (fromId && toId) {
+          await tx.timelineArrow.create({
+            data: {
+              label: edge.label || null,
+              fromEventId: fromId,
+              toEventId: toId,
+              resourceId,
+            },
+          })
+        }
+      }
+    })
 
     // Return updated resource
     const updated = await prisma.resource.findUnique({
@@ -103,6 +104,9 @@ export async function GET(
     })
 
     if (!resource) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    if (resource.userId !== session.user.id && resource.visibility !== "PUBLIC") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
     return NextResponse.json(resource)
   } catch (error) {

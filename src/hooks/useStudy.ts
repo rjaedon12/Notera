@@ -1,3 +1,5 @@
+"use client"
+
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { StudySet, Card, Folder, Progress, SetComment, AppNotification, UserAnalytics, Achievement, UserAchievement, DiscoverResponse, PaginatedSets } from "@/types"
 
