@@ -715,9 +715,18 @@ export default function TakeQuizPage({
       </div>
 
       {/* Split Panel Layout */}
-      <div className="flex-1 flex">
+      <div className="flex-1 flex overflow-hidden">
         {/* Left Panel — Question Stem */}
-        <div className="w-1/2 border-r border-border p-8 overflow-y-auto bg-background">
+        <div
+          className="border-r border-border p-8 overflow-y-auto bg-background"
+          style={{
+            width: desmosOpen ? '35%' : '50%',
+            flexShrink: desmosOpen ? 1 : 0,
+            flexGrow: 0,
+            minWidth: '200px',
+            transition: 'width 300ms ease-in-out',
+          }}
+        >
           <div className="max-w-lg mx-auto">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-sm font-medium mb-6">
               Question {currentIndex + 1}
@@ -754,8 +763,17 @@ export default function TakeQuizPage({
           </div>
         </div>
 
-        {/* Right Panel — Answer Area */}
-        <div className="w-1/2 p-8 overflow-y-auto bg-muted/30">
+        {/* Center Panel — Answer Area */}
+        <div
+          className="p-8 overflow-y-auto bg-muted/30"
+          style={{
+            width: desmosOpen ? '35%' : '50%',
+            flexShrink: desmosOpen ? 1 : 0,
+            flexGrow: 0,
+            minWidth: '200px',
+            transition: 'width 300ms ease-in-out',
+          }}
+        >
           <div className="max-w-lg mx-auto">
             {currentQuestion?.type === "OPEN_RESPONSE" ? (
               <>
@@ -763,6 +781,7 @@ export default function TakeQuizPage({
                   {submitted ? "Your response (submitted)" : "Write your response"}
                 </div>
                 <OpenResponseEditor
+                  key={currentQuestion?.id}
                   value={submitted ? openResponseText : undefined}
                   onChange={(html) => setOpenResponseText(html)}
                   readOnly={submitted}
@@ -976,14 +995,29 @@ export default function TakeQuizPage({
             </div>
           </div>
         </div>
+
+        {/* Right Panel — Desmos Calculator (slides in as third column) */}
+        {/* TODO: Add responsive breakpoint check — if viewport width < ~1024px,
+           fall back to existing overlay behavior instead of inline panel */}
+        {desmosEnabled && (
+          <div
+            className="overflow-hidden border-l border-[#E8E8ED]"
+            style={{
+              width: desmosOpen ? '30%' : '0%',
+              minWidth: desmosOpen ? '320px' : '0px',
+              flexShrink: 0,
+              flexGrow: 0,
+              transition: 'width 300ms ease-in-out, min-width 300ms ease-in-out',
+            }}
+          >
+            <DesmosPanel isOpen={desmosOpen} onClose={() => setDesmosOpen(false)} inline />
+          </div>
+        )}
       </div>
 
-      {/* Desmos Panel */}
+      {/* Desmos Toggle Button */}
       {desmosEnabled && (
-        <>
-          <DesmosToggleButton isOpen={desmosOpen} onClick={() => setDesmosOpen(!desmosOpen)} />
-          <DesmosPanel isOpen={desmosOpen} onClose={() => setDesmosOpen(false)} />
-        </>
+        <DesmosToggleButton isOpen={desmosOpen} onClick={() => setDesmosOpen(!desmosOpen)} />
       )}
     </div>
   )

@@ -54,8 +54,10 @@ export function OpenResponseEditor({
   return (
     <div
       className={cn(
-        "border rounded-lg overflow-hidden transition-colors",
-        readOnly ? "border-border bg-muted/30" : "border-border focus-within:border-[var(--primary)]",
+        "border border-[#E8E8ED] rounded-xl overflow-hidden transition-colors",
+        readOnly
+          ? "bg-muted/30"
+          : "focus-within:ring-2 focus-within:ring-[#0071E3]/20 focus-within:border-[#0071E3]",
         className
       )}
     >
