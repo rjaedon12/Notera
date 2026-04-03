@@ -155,16 +155,18 @@ export default function CreateQuestionBankPage() {
     }
   }
 
-  const handleImport = (parsed: ParsedQuestion[]) => {
+  const handleImport = (parsed: ParsedQuestion[], mode: "MULTIPLE_CHOICE" | "OPEN_RESPONSE") => {
     const imported: QuestionDraft[] = parsed.map((p) => ({
       prompt: p.prompt,
       imageUrl: "",
       passage: "",
       explanation: "",
-      choices: p.choices.map((c) => ({ text: c.text, isCorrect: c.isCorrect })),
+      choices: mode === "MULTIPLE_CHOICE" 
+        ? p.choices.map((c) => ({ text: c.text, isCorrect: c.isCorrect }))
+        : [],
       showPassage: false,
       showImage: false,
-      type: "MULTIPLE_CHOICE" as QuestionType,
+      type: mode,
       pointValue: 1,
       exampleAnswer: "",
     }))

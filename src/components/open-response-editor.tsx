@@ -4,7 +4,7 @@ import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Placeholder from "@tiptap/extension-placeholder"
 import { MathBlock, InlineMath } from "@/components/notes/extensions/Mathematics"
-import { Bold, Italic, List, ListOrdered, Indent, Outdent, Sigma } from "lucide-react"
+import { Bold, Italic, Sigma } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface OpenResponseEditorProps {
@@ -29,6 +29,9 @@ export function OpenResponseEditor({
         codeBlock: false,
         blockquote: false,
         horizontalRule: false,
+        bulletList: false,
+        orderedList: false,
+        listItem: false,
       }),
       Placeholder.configure({ placeholder }),
       MathBlock,
@@ -72,34 +75,6 @@ export function OpenResponseEditor({
             title="Italic"
           >
             <Italic className="h-4 w-4" />
-          </ToolbarButton>
-          <div className="w-px h-4 bg-border mx-1" />
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            active={editor.isActive("bulletList")}
-            title="Bullet List"
-          >
-            <List className="h-4 w-4" />
-          </ToolbarButton>
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            active={editor.isActive("orderedList")}
-            title="Numbered List"
-          >
-            <ListOrdered className="h-4 w-4" />
-          </ToolbarButton>
-          <div className="w-px h-4 bg-border mx-1" />
-          <ToolbarButton
-            onClick={() => editor.chain().focus().sinkListItem("listItem").run()}
-            title="Indent"
-          >
-            <Indent className="h-4 w-4" />
-          </ToolbarButton>
-          <ToolbarButton
-            onClick={() => editor.chain().focus().liftListItem("listItem").run()}
-            title="Outdent"
-          >
-            <Outdent className="h-4 w-4" />
           </ToolbarButton>
           <div className="w-px h-4 bg-border mx-1" />
           <ToolbarButton

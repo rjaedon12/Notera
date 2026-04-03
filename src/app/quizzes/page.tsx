@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useQuestionBanks, useDeleteQuestionBank, useQuizAttempts } from "@/hooks/useQuiz"
+import { useQuestionBanks, useDeleteQuestionBank, useQuizAttempts, useDeleteAttempt } from "@/hooks/useQuiz"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -33,6 +33,7 @@ export default function QuizzesPage() {
   const { data: banksData, isLoading: loadingBanks } = useQuestionBanks()
   const { data: attempts, isLoading: loadingAttempts } = useQuizAttempts()
   const deleteBank = useDeleteQuestionBank()
+  const deleteAttempt = useDeleteAttempt()
 
   if (status === "unauthenticated") {
     router.push("/login")
@@ -48,6 +49,17 @@ export default function QuizzesPage() {
         toast.success("Question bank deleted")
       } catch {
         toast.error("Failed to delete question bank")
+      }
+    }
+  }
+
+  const handleDeleteAttempt = async (attemptId: string) => {
+    if (confirm("Are you sure you want to delete this attempt from your history?")) {
+      try {
+        await deleteAttempt.mutateAsync(attemptId)
+        toast.success("Attempt deleted")
+      } catch {
+        toast.error("Failed to delete attempt")
       }
     }
   }
@@ -282,9 +294,9 @@ export default function QuizzesPage() {
           ) : attempts && attempts.length > 0 ? (
             <div className="space-y-3">
               {attempts.map((attempt) => (
-                <Card key={attempt.id}>
+                <Card key={attempt.id} className="group">
                   <CardContent className="p-4 flex items-center justify-between">
-                    <div>
+                    <div className="flex-1">
                       <h3 className="font-medium">
                         {attempt.bank?.title || "Unknown Bank"}
                       </h3>
@@ -308,20 +320,29 @@ export default function QuizzesPage() {
                         )}
                       </div>
                     </div>
-                    {attempt.completedAt && (
-                      <div
-                        className={cn(
-                          "text-2xl font-bold",
-                          (attempt.score || 0) >= 70
-                            ? "text-green-600 dark:text-green-400"
-                            : (attempt.score || 0) >= 50
-                            ? "text-yellow-600 dark:text-yellow-400"
-                            : "text-red-600 dark:text-red-400"
-                        )}
+                    <div className="flex items-center gap-3">
+                      {attempt.completedAt && (
+                        <div
+                          className={cn(
+                            "text-2xl font-bold",
+                            (attempt.score || 0) >= 70
+                              ? "text-green-600 dark:text-green-400"
+                              : (attempt.score || 0) >= 50
+                              ? "text-yellow-600 dark:text-yellow-400"
+                              : "text-red-600 dark:text-red-400"
+                          )}
+                        >
+                          {Math.round(attempt.score || 0)}%
+                        </div>
+                      )}
+                      <button
+                        onClick={() => handleDeleteAttempt(attempt.id)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-destructive/10 rounded"
+                        title="Delete attempt"
                       >
-                        {Math.round(attempt.score || 0)}%
-                      </div>
-                    )}
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}

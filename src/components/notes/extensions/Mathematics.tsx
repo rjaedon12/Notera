@@ -50,15 +50,16 @@ function MathBlockComponent({ node, updateAttributes, selected, deleteNode }: an
     } else {
       // Render saved equation (display mode)
       if (renderRef.current && latex) {
-        // Skip if already rendered this exact latex
-        if (lastRenderedLatex.current === latex) return
-        // Clear before render to prevent doubling
+        // Always clear before render to prevent doubling
         renderRef.current.innerHTML = ""
+        // Skip if already rendered this exact latex (pure optimization)
+        if (lastRenderedLatex.current === latex && renderRef.current.children.length > 0) return
         try {
           katex.render(latex, renderRef.current, {
             displayMode: true,
             throwOnError: false,
             trust: true,
+            output: 'html', // Ensure only HTML output (no MathML duplication)
           })
           lastRenderedLatex.current = latex
         } catch {
@@ -117,6 +118,7 @@ function MathBlockComponent({ node, updateAttributes, selected, deleteNode }: an
             <button
               onClick={() => setEditing(false)}
               className="math-block-cancel-btn"
+              style={{ marginRight: "12px" }}
             >
               Cancel
             </button>
@@ -173,6 +175,11 @@ export const MathBlock = Node.create({
       "div",
       mergeAttributes(HTMLAttributes, { "data-type": "math-block" }),
     ]
+  },
+
+  // Prevent text serialization from duplicating the equation
+  renderText() {
+    return ""
   },
 
   addNodeView() {
@@ -300,6 +307,11 @@ export const InlineMath = Node.create({
       "span",
       mergeAttributes(HTMLAttributes, { "data-type": "inline-math" }),
     ]
+  },
+
+  // Prevent text serialization from duplicating the equation
+  renderText() {
+    return ""
   },
 
   addNodeView() {

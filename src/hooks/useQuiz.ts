@@ -329,3 +329,20 @@ export function useCompleteAttempt() {
     },
   })
 }
+
+export function useDeleteAttempt() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (attemptId: string) => {
+      const res = await fetch(`/api/quizzes/attempts/${attemptId}`, {
+        method: "DELETE",
+      })
+      if (!res.ok) throw new Error("Failed to delete attempt")
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["quizAttempts"] })
+      queryClient.invalidateQueries({ queryKey: ["questionBanks"] })
+    },
+  })
+}

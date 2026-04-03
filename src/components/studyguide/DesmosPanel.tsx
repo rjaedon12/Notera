@@ -44,13 +44,13 @@ export function DesmosPanel({ isOpen, onClose }: DesmosPanelProps) {
 
   return (
     <motion.div
-      initial={{ width: 0, opacity: 0 }}
-      animate={{ width: isOpen ? 420 : 0, opacity: isOpen ? 1 : 0 }}
-      exit={{ width: 0, opacity: 0 }}
+      initial={{ x: "100%", opacity: 0 }}
+      animate={{ x: isOpen ? 0 : "100%", opacity: isOpen ? 1 : 0 }}
+      exit={{ x: "100%", opacity: 0 }}
       transition={{ type: "spring", damping: 28, stiffness: 320 }}
-      className="shrink-0 border-l overflow-hidden hidden md:flex flex-col h-full"
+      className="fixed top-0 right-0 h-full w-[420px] z-50 hidden md:flex flex-col shadow-2xl"
       style={{
-        borderColor: "var(--glass-border)",
+        borderLeft: "1px solid var(--glass-border)",
         background: "var(--popover)",
       }}
     >
