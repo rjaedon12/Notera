@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -35,7 +35,32 @@ const hubTabs = [
   { id: "history" as Tab, label: "Attempt History", icon: Clock },
 ]
 
-export default function QuizzesPage() {
+function QuizzesPageFallback() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8 space-y-3">
+        <div className="h-10 w-56 glass-shimmer rounded-2xl" />
+        <div className="h-5 w-80 max-w-full glass-shimmer rounded-2xl" />
+      </div>
+
+      <div className="mb-6 h-10 w-full glass-shimmer rounded-full" />
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3].map((item) => (
+          <Card key={item}>
+            <CardContent className="p-6">
+              <div className="h-5 w-3/4 glass-shimmer rounded-xl mb-3" />
+              <div className="h-4 w-1/2 glass-shimmer rounded-xl mb-4" />
+              <div className="h-8 w-full glass-shimmer rounded-xl" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function QuizzesPageContent() {
   const { status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -62,9 +87,14 @@ export default function QuizzesPage() {
     }
   }, [searchParams])
 
-  if (status === "unauthenticated") {
-    router.push("/login")
-    return null
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login")
+    }
+  }, [router, status])
+
+  if (status !== "authenticated") {
+    return <QuizzesPageFallback />
   }
 
   const updateHubQuery = (nextTab: Tab, nextDbqTab?: DBQTab) => {
@@ -621,5 +651,13 @@ export default function QuizzesPage() {
         </>
       )}
     </div>
+  )
+}
+
+export default function QuizzesPage() {
+  return (
+    <Suspense fallback={<QuizzesPageFallback />}>
+      <QuizzesPageContent />
+    </Suspense>
   )
 }
