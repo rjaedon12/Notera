@@ -9,6 +9,7 @@ import {
   useAddQuestion,
   useDeleteQuestion,
   useUpdateQuestionBank,
+  useUpdateQuestion,
 } from "@/hooks/useQuiz"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,6 +33,7 @@ import {
   ImageIcon,
   FileText,
   Save,
+  Pencil,
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { cn } from "@/lib/utils"
@@ -64,10 +66,13 @@ export default function QuestionBankPage({
   const addQuestion = useAddQuestion()
   const deleteQuestion = useDeleteQuestion()
   const updateBank = useUpdateQuestionBank()
+  const updateQuestion = useUpdateQuestion()
 
   const [expandedQ, setExpandedQ] = useState<string | null>(null)
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
+  const [showEditQuestionDialog, setShowEditQuestionDialog] = useState(false)
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState("")
   const [editSubject, setEditSubject] = useState("")
   const [editDesc, setEditDesc] = useState("")
@@ -90,6 +95,89 @@ export default function QuestionBankPage({
     showPassage: false,
     showImage: false,
   })
+
+  // Edit question form
+  const [editQ, setEditQ] = useState<QuestionDraft>({
+    prompt: "",
+    imageUrl: "",
+    passage: "",
+    explanation: "",
+    choices: [
+      { text: "", isCorrect: true },
+      { text: "", isCorrect: false },
+    ],
+    showPassage: false,
+    showImage: false,
+  })
+
+  const openEditQuestionDialog = (questionId: string) => {
+    const question = bank?.questions?.find((q) => q.id === questionId)
+    if (!question) return
+    
+    setEditingQuestionId(questionId)
+    setEditQ({
+      prompt: question.prompt,
+      imageUrl: question.imageUrl || "",
+      passage: question.passage || "",
+      explanation: question.explanation || "",
+      choices: question.choices?.map((c) => ({
+        text: c.text,
+        isCorrect: c.isCorrect,
+      })) || [
+        { text: "", isCorrect: true },
+        { text: "", isCorrect: false },
+      ],
+      showPassage: !!question.passage,
+      showImage: !!question.imageUrl,
+    })
+    setShowEditQuestionDialog(true)
+  }
+
+  const handleUpdateQuestion = async () => {
+    if (!editingQuestionId) return
+    
+    if (!editQ.prompt.trim()) {
+      toast.error("Question prompt is required")
+      return
+    }
+    if (!editQ.explanation.trim()) {
+      toast.error("Explanation is required")
+      return
+    }
+    const filledChoices = editQ.choices.filter((c) => c.text.trim())
+    if (filledChoices.length < 2) {
+      toast.error("At least 2 choices are required")
+      return
+    }
+    const hasCorrect = filledChoices.some((c) => c.isCorrect)
+    if (!hasCorrect) {
+      toast.error("Mark one choice as correct")
+      return
+    }
+
+    try {
+      const question = bank?.questions?.find((q) => q.id === editingQuestionId)
+      await updateQuestion.mutateAsync({
+        bankId,
+        questionId: editingQuestionId,
+        prompt: editQ.prompt.trim(),
+        imageUrl: editQ.imageUrl.trim() || undefined,
+        passage: editQ.passage.trim() || undefined,
+        explanation: editQ.explanation.trim(),
+        orderIndex: question?.orderIndex ?? 0,
+        choices: filledChoices.map((c, i) => ({
+          text: c.text.trim(),
+          isCorrect: c.isCorrect,
+          orderIndex: i,
+        })),
+      })
+      toast.success("Question updated")
+      setShowEditQuestionDialog(false)
+      setEditingQuestionId(null)
+    } catch {
+      toast.error("Failed to update question")
+    }
+  }
 
   const handleDeleteBank = async () => {
     if (
@@ -412,7 +500,15 @@ export default function QuestionBankPage({
                       {question.explanation}
                     </div>
 
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditQuestionDialog(question.id)}
+                      >
+                        <Pencil className="h-3.5 w-3.5 mr-1" />
+                        Edit
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -595,6 +691,182 @@ export default function QuestionBankPage({
             </Button>
             <Button onClick={handleAddQuestion} disabled={addQuestion.isPending}>
               {addQuestion.isPending ? "Adding..." : "Add Question"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Question Dialog */}
+      <Dialog open={showEditQuestionDialog} onOpenChange={(open) => {
+        setShowEditQuestionDialog(open)
+        if (!open) setEditingQuestionId(null)
+      }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Question</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Toggle optional fields */}
+            <div className="flex gap-2">
+              <Button
+                variant={editQ.showImage ? "default" : "outline"}
+                size="sm"
+                onClick={() => setEditQ((p) => ({ ...p, showImage: !p.showImage }))}
+              >
+                <ImageIcon className="h-3.5 w-3.5 mr-1" />
+                Image
+              </Button>
+              <Button
+                variant={editQ.showPassage ? "default" : "outline"}
+                size="sm"
+                onClick={() => setEditQ((p) => ({ ...p, showPassage: !p.showPassage }))}
+              >
+                <FileText className="h-3.5 w-3.5 mr-1" />
+                Passage
+              </Button>
+            </div>
+
+            {editQ.showPassage && (
+              <div>
+                <Label>Passage / Stimulus</Label>
+                <Textarea
+                  placeholder="Reading passage or stimulus text..."
+                  value={editQ.passage}
+                  onChange={(e) => setEditQ((p) => ({ ...p, passage: e.target.value }))}
+                  className="mt-1"
+                  rows={4}
+                />
+              </div>
+            )}
+
+            {editQ.showImage && (
+              <div>
+                <Label>Image</Label>
+                <ImageUploader
+                  value={editQ.imageUrl}
+                  onChange={(url) => setEditQ((p) => ({ ...p, imageUrl: url }))}
+                />
+              </div>
+            )}
+
+            <div>
+              <Label>Question Prompt</Label>
+              <Textarea
+                placeholder="Enter your question here..."
+                value={editQ.prompt}
+                onChange={(e) => setEditQ((p) => ({ ...p, prompt: e.target.value }))}
+                className="mt-1"
+                rows={2}
+              />
+            </div>
+
+            <div>
+              <Label className="mb-2 block">
+                Answer Choices{" "}
+                <span className="text-muted-foreground font-normal">(click to mark correct)</span>
+              </Label>
+              <div className="space-y-2">
+                {editQ.choices.map((choice, ci) => (
+                  <div key={ci} className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEditQ((p) => ({
+                          ...p,
+                          choices: p.choices.map((c, i) => ({
+                            ...c,
+                            isCorrect: i === ci,
+                          })),
+                        }))
+                      }
+                    >
+                      {choice.isCorrect ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <Circle className="h-5 w-5 text-muted-foreground hover:text-green-400" />
+                      )}
+                    </button>
+                    <span className="text-sm font-medium text-muted-foreground w-6">
+                      {String.fromCharCode(65 + ci)}.
+                    </span>
+                    <Input
+                      placeholder={`Choice ${String.fromCharCode(65 + ci)}`}
+                      value={choice.text}
+                      onChange={(e) =>
+                        setEditQ((p) => ({
+                          ...p,
+                          choices: p.choices.map((c, i) =>
+                            i === ci ? { ...c, text: e.target.value } : c
+                          ),
+                        }))
+                      }
+                      className={cn(
+                        "flex-1",
+                        choice.isCorrect && "border-green-300 dark:border-green-700"
+                      )}
+                    />
+                    {editQ.choices.length > 2 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() =>
+                          setEditQ((p) => {
+                            const choices = p.choices.filter((_, i) => i !== ci)
+                            if (!choices.some((c) => c.isCorrect)) choices[0].isCorrect = true
+                            return { ...p, choices }
+                          })
+                        }
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {editQ.choices.length < 6 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    setEditQ((p) => ({
+                      ...p,
+                      choices: [...p.choices, { text: "", isCorrect: false }],
+                    }))
+                  }
+                  className="mt-2"
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Add Choice
+                </Button>
+              )}
+            </div>
+
+            <div>
+              <Label>Explanation</Label>
+              <Textarea
+                placeholder="Explain why the correct answer is correct..."
+                value={editQ.explanation}
+                onChange={(e) =>
+                  setEditQ((p) => ({ ...p, explanation: e.target.value }))
+                }
+                className="mt-1"
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowEditQuestionDialog(false)
+              setEditingQuestionId(null)
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateQuestion} disabled={updateQuestion.isPending}>
+              <Save className="h-4 w-4 mr-1" />
+              {updateQuestion.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>

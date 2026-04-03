@@ -232,22 +232,67 @@ export function ImportTextModal({ open, onClose, onImport }: ImportTextModalProp
           </div>
         )}
 
+        {/* No cards detected feedback */}
+        {text.trim() && preview.length === 0 && (
+          <div
+            className="mt-6 p-4 rounded-xl border text-sm"
+            style={{
+              background: "color-mix(in srgb, var(--destructive) 10%, transparent)",
+              borderColor: "color-mix(in srgb, var(--destructive) 30%, transparent)",
+              color: "var(--destructive)",
+            }}
+          >
+            <p className="font-medium">No cards detected</p>
+            <p className="mt-1 text-xs opacity-80">
+              Check your delimiter settings. Currently using:{" "}
+              <span className="font-mono">
+                {termSepOption === "tab" ? "Tab" : termSepOption === "comma" ? "Comma" : `"${customTermSep}"`}
+              </span>{" "}
+              between term/definition, and{" "}
+              <span className="font-mono">
+                {cardSepOption === "newline" ? "New line" : cardSepOption === "semicolon" ? "Semicolon" : `"${customCardSep}"`}
+              </span>{" "}
+              between cards.
+            </p>
+          </div>
+        )}
+
         </div>{/* end scrollable body */}
 
         {/* Pinned footer */}
         <div
-          className="flex justify-end gap-2 px-6 py-4 flex-shrink-0"
+          className="flex justify-between items-center gap-2 px-6 py-4 flex-shrink-0"
           style={{
             borderTop: "1px solid var(--glass-border)",
             background: "var(--popover)",
           }}
         >
-          <Button variant="outline" onClick={handleCancel}>
-            Cancel Import
-          </Button>
-          <Button onClick={handleImport} disabled={preview.length === 0}>
-            Import
-          </Button>
+          {/* Status indicator */}
+          <div className="text-sm text-muted-foreground">
+            {preview.length > 0 ? (
+              <span className="text-green-600 dark:text-green-400 font-medium">
+                ✓ {preview.length} card{preview.length !== 1 ? "s" : ""} ready
+              </span>
+            ) : text.trim() ? (
+              <span className="text-amber-600 dark:text-amber-400">
+                Adjust delimiters above
+              </span>
+            ) : (
+              <span>Paste your data above</span>
+            )}
+          </div>
+          
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleImport} 
+              disabled={preview.length === 0}
+            >
+              {preview.length > 0 ? `Import ${preview.length} Card${preview.length !== 1 ? "s" : ""}` : "Import"}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

@@ -92,7 +92,18 @@ export function DesmosPanel({ isOpen, onClose }: DesmosPanelProps) {
             style={{ background: "var(--popover)" }}
           >
             <AlertCircle className="h-6 w-6 text-red-400" />
-            <p className="text-xs text-center text-red-400">{error}</p>
+            <p className="text-xs text-center text-red-400 max-w-xs">{error}</p>
+            {error.includes("API key") && (
+              <a
+                href="https://www.desmos.com/api"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs underline hover:no-underline"
+                style={{ color: "var(--accent-color)" }}
+              >
+                Get a free Desmos API key
+              </a>
+            )}
           </div>
         )}
 

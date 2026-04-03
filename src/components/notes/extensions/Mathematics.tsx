@@ -28,33 +28,43 @@ function MathBlockComponent({ node, updateAttributes, selected, deleteNode }: an
   const renderRef = useRef<HTMLDivElement>(null)
   const previewRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const lastRenderedLatex = useRef<string>("")
 
-  // Render the saved equation
+  // Single unified effect for rendering - prevents double-render issues
   useEffect(() => {
-    if (!editing && renderRef.current && latex) {
-      try {
-        katex.render(latex, renderRef.current, {
-          displayMode: true,
-          throwOnError: false,
-          trust: true,
-        })
-      } catch {
-        renderRef.current.textContent = latex
+    if (editing) {
+      // Live preview while editing
+      if (previewRef.current && latex) {
+        // Clear before render to prevent doubling
+        previewRef.current.innerHTML = ""
+        try {
+          katex.render(latex, previewRef.current, {
+            displayMode: true,
+            throwOnError: false,
+            trust: true,
+          })
+        } catch {
+          previewRef.current.textContent = "⚠ Invalid LaTeX"
+        }
       }
-    }
-  }, [editing, latex])
-
-  // Live preview while editing
-  useEffect(() => {
-    if (editing && previewRef.current && latex) {
-      try {
-        katex.render(latex, previewRef.current, {
-          displayMode: true,
-          throwOnError: false,
-          trust: true,
-        })
-      } catch {
-        previewRef.current.textContent = "⚠ Invalid LaTeX"
+    } else {
+      // Render saved equation (display mode)
+      if (renderRef.current && latex) {
+        // Skip if already rendered this exact latex
+        if (lastRenderedLatex.current === latex) return
+        // Clear before render to prevent doubling
+        renderRef.current.innerHTML = ""
+        try {
+          katex.render(latex, renderRef.current, {
+            displayMode: true,
+            throwOnError: false,
+            trust: true,
+          })
+          lastRenderedLatex.current = latex
+        } catch {
+          renderRef.current.textContent = latex
+          lastRenderedLatex.current = latex
+        }
       }
     }
   }, [editing, latex])
@@ -192,17 +202,25 @@ function InlineMathComponent({ node, updateAttributes, selected }: any) {
   const [latex, setLatex] = useState(node.attrs.latex || "")
   const renderRef = useRef<HTMLSpanElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const lastRenderedLatex = useRef<string>("")
+  const isSaving = useRef(false)
 
   useEffect(() => {
     if (!editing && renderRef.current && latex) {
+      // Skip if already rendered this exact latex
+      if (lastRenderedLatex.current === latex) return
+      // Clear before render to prevent doubling
+      renderRef.current.innerHTML = ""
       try {
         katex.render(latex, renderRef.current, {
           displayMode: false,
           throwOnError: false,
           trust: true,
         })
+        lastRenderedLatex.current = latex
       } catch {
         renderRef.current.textContent = latex
+        lastRenderedLatex.current = latex
       }
     }
   }, [editing, latex])
@@ -214,8 +232,13 @@ function InlineMathComponent({ node, updateAttributes, selected }: any) {
   }, [editing])
 
   const handleSave = useCallback(() => {
+    // Prevent double-save from blur + keydown firing together
+    if (isSaving.current) return
+    isSaving.current = true
     updateAttributes({ latex })
     setEditing(false)
+    // Reset save guard after a short delay
+    setTimeout(() => { isSaving.current = false }, 100)
   }, [latex, updateAttributes])
 
   return (

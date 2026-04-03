@@ -57,7 +57,7 @@ function loadDesmosScript(): Promise<void> {
 
     const apiKey = process.env.NEXT_PUBLIC_DESMOS_API_KEY
     if (!apiKey) {
-      reject(new Error("NEXT_PUBLIC_DESMOS_API_KEY is not set"))
+      reject(new Error("Desmos API key not configured. Add NEXT_PUBLIC_DESMOS_API_KEY to your environment variables. Get a free key at desmos.com/api"))
       return
     }
 
