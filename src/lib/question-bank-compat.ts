@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 
-type QuestionBankLike = {
+type QuestionBankLike = Record<string, unknown> & {
   feedbackMode?: unknown
 }
 
@@ -26,6 +26,8 @@ const QUESTION_BANK_BASE_SELECT = {
   userId: true,
   categoryId: true,
 } satisfies Prisma.QuestionBankSelect
+
+type QuestionBankBaseSelect = typeof QUESTION_BANK_BASE_SELECT
 
 export const QUESTION_BANK_OWNER_SELECT = {
   id: true,
@@ -85,9 +87,13 @@ export async function questionBankHasFeedbackModeColumn(): Promise<boolean> {
   return globalForQuestionBankCompat.questionBankFeedbackModePromise
 }
 
+export async function getQuestionBankSelect(): Promise<QuestionBankBaseSelect>
+export async function getQuestionBankSelect<const T extends Prisma.QuestionBankSelect>(
+  extra: T
+): Promise<QuestionBankBaseSelect & T>
 export async function getQuestionBankSelect(
   extra: Prisma.QuestionBankSelect = {}
-): Promise<Prisma.QuestionBankSelect> {
+) {
   const hasFeedbackMode = await questionBankHasFeedbackModeColumn()
 
   return {
