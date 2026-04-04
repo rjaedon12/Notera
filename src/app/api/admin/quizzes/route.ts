@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyAdminAuth } from "@/lib/admin-auth"
+import {
+  getQuestionBankSelect,
+  withQuestionBankDefaultsArray,
+} from "@/lib/question-bank-compat"
 
 // GET /api/admin/quizzes — list all quiz banks (admin only)
 export async function GET() {
@@ -9,15 +13,17 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
+    const bankSelect = await getQuestionBankSelect({
+      user: { select: { id: true, name: true, email: true } },
+      _count: { select: { questions: true, attempts: true } },
+    })
+
     const banks = await prisma.questionBank.findMany({
-      include: {
-        user: { select: { id: true, name: true, email: true } },
-        _count: { select: { questions: true, attempts: true } },
-      },
+      select: bankSelect,
       orderBy: { createdAt: "desc" },
     })
 
-    return NextResponse.json(banks)
+    return NextResponse.json(withQuestionBankDefaultsArray(banks))
   } catch (error) {
     console.error("Admin get quizzes error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -34,7 +40,10 @@ export async function DELETE(request: NextRequest) {
     const { bankId } = await request.json()
     if (!bankId) return NextResponse.json({ error: "bankId is required" }, { status: 400 })
 
-    const bank = await prisma.questionBank.findUnique({ where: { id: bankId } })
+    const bank = await prisma.questionBank.findUnique({
+      where: { id: bankId },
+      select: { id: true },
+    })
     if (!bank) return NextResponse.json({ error: "Quiz bank not found" }, { status: 404 })
 
     await prisma.questionBank.delete({ where: { id: bankId } })

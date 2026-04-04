@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import {
+  getQuestionBankFeedbackModeData,
+  getQuestionBankSelect,
+  QUESTION_BANK_OWNER_SELECT,
+  QUESTION_WITH_CHOICES_SELECT,
+  withQuestionBankDefaults,
+} from "@/lib/question-bank-compat"
 
 // GET /api/quizzes/banks/[bankId]
 export async function GET(
@@ -14,17 +21,18 @@ export async function GET(
     }
 
     const { bankId } = await params
+    const bankSelect = await getQuestionBankSelect({
+      questions: {
+        select: QUESTION_WITH_CHOICES_SELECT,
+        orderBy: { orderIndex: "asc" },
+      },
+      user: { select: { id: true, name: true } },
+      _count: { select: { questions: true, attempts: true } },
+    })
 
     const bank = await prisma.questionBank.findUnique({
       where: { id: bankId },
-      include: {
-        questions: {
-          include: { choices: { orderBy: { orderIndex: "asc" } } },
-          orderBy: { orderIndex: "asc" },
-        },
-        user: { select: { id: true, name: true } },
-        _count: { select: { questions: true, attempts: true } },
-      },
+      select: bankSelect,
     })
 
     if (!bank) return NextResponse.json({ error: "Not found" }, { status: 404 })
@@ -35,14 +43,16 @@ export async function GET(
     }
 
     // Map correctChoiceId for each question
-    const questionsWithCorrect = bank.questions.map((q) => {
+    const normalizedBank = withQuestionBankDefaults(bank)
+
+    const questionsWithCorrect = normalizedBank.questions.map((q) => {
       const correctChoice = q.choices.find((c) => c.isCorrect)
       return { ...q, correctChoiceId: correctChoice?.id || null }
     })
 
     return NextResponse.json({
-      ...bank,
-      ownerId: bank.userId,
+      ...normalizedBank,
+      ownerId: normalizedBank.userId,
       questions: questionsWithCorrect,
     })
   } catch (error) {
@@ -65,9 +75,17 @@ export async function PATCH(
     const { bankId } = await params
     const body = await request.json()
 
-    const bank = await prisma.questionBank.findUnique({ where: { id: bankId } })
+    const bank = await prisma.questionBank.findUnique({
+      where: { id: bankId },
+      select: QUESTION_BANK_OWNER_SELECT,
+    })
     if (!bank) return NextResponse.json({ error: "Not found" }, { status: 404 })
     if (bank.userId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+
+    const feedbackModeData = await getQuestionBankFeedbackModeData(body.feedbackMode)
+    const bankSelect = await getQuestionBankSelect({
+      _count: { select: { questions: true, attempts: true } },
+    })
 
     const updated = await prisma.questionBank.update({
       where: { id: bankId },
@@ -79,16 +97,12 @@ export async function PATCH(
         ...(body.isPublic !== undefined && { isPublic: body.isPublic }),
         ...(body.timerMinutes !== undefined && { timerMinutes: body.timerMinutes === null ? null : Number(body.timerMinutes) }),
         ...(body.desmosEnabled !== undefined && { desmosEnabled: body.desmosEnabled }),
-        ...(body.feedbackMode !== undefined && {
-          feedbackMode: body.feedbackMode === "REVEAL_AT_END" ? "REVEAL_AT_END" : "IMMEDIATE",
-        }),
+        ...feedbackModeData,
       },
-      include: {
-        _count: { select: { questions: true, attempts: true } },
-      },
+      select: bankSelect,
     })
 
-    return NextResponse.json(updated)
+    return NextResponse.json(withQuestionBankDefaults(updated))
   } catch (error) {
     console.error("Update question bank error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -108,7 +122,10 @@ export async function DELETE(
 
     const { bankId } = await params
 
-    const bank = await prisma.questionBank.findUnique({ where: { id: bankId } })
+    const bank = await prisma.questionBank.findUnique({
+      where: { id: bankId },
+      select: QUESTION_BANK_OWNER_SELECT,
+    })
     if (!bank) return NextResponse.json({ error: "Not found" }, { status: 404 })
     if (bank.userId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 

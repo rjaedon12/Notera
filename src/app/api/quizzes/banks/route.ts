@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import {
+  getQuestionBankFeedbackModeData,
+  getQuestionBankSelect,
+  QUESTION_WITH_CHOICES_SELECT,
+  withQuestionBankDefaults,
+} from "@/lib/question-bank-compat"
 
 // GET /api/quizzes/banks — returns { myBanks, premadeBanks }
 export async function GET() {
@@ -10,13 +16,15 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const bankSelect = await getQuestionBankSelect({
+      user: { select: { id: true, name: true } },
+      _count: { select: { questions: true, attempts: true } },
+    })
+
     const [myBanks, premadeBanks] = await Promise.all([
       prisma.questionBank.findMany({
         where: { userId: session.user.id },
-        include: {
-          _count: { select: { questions: true, attempts: true } },
-          user: { select: { id: true, name: true } },
-        },
+        select: bankSelect,
         orderBy: { updatedAt: "desc" },
       }),
       prisma.questionBank.findMany({
@@ -24,18 +32,15 @@ export async function GET() {
           OR: [{ isPublic: true }, { isPremade: true }],
           NOT: { userId: session.user.id },
         },
-        include: {
-          _count: { select: { questions: true, attempts: true } },
-          user: { select: { id: true, name: true } },
-        },
+        select: bankSelect,
         orderBy: { updatedAt: "desc" },
       }),
     ])
 
     // Map owner to match the frontend's expected field names
-    const mapBank = (b: typeof myBanks[0]) => ({
-      ...b,
-      ownerId: b.userId,
+    const mapBank = (bank: (typeof myBanks)[number]) => ({
+      ...withQuestionBankDefaults(bank),
+      ownerId: bank.userId,
     })
 
     return NextResponse.json({
@@ -73,6 +78,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Title and subject are required" }, { status: 400 })
     }
 
+    const feedbackModeData = await getQuestionBankFeedbackModeData(feedbackMode)
+    const bankSelect = await getQuestionBankSelect({
+      questions: {
+        select: QUESTION_WITH_CHOICES_SELECT,
+        orderBy: { orderIndex: "asc" },
+      },
+      _count: { select: { questions: true, attempts: true } },
+    })
+
     const bank = await prisma.questionBank.create({
       data: {
         title,
@@ -82,7 +96,7 @@ export async function POST(request: NextRequest) {
         isPublic: isPublic ?? false,
         timerMinutes: timerMinutes != null ? Number(timerMinutes) : null,
         desmosEnabled: desmosEnabled ?? false,
-        feedbackMode: feedbackMode === "REVEAL_AT_END" ? "REVEAL_AT_END" : "IMMEDIATE",
+        ...feedbackModeData,
         userId: session.user.id,
         ...(questions && questions.length > 0
           ? {
@@ -124,13 +138,10 @@ export async function POST(request: NextRequest) {
             }
           : {}),
       },
-      include: {
-        questions: { include: { choices: true } },
-        _count: { select: { questions: true, attempts: true } },
-      },
+      select: bankSelect,
     })
 
-    return NextResponse.json(bank, { status: 201 })
+    return NextResponse.json(withQuestionBankDefaults(bank), { status: 201 })
   } catch (error) {
     console.error("Create question bank error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

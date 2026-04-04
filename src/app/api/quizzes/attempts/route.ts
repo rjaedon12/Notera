@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import {
+  getQuestionBankSelect,
+  QUESTION_WITH_CHOICES_SELECT,
+  withQuestionBankDefaults,
+} from "@/lib/question-bank-compat"
 
 // GET /api/quizzes/attempts — list user's quiz attempts
 export async function GET(request: NextRequest) {
@@ -61,14 +66,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "bankId is required" }, { status: 400 })
     }
 
+    const bankSelect = await getQuestionBankSelect({
+      questions: {
+        select: QUESTION_WITH_CHOICES_SELECT,
+        orderBy: { orderIndex: "asc" },
+      },
+    })
+
     const bank = await prisma.questionBank.findUnique({
       where: { id: bankId },
-      include: {
-        questions: {
-          include: { choices: { orderBy: { orderIndex: "asc" } } },
-          orderBy: { orderIndex: "asc" },
-        },
-      },
+      select: bankSelect,
     })
 
     if (!bank) return NextResponse.json({ error: "Bank not found" }, { status: 404 })
@@ -81,20 +88,22 @@ export async function POST(request: NextRequest) {
         bankId,
         userId: session.user.id,
       },
-      include: {
+      select: {
+        id: true,
+        score: true,
+        completedAt: true,
+        startedAt: true,
+        userId: true,
+        bankId: true,
         bank: {
-          include: {
-            questions: {
-              include: { choices: { orderBy: { orderIndex: "asc" } } },
-              orderBy: { orderIndex: "asc" },
-            },
-          },
+          select: bankSelect,
         },
       },
     })
 
     // Map correctChoiceId for each question
-    const questions = attempt.bank.questions.map((q) => {
+    const bankWithDefaults = withQuestionBankDefaults(attempt.bank)
+    const questions = bankWithDefaults.questions.map((q) => {
       const correct = q.choices.find((c) => c.isCorrect)
       return { ...q, correctChoiceId: correct?.id || null }
     })
@@ -103,7 +112,7 @@ export async function POST(request: NextRequest) {
       ...attempt,
       totalQuestions: questions.length,
       bank: {
-        ...attempt.bank,
+        ...bankWithDefaults,
         questions,
       },
     }, { status: 201 })

@@ -34,41 +34,96 @@ interface UseDesmosOptions {
 }
 
 const DESMOS_SCRIPT_ID = "desmos-api-script"
+let desmosScriptPromise: Promise<void> | null = null
 
 function loadDesmosScript(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (window.Desmos) {
+  if (typeof window === "undefined") {
+    return Promise.reject(new Error("Desmos can only load in the browser"))
+  }
+
+  if (window.Desmos) {
+    return Promise.resolve()
+  }
+
+  const apiKey = process.env.NEXT_PUBLIC_DESMOS_API_KEY?.trim()
+  if (!apiKey) {
+    return Promise.reject(
+      new Error(
+        "Desmos API key not configured. Add NEXT_PUBLIC_DESMOS_API_KEY to your environment variables. Get a free key at desmos.com/api"
+      )
+    )
+  }
+
+  if (desmosScriptPromise) {
+    return desmosScriptPromise
+  }
+
+  desmosScriptPromise = new Promise((resolve, reject) => {
+    let script = document.getElementById(DESMOS_SCRIPT_ID) as HTMLScriptElement | null
+
+    if (script?.dataset.desmosStatus === "error") {
+      script.remove()
+      script = null
+    }
+
+    if (script?.dataset.desmosStatus === "ready" && window.Desmos) {
       resolve()
       return
     }
 
-    const existing = document.getElementById(DESMOS_SCRIPT_ID)
-    if (existing) {
-      // Script element exists — if Desmos already loaded, resolve immediately.
-      // Otherwise the script is still loading; listen for the events.
+    if (!script) {
+      script = document.createElement("script")
+      script.id = DESMOS_SCRIPT_ID
+      script.src = `https://www.desmos.com/api/v1.10/calculator.js?apiKey=${apiKey}`
+      script.async = true
+      script.dataset.desmosStatus = "loading"
+      document.head.appendChild(script)
+    }
+
+    const cleanup = () => {
+      script?.removeEventListener("load", handleLoad)
+      script?.removeEventListener("error", handleError)
+    }
+
+    const handleLoad = () => {
+      cleanup()
+
       if (window.Desmos) {
+        if (script) {
+          script.dataset.desmosStatus = "ready"
+        }
         resolve()
         return
       }
-      existing.addEventListener("load", () => resolve())
-      existing.addEventListener("error", () => reject(new Error("Failed to load Desmos API")))
-      return
+
+      if (script) {
+        script.dataset.desmosStatus = "error"
+        script.remove()
+      }
+      desmosScriptPromise = null
+      reject(new Error("Failed to initialize Desmos"))
     }
 
-    const apiKey = process.env.NEXT_PUBLIC_DESMOS_API_KEY
-    if (!apiKey) {
-      reject(new Error("Desmos API key not configured. Add NEXT_PUBLIC_DESMOS_API_KEY to your environment variables. Get a free key at desmos.com/api"))
-      return
+    const handleError = () => {
+      cleanup()
+
+      if (script) {
+        script.dataset.desmosStatus = "error"
+        script.remove()
+      }
+      desmosScriptPromise = null
+      reject(new Error("Failed to load Desmos API"))
     }
 
-    const script = document.createElement("script")
-    script.id = DESMOS_SCRIPT_ID
-    script.src = `https://www.desmos.com/api/v1.10/calculator.js?apiKey=${apiKey}`
-    script.async = true
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error("Failed to load Desmos API"))
-    document.head.appendChild(script)
+    script.addEventListener("load", handleLoad, { once: true })
+    script.addEventListener("error", handleError, { once: true })
+
+    if (script.dataset.desmosStatus === "ready" && window.Desmos) {
+      handleLoad()
+    }
   })
+
+  return desmosScriptPromise
 }
 
 export function useDesmos(
@@ -96,12 +151,15 @@ export function useDesmos(
       if (calculatorRef.current) {
         calculatorRef.current.destroy()
         calculatorRef.current = null
-        setIsLoaded(false)
       }
+      setIsLoaded(false)
+      setError(null)
       return
     }
 
     let cancelled = false
+    setError(null)
+    setIsLoaded(false)
 
     async function init() {
       try {
@@ -124,9 +182,13 @@ export function useDesmos(
         })
 
         calculatorRef.current = calc
-        if (!cancelled) setIsLoaded(true)
+        if (!cancelled) {
+          setError(null)
+          setIsLoaded(true)
+        }
       } catch (err) {
         if (!cancelled) {
+          setIsLoaded(false)
           setError(err instanceof Error ? err.message : "Failed to initialize Desmos")
         }
       }
