@@ -73,11 +73,11 @@ export default function WhiteboardDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
-            <Layout size={24} className="text-blue-500" />
+          <h1 className="text-2xl font-bold font-heading tracking-tight flex items-center gap-2.5" style={{ color: "var(--foreground)" }}>
+            <Layout size={22} style={{ color: "var(--primary)" }} />
             Whiteboard
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-sm mt-1" style={{ color: "var(--muted-foreground)" }}>
             Collaborative boards for visual learning
           </p>
         </div>
@@ -85,7 +85,11 @@ export default function WhiteboardDashboard() {
         <button
           onClick={handleCreate}
           disabled={isPending}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium transition-colors disabled:opacity-50 shadow-sm"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-50 shadow-sm hover:shadow-md active:scale-[0.97]"
+          style={{
+            background: "var(--primary)",
+            color: "var(--primary-foreground)",
+          }}
         >
           <Plus size={16} />
           New Board
@@ -95,13 +99,18 @@ export default function WhiteboardDashboard() {
       {/* Search */}
       {boards.length > 0 && (
         <div className="relative mb-6">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: "var(--muted-foreground)" }} />
           <input
             type="text"
             placeholder="Search boards..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full max-w-sm pl-10 pr-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 text-sm text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-500/30 transition-all"
+            className="w-full max-w-sm pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none transition-all backdrop-blur-xl focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-0"
+            style={{
+              background: "var(--glass-fill)",
+              border: "1px solid var(--glass-border)",
+              color: "var(--foreground)",
+            }}
           />
         </div>
       )}
@@ -109,7 +118,7 @@ export default function WhiteboardDashboard() {
       {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-20">
-          <div className="animate-pulse text-zinc-400">Loading boards...</div>
+          <div className="animate-pulse" style={{ color: "var(--muted-foreground)" }}>Loading boards...</div>
         </div>
       )}
 
@@ -120,22 +129,29 @@ export default function WhiteboardDashboard() {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center justify-center py-20 text-center"
         >
-          <div className="w-20 h-20 rounded-2xl bg-blue-50 dark:bg-blue-500/15 flex items-center justify-center mb-4">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-blue-500">
+          <div
+            className="w-20 h-20 rounded-2xl flex items-center justify-center mb-4"
+            style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)" }}
+          >
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: "var(--primary)" }}>
               <rect x="2" y="4" width="20" height="14" rx="2" />
               <path d="M7 9l2.5 2.5L14 8" strokeWidth="1.7" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-zinc-700 dark:text-zinc-200 mb-1">
+          <h3 className="text-lg font-semibold font-heading mb-1" style={{ color: "var(--foreground)" }}>
             No boards yet
           </h3>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6 max-w-sm">
+          <p className="text-sm mb-6 max-w-sm" style={{ color: "var(--muted-foreground)" }}>
             Create your first whiteboard to start sketching, diagramming, and collaborating in real time.
           </p>
           <button
             onClick={handleCreate}
             disabled={isPending}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-50 active:scale-[0.97]"
+            style={{
+              background: "var(--primary)",
+              color: "var(--primary-foreground)",
+            }}
           >
             <Plus size={16} />
             Create your first board
@@ -145,15 +161,18 @@ export default function WhiteboardDashboard() {
 
       {/* Board grid */}
       {!loading && filtered.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {/* New board quick-create card */}
           <motion.button
             layout
             onClick={handleCreate}
             disabled={isPending}
-            className="aspect-[16/10] rounded-xl border-2 border-dashed border-zinc-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-500/40 flex items-center justify-center transition-all hover:bg-blue-50/50 dark:hover:bg-blue-500/5 group"
+            className="aspect-[16/10] rounded-2xl border-2 border-dashed flex items-center justify-center transition-all group"
+            style={{
+              borderColor: "var(--glass-border)",
+            }}
           >
-            <div className="flex flex-col items-center gap-2 text-zinc-400 group-hover:text-blue-500 transition-colors">
+            <div className="flex flex-col items-center gap-2 transition-colors" style={{ color: "var(--muted-foreground)" }}>
               <Plus size={24} />
               <span className="text-sm font-medium">New Board</span>
             </div>
@@ -175,7 +194,7 @@ export default function WhiteboardDashboard() {
 
       {/* No search results */}
       {!loading && boards.length > 0 && filtered.length === 0 && search && (
-        <div className="text-center py-12 text-zinc-400">
+        <div className="text-center py-12" style={{ color: "var(--muted-foreground)" }}>
           No boards matching &ldquo;{search}&rdquo;
         </div>
       )}

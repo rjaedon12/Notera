@@ -9,6 +9,7 @@ export type QuizFeedbackModeValue = "IMMEDIATE" | "REVEAL_AT_END"
 
 const globalForQuestionBankCompat = globalThis as typeof globalThis & {
   questionBankFeedbackModePromise?: Promise<boolean>
+  feedbackModeColumnEnsured?: boolean
 }
 
 const QUESTION_BANK_BASE_SELECT = {
@@ -124,4 +125,38 @@ export function withQuestionBankDefaults<T extends QuestionBankLike>(bank: T) {
 
 export function withQuestionBankDefaultsArray<T extends QuestionBankLike>(banks: T[]) {
   return banks.map((bank) => withQuestionBankDefaults(bank))
+}
+
+/**
+ * Non-destructively ensures the feedbackMode column and its enum type exist.
+ * Safe to call multiple times — uses IF NOT EXISTS.
+ * Only runs once per process lifetime.
+ */
+export async function ensureFeedbackModeColumn(): Promise<void> {
+  if (globalForQuestionBankCompat.feedbackModeColumnEnsured) return
+
+  const hasColumn = await questionBankHasFeedbackModeColumn()
+  if (hasColumn) {
+    globalForQuestionBankCompat.feedbackModeColumnEnsured = true
+    return
+  }
+
+  try {
+    // Create the enum type if it doesn't exist
+    await prisma.$executeRawUnsafe(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'QuizFeedbackMode') THEN CREATE TYPE "QuizFeedbackMode" AS ENUM ('IMMEDIATE', 'REVEAL_AT_END'); END IF; END $$`
+    )
+
+    // Add the column if it doesn't exist
+    await prisma.$executeRawUnsafe(
+      `ALTER TABLE "QuestionBank" ADD COLUMN IF NOT EXISTS "feedbackMode" "QuizFeedbackMode" DEFAULT 'IMMEDIATE'::"QuizFeedbackMode"`
+    )
+
+    // Clear the cached column check so subsequent calls detect the new column
+    globalForQuestionBankCompat.questionBankFeedbackModePromise = undefined
+    globalForQuestionBankCompat.feedbackModeColumnEnsured = true
+  } catch (error) {
+    console.warn("Could not auto-add feedbackMode column (DDL may be restricted):", error)
+    // Non-fatal — the compat layer still excludes the column from queries
+  }
 }

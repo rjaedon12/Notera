@@ -33,7 +33,7 @@ export function useWhiteboardCanvas({
   const [elements, setElements] = useState<WhiteboardElement[]>(initialElements)
   const [tool, setTool] = useState<ToolType>("pen")
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, zoom: DEFAULT_ZOOM })
-  const [style, setStyle] = useState<StrokeStyle>({ color: LIGHT_CANVAS_TEXT_COLOR, size: 4, opacity: 1 })
+  const [style, setStyle] = useState<StrokeStyle>({ color: "#1a1a1a", size: 4, opacity: 1 })
   const [background, setBackground] = useState<BackgroundType>("plain")
   const [bgColor, setBgColor] = useState("#ffffff")
   const [isDrawing, setIsDrawing] = useState(false)
@@ -83,10 +83,9 @@ export function useWhiteboardCanvas({
   const getActiveStyle = useCallback(
     (overrides: Partial<StrokeStyle> = {}): StrokeStyle => ({
       ...style,
-      color: resolveCanvasElementColor(style.color, isDarkTheme),
       ...overrides,
     }),
-    [style, isDarkTheme]
+    [style]
   )
 
   // ─── Coordinate Transforms ──────────────────────────────
@@ -1096,7 +1095,7 @@ function getCanvasThemeColors(isDarkTheme: boolean) {
 }
 
 function resolveCanvasElementColor(color: string | undefined, isDarkTheme: boolean) {
-  if (!color || isDefaultCanvasTextColor(color)) {
+  if (!color) {
     return isDarkTheme ? DARK_CANVAS_TEXT_COLOR : LIGHT_CANVAS_TEXT_COLOR
   }
 
@@ -1105,11 +1104,6 @@ function resolveCanvasElementColor(color: string | undefined, isDarkTheme: boole
 
 function resolveStickyTextColor(stickyColor?: string) {
   return isColorDark(stickyColor ?? "#fff3bf") ? DARK_CANVAS_TEXT_COLOR : LIGHT_CANVAS_TEXT_COLOR
-}
-
-function isDefaultCanvasTextColor(color: string) {
-  const normalized = normalizeHexColor(color)
-  return normalized === LIGHT_CANVAS_TEXT_COLOR || normalized === DARK_CANVAS_TEXT_COLOR
 }
 
 function normalizeHexColor(color: string) {

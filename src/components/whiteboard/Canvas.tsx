@@ -214,7 +214,7 @@ export function Canvas({
 }
 
 function resolveCanvasEditorColor(color: string | undefined, isDarkTheme: boolean) {
-  if (!color || isDefaultCanvasTextColor(color)) {
+  if (!color) {
     return isDarkTheme ? DARK_CANVAS_TEXT_COLOR : LIGHT_CANVAS_TEXT_COLOR
   }
 
@@ -223,11 +223,6 @@ function resolveCanvasEditorColor(color: string | undefined, isDarkTheme: boolea
 
 function resolveStickyEditorColor(stickyColor?: string) {
   return isColorDarkHex(stickyColor ?? "#fff3bf") ? DARK_CANVAS_TEXT_COLOR : LIGHT_CANVAS_TEXT_COLOR
-}
-
-function isDefaultCanvasTextColor(color: string) {
-  const normalized = normalizeHexColor(color)
-  return normalized === LIGHT_CANVAS_TEXT_COLOR || normalized === DARK_CANVAS_TEXT_COLOR
 }
 
 function normalizeHexColor(color: string) {

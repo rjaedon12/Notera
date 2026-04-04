@@ -6,6 +6,7 @@ import {
   getQuestionBankSelect,
   QUESTION_WITH_CHOICES_SELECT,
   withQuestionBankDefaults,
+  ensureFeedbackModeColumn,
 } from "@/lib/question-bank-compat"
 
 // GET /api/quizzes/banks — returns { myBanks, premadeBanks }
@@ -78,6 +79,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Title and subject are required" }, { status: 400 })
     }
 
+    // Ensure the feedbackMode column exists (safe, non-destructive)
+    await ensureFeedbackModeColumn()
+
     const feedbackModeData = await getQuestionBankFeedbackModeData(feedbackMode)
     const bankSelect = await getQuestionBankSelect({
       questions: {
@@ -144,6 +148,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(withQuestionBankDefaults(bank), { status: 201 })
   } catch (error) {
     console.error("Create question bank error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    const message = error instanceof Error ? error.message : "Internal server error"
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

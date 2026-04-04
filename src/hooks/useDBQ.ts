@@ -130,3 +130,23 @@ export function useSubmitDBQEssay() {
     },
   })
 }
+
+export function useDeleteDBQEssay() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (essayId: string) => {
+      const res = await fetch(`/api/dbq/essays/${essayId}`, {
+        method: "DELETE",
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Request failed" }))
+        throw new Error(err.error || "Failed to delete essay")
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dbqEssays"] })
+      queryClient.invalidateQueries({ queryKey: ["dbqPrompts"] })
+    },
+  })
+}

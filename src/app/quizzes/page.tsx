@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useQuestionBanks, useDeleteQuestionBank, useQuizAttempts, useDeleteAttempt } from "@/hooks/useQuiz"
-import { useDBQPrompts, useDBQEssays } from "@/hooks/useDBQ"
+import { useDBQPrompts, useDBQEssays, useDeleteDBQEssay } from "@/hooks/useDBQ"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -21,6 +21,7 @@ import {
   ScrollText,
   FileText,
   ChevronRight,
+  Eye,
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { cn } from "@/lib/utils"
@@ -74,6 +75,7 @@ function QuizzesPageContent() {
   const { data: essays, isLoading: loadingEssays } = useDBQEssays()
   const deleteBank = useDeleteQuestionBank()
   const deleteAttempt = useDeleteAttempt()
+  const deleteEssay = useDeleteDBQEssay()
 
   useEffect(() => {
     const nextTab = searchParams.get("tab")
@@ -383,20 +385,6 @@ function QuizzesPageContent() {
 
       {activeTab === "dbq" && (
         <div className="space-y-6">
-          <div
-            className="rounded-2xl p-5 border"
-            style={{ background: "var(--glass-fill)", borderColor: "var(--glass-border)" }}
-          >
-            <div className="flex items-start gap-3">
-              <ScrollText className="h-6 w-6 mt-0.5" style={{ color: "var(--primary)" }} />
-              <div>
-                <h2 className="text-lg font-semibold font-heading">DBQ Arena</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Document-based questions stay distinct from practice tests, but now live inside the same hub.
-                </p>
-              </div>
-            </div>
-          </div>
 
           <div
             className="inline-flex items-center gap-1 rounded-xl p-1"
@@ -528,10 +516,10 @@ function QuizzesPageContent() {
               ) : filteredEssays.length > 0 ? (
                 <div className="space-y-3">
                   {filteredEssays.map((essay) => (
-                    <Link key={essay.id} href={`/dbq/${essay.promptId}/essays/${essay.id}`}>
-                      <Card className="hover:shadow-md transition-all cursor-pointer group">
-                        <CardContent className="p-5 flex items-center justify-between">
-                          <div className="space-y-1 min-w-0 flex-1">
+                    <Card key={essay.id} className="hover:shadow-md transition-all group">
+                      <CardContent className="p-5 flex items-center justify-between">
+                        <Link href={`/dbq/${essay.promptId}/essays/${essay.id}`} className="min-w-0 flex-1 cursor-pointer">
+                          <div className="space-y-1">
                             <h4 className="font-medium truncate">
                               {essay.prompt?.title ?? "DBQ Essay"}
                             </h4>
@@ -552,10 +540,27 @@ function QuizzesPageContent() {
                               {essay.content.slice(0, 120)}...
                             </p>
                           </div>
-                          <ChevronRight className="h-5 w-5 text-[var(--muted-foreground)] group-hover:text-[var(--foreground)] transition-colors flex-shrink-0 ml-4" />
-                        </CardContent>
-                      </Card>
-                    </Link>
+                        </Link>
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (confirm("Delete this essay? This cannot be undone.")) {
+                                deleteEssay.mutate(essay.id, {
+                                  onSuccess: () => toast.success("Essay deleted"),
+                                  onError: () => toast.error("Failed to delete essay"),
+                                })
+                              }
+                            }}
+                            className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-[var(--muted-foreground)] hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                            title="Delete essay"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                          <ChevronRight className="h-5 w-5 text-[var(--muted-foreground)] group-hover:text-[var(--foreground)] transition-colors" />
+                        </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               ) : (
@@ -626,6 +631,15 @@ function QuizzesPageContent() {
                         >
                           {Math.round(attempt.score || 0)}%
                         </div>
+                      )}
+                      {attempt.completedAt && (
+                        <Link
+                          href={`/quizzes/review/${attempt.id}`}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-primary/10 rounded"
+                          title="Review answers"
+                        >
+                          <Eye className="h-4 w-4 text-primary" />
+                        </Link>
                       )}
                       <button
                         onClick={() => handleDeleteAttempt(attempt.id)}

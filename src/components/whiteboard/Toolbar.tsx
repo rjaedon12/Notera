@@ -118,12 +118,19 @@ export function Toolbar({
           </AnimatePresence>
 
           {/* Main toolbar */}
-          <div className="flex items-center gap-1 px-3 py-2 rounded-2xl bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border border-zinc-200/60 dark:border-zinc-700/60 shadow-lg shadow-black/5 dark:shadow-black/30">
+          <div
+            className="flex items-center gap-1 px-3 py-2 rounded-2xl backdrop-blur-xl shadow-lg"
+            style={{
+              background: "var(--popover)",
+              border: "1px solid var(--glass-border)",
+            }}
+          >
             {/* Undo/Redo */}
             <button
               onClick={onUndo}
               disabled={!canUndo}
-              className="p-2 rounded-xl text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="p-2 rounded-xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              style={{ color: "var(--muted-foreground)" }}
               title="Undo (⌘Z)"
             >
               <Undo2 size={18} />
@@ -131,14 +138,15 @@ export function Toolbar({
             <button
               onClick={onRedo}
               disabled={!canRedo}
-              className="p-2 rounded-xl text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="p-2 rounded-xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              style={{ color: "var(--muted-foreground)" }}
               title="Redo (⌘⇧Z)"
             >
               <Redo2 size={18} />
             </button>
 
             {/* Divider */}
-            <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-700 mx-1" />
+            <div className="w-px h-6 mx-1" style={{ background: "var(--glass-border)" }} />
 
             {/* Tool buttons */}
             {TOOLBAR_TOOLS.map((t) => (
@@ -152,11 +160,16 @@ export function Toolbar({
                     setShowColorPicker(false)
                   }
                 }}
-                className={`p-2 rounded-xl transition-all duration-150 ${
+                className="p-2 rounded-xl transition-all duration-150"
+                style={
                   tool === t
-                    ? "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 ring-1 ring-blue-200 dark:ring-blue-500/30"
-                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                }`}
+                    ? {
+                        background: "color-mix(in srgb, var(--primary) 12%, transparent)",
+                        color: "var(--primary)",
+                        boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent)",
+                      }
+                    : { color: "var(--muted-foreground)" }
+                }
                 title={`${TOOLS_CONFIG[t].label} (${TOOLS_CONFIG[t].shortcut})`}
               >
                 {TOOL_ICONS[t]}

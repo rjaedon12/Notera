@@ -28,7 +28,11 @@ export function BoardCard({ board, onOpen, onDelete, onDuplicate }: BoardCardPro
       {/* Thumbnail */}
       <button
         onClick={() => onOpen(board.id)}
-        className="w-full aspect-[16/10] rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden bg-white dark:bg-zinc-800 hover:border-blue-300 dark:hover:border-blue-500/40 transition-all hover:shadow-md"
+        className="w-full aspect-[16/10] rounded-2xl overflow-hidden transition-all duration-200 hover:shadow-lg"
+        style={{
+          background: "var(--glass-fill)",
+          border: "1px solid var(--glass-border)",
+        }}
       >
         {board.thumbnail ? (
           <img
@@ -38,10 +42,13 @@ export function BoardCard({ board, onOpen, onDelete, onDuplicate }: BoardCardPro
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <div className="w-16 h-16 rounded-xl bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-zinc-400">
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center"
+              style={{ background: "var(--glass-fill)" }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: "var(--muted-foreground)" }}>
                 <rect x="2" y="4" width="20" height="14" rx="2" />
-                <path d="M7 9l2.5 2.5L14 8" />
+                <path d="M7 9l2.5 2.5L14 8" strokeWidth="1.7" />
               </svg>
             </div>
           </div>
@@ -49,9 +56,12 @@ export function BoardCard({ board, onOpen, onDelete, onDuplicate }: BoardCardPro
       </button>
 
       {/* Info */}
-      <div className="mt-2 px-1">
+      <div className="mt-2.5 px-1">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-zinc-800 dark:text-zinc-100 truncate">
+          <h3
+            className="text-sm font-medium truncate"
+            style={{ color: "var(--foreground)" }}
+          >
             {board.title}
           </h3>
 
@@ -59,7 +69,8 @@ export function BoardCard({ board, onOpen, onDelete, onDuplicate }: BoardCardPro
           <div className="relative">
             <button
               onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu) }}
-              className="p-1 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 opacity-0 group-hover:opacity-100 transition-all"
+              className="p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-[var(--glass-fill)]"
+              style={{ color: "var(--muted-foreground)" }}
             >
               <MoreHorizontal size={14} />
             </button>
@@ -67,16 +78,23 @@ export function BoardCard({ board, onOpen, onDelete, onDuplicate }: BoardCardPro
             {showMenu && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
-                <div className="absolute right-0 top-full mt-1 w-40 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shadow-xl z-20">
+                <div
+                  className="absolute right-0 top-full mt-1 w-40 py-1.5 rounded-xl shadow-xl z-20 backdrop-blur-xl"
+                  style={{
+                    background: "var(--popover)",
+                    border: "1px solid var(--glass-border)",
+                  }}
+                >
                   <button
                     onClick={() => { onDuplicate(board.id); setShowMenu(false) }}
-                    className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-sm transition-colors hover:bg-[var(--glass-fill)]"
+                    style={{ color: "var(--foreground)" }}
                   >
                     <Copy size={14} /> Duplicate
                   </button>
                   <button
                     onClick={() => { onDelete(board.id); setShowMenu(false) }}
-                    className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-red-500 transition-colors hover:bg-red-500/10"
                   >
                     <Trash2 size={14} /> Delete
                   </button>
@@ -86,7 +104,7 @@ export function BoardCard({ board, onOpen, onDelete, onDuplicate }: BoardCardPro
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+        <div className="flex items-center gap-2 text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>
           <span>{timeAgo}</span>
           {board.memberCount > 1 && (
             <span className="flex items-center gap-0.5">
