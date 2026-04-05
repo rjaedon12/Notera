@@ -38,6 +38,7 @@ const navItems: NavItem[] = [
   { href: "/discover", label: "Discover", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><line x1="12" y1="3" x2="12" y2="5.5"/><line x1="12" y1="18.5" x2="12" y2="21"/><line x1="3" y1="12" x2="5.5" y2="12"/><line x1="18.5" y1="12" x2="21" y2="12"/><path d="M14.5 9.5l-5.5 2-2 5.5 5.5-2z" strokeWidth="1.4"/></svg></NavIcon> },
   { href: "/library", label: "Library", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19V6a1 1 0 011-1h5.5a2 2 0 012 2v12"/><path d="M20 19V6a1 1 0 00-1-1h-5.5a2 2 0 00-2 2v12"/><path d="M2 19h20"/><path d="M12 7v12"/></svg></NavIcon>, requiresAuth: true },
   { href: "/forum", label: "Forum", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg></NavIcon>, requiresAuth: true },
+  { href: "/analytics", label: "Analytics", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M7 16l4-6 4 4 4-6" strokeWidth="1.7"/></svg></NavIcon>, requiresAuth: true },
   // Study tools
   { href: "/notes", label: "Notes", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3h14a1 1 0 011 1v16l-3-2-2 2-2-2-2 2-2-2-3 2V4a1 1 0 011-1z"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/></svg></NavIcon>, requiresAuth: true },
   { href: "/studyguides", label: "Study Guides", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></NavIcon>, requiresAuth: true },
@@ -45,9 +46,6 @@ const navItems: NavItem[] = [
   { href: "/quizzes", label: "Quiz Arena", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><path d="M9 10l1.5 1.5L14 8" strokeWidth="1.7"/></svg></NavIcon>, requiresAuth: true },
   { href: "/daily-review", label: "Daily Review", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg></NavIcon>, requiresAuth: true },
   { href: "/spaces", label: "Spaces", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="15" cy="8" r="3"/><path d="M3 20a6 6 0 0112 0"/><path d="M15 11a5 5 0 015 5v4"/></svg></NavIcon>, requiresAuth: true },
-  // Progress
-  { href: "/analytics", label: "Analytics", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M7 16l4-6 4 4 4-6" strokeWidth="1.7"/></svg></NavIcon>, requiresAuth: true },
-  { href: "/achievements", label: "Achievements", icon: <NavIcon><svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg></NavIcon>, requiresAuth: true },
 ]
 
 const bottomItems: NavItem[] = [
@@ -129,9 +127,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   }
 
   // Split navItems into sections for better organization
-  const coreItems = filterItems(navItems.filter(i => ["/", "/discover", "/library", "/forum"].includes(i.href)))
+  const coreItems = filterItems(navItems.filter(i => ["/", "/discover", "/library", "/forum", "/analytics"].includes(i.href)))
   const studyItems = filterItems(navItems.filter(i => ["/notes", "/studyguides", "/whiteboard", "/quizzes", "/daily-review", "/spaces"].includes(i.href)))
-  const progressItems = filterItems(navItems.filter(i => ["/analytics", "/achievements"].includes(i.href)))
 
   const isOnExperimentalPage = experimentalItems.some(
     item => pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
@@ -162,15 +159,6 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
               {renderSectionLabel("Study Tools")}
               <div className="space-y-0.5">
                 {studyItems.map(renderNavItem)}
-              </div>
-            </>
-          )}
-          {/* Progress */}
-          {progressItems.length > 0 && (
-            <>
-              {renderSectionLabel("Progress")}
-              <div className="space-y-0.5">
-                {progressItems.map(renderNavItem)}
               </div>
             </>
           )}

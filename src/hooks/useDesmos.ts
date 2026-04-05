@@ -16,6 +16,7 @@ declare global {
 interface DesmosCalculator {
   destroy: () => void
   resize: () => void
+  updateSettings?: (options: Record<string, unknown>) => void
   setExpression: (expr: { id: string; latex: string; color?: string }) => void
   removeExpression: (expr: { id: string }) => void
   getExpressions: () => { id: string; latex: string }[]
@@ -35,6 +36,22 @@ interface UseDesmosOptions {
 
 const DESMOS_SCRIPT_ID = "desmos-api-script"
 let desmosScriptPromise: Promise<void> | null = null
+
+function readIsDarkTheme(): boolean {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return false
+  }
+
+  const root = document.documentElement
+  if (root.classList.contains("dark")) {
+    return true
+  }
+  if (root.classList.contains("light")) {
+    return false
+  }
+
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+}
 
 function loadDesmosScript(): Promise<void> {
   if (typeof window === "undefined") {
@@ -133,6 +150,7 @@ export function useDesmos(
   const calculatorRef = useRef<DesmosCalculator | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isDarkTheme, setIsDarkTheme] = useState<boolean>(() => readIsDarkTheme())
 
   const {
     enabled = true,
@@ -143,6 +161,40 @@ export function useDesmos(
     expressionsTopbar = true,
     border = false,
   } = options
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      return
+    }
+
+    const syncTheme = () => {
+      setIsDarkTheme(readIsDarkTheme())
+    }
+
+    syncTheme()
+
+    const observer = new MutationObserver(syncTheme)
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "data-theme", "style"],
+    })
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", syncTheme)
+    } else {
+      mediaQuery.addListener(syncTheme)
+    }
+
+    return () => {
+      observer.disconnect()
+      if (typeof mediaQuery.removeEventListener === "function") {
+        mediaQuery.removeEventListener("change", syncTheme)
+      } else {
+        mediaQuery.removeListener(syncTheme)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     // Don't initialize until enabled (panel is visible)
@@ -179,6 +231,7 @@ export function useDesmos(
           expressionsTopbar,
           border,
           fontSize: 14,
+          invertedColors: isDarkTheme,
         })
 
         calculatorRef.current = calc
@@ -204,7 +257,16 @@ export function useDesmos(
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled])
+  }, [border, enabled, expressions, expressionsTopbar, keypad, settingsMenu, zoomButtons])
+
+  useEffect(() => {
+    if (!enabled || !isLoaded) {
+      return
+    }
+
+    calculatorRef.current?.updateSettings?.({ invertedColors: isDarkTheme })
+    calculatorRef.current?.resize()
+  }, [enabled, isDarkTheme, isLoaded])
 
   const resize = useCallback(() => {
     calculatorRef.current?.resize()

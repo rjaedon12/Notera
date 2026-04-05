@@ -57,10 +57,16 @@ export function DesmosPanel({ isOpen, onClose, inline = false }: DesmosPanelProp
   const panelContent = (
     <>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#E8E8ED] shrink-0">
+      <div
+        className="flex items-center justify-between px-4 py-2.5 border-b shrink-0"
+        style={{
+          borderColor: "var(--glass-border)",
+          background: "color-mix(in srgb, var(--popover) 92%, var(--background-secondary))",
+        }}
+      >
         <div className="flex items-center gap-2">
-          <LineChart className="h-4 w-4" style={{ color: "#0071E3" }} />
-          <h3 className={inline ? "text-sm font-medium text-[#1D1D1F]" : "text-sm font-semibold font-heading"}>
+          <LineChart className="h-4 w-4" style={{ color: "var(--primary)" }} />
+          <h3 className={inline ? "text-sm font-medium font-heading" : "text-sm font-semibold font-heading"} style={{ color: "var(--foreground)" }}>
             Graphing Calculator
           </h3>
         </div>
@@ -69,7 +75,7 @@ export function DesmosPanel({ isOpen, onClose, inline = false }: DesmosPanelProp
           className="p-1.5 rounded-lg hover:bg-[var(--glass-fill)] transition-colors"
           aria-label="Close calculator"
         >
-          <X className="h-4 w-4" style={{ color: "#0071E3" }} />
+          <X className="h-4 w-4" style={{ color: "var(--primary)" }} />
         </button>
       </div>
 
@@ -80,7 +86,7 @@ export function DesmosPanel({ isOpen, onClose, inline = false }: DesmosPanelProp
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-10"
             style={{ background: "var(--popover)" }}
           >
-            <Loader2 className="h-6 w-6 animate-spin" style={{ color: "#0071E3" }} />
+            <Loader2 className="h-6 w-6 animate-spin" style={{ color: "var(--primary)" }} />
             <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
               Loading calculator\u2026
             </p>
@@ -100,7 +106,7 @@ export function DesmosPanel({ isOpen, onClose, inline = false }: DesmosPanelProp
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs underline hover:no-underline"
-                style={{ color: "#0071E3" }}
+                style={{ color: "var(--primary)" }}
               >
                 Get a free Desmos API key
               </a>
@@ -130,7 +136,7 @@ export function DesmosPanel({ isOpen, onClose, inline = false }: DesmosPanelProp
   // Overlay mode (original behavior)
   return (
     <div
-      className="fixed z-50 flex flex-col border border-[#E8E8ED] shadow-lg overflow-hidden"
+      className="fixed z-50 flex flex-col border shadow-lg overflow-hidden"
       style={{
         bottom: "1.5rem",
         right: "1.5rem",
@@ -138,6 +144,8 @@ export function DesmosPanel({ isOpen, onClose, inline = false }: DesmosPanelProp
         height: "420px",
         borderRadius: "12px",
         background: "var(--popover)",
+        borderColor: "var(--glass-border)",
+        boxShadow: "var(--glass-shadow)",
       }}
     >
       {panelContent}

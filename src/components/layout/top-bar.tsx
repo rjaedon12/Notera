@@ -1,9 +1,9 @@
 "use client"
 
 import Link from "next/link"
+import { useQuery } from "@tanstack/react-query"
 import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { ThemeToggleSimple } from "@/components/theme-toggle"
 import { NotificationBell } from "@/components/notification-bell"
 import { ThemePicker } from "@/components/ui/ThemePicker"
@@ -13,6 +13,7 @@ import {
   User,
   Settings,
   LogOut,
+  Trophy,
 } from "lucide-react"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
@@ -21,6 +22,11 @@ import { SearchResultsDropdown, type SearchResult } from "@/components/layout/se
 
 interface TopBarProps {
   onMenuClick: () => void
+}
+
+interface AchievementsMenuData {
+  total: number
+  unlocked: number
 }
 
 export function TopBar({ onMenuClick }: TopBarProps) {
@@ -32,6 +38,24 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   const searchContainerRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const router = useRouter()
+
+  const { data: achievementsSummary, isLoading: isAchievementsLoading } = useQuery<AchievementsMenuData>({
+    queryKey: ["achievements", "menu-summary"],
+    queryFn: async () => {
+      const res = await fetch("/api/achievements")
+      if (!res.ok) {
+        throw new Error("Failed to fetch achievements")
+      }
+      return res.json() as Promise<AchievementsMenuData>
+    },
+    enabled: Boolean(session),
+    staleTime: 60_000,
+    retry: false,
+  })
+
+  const achievementsProgress = achievementsSummary?.total
+    ? (achievementsSummary.unlocked / achievementsSummary.total) * 100
+    : 0
 
   const fetchSearchResults = useCallback(async (query: string) => {
     if (query.trim().length < 2) {
@@ -174,7 +198,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                 )}
               </button>
               <div
-                className="absolute right-0 top-full mt-2 w-56 rounded-xl py-2 opacity-0 invisible
+                className="absolute right-0 top-full mt-2 w-64 rounded-xl py-2 opacity-0 invisible
                   group-hover:opacity-100 group-hover:visible transition-all duration-200"
                 style={{
                   background: "var(--popover)",
@@ -202,6 +226,55 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                 >
                   <Settings className="h-4 w-4" />
                   Settings
+                </Link>
+                <Link
+                  href="/achievements"
+                  className="mx-3 my-1 block rounded-xl border px-3 py-3 transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                  style={{
+                    borderColor: "var(--glass-border)",
+                    background: "var(--glass-fill)",
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                      style={{
+                        background: "color-mix(in srgb, var(--primary) 14%, transparent)",
+                        color: "var(--primary)",
+                      }}
+                    >
+                      <Trophy className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-foreground">Achievements</p>
+                        {achievementsSummary?.total ? (
+                          <span className="text-xs font-semibold" style={{ color: "var(--primary)" }}>
+                            {achievementsSummary.unlocked}/{achievementsSummary.total}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="mt-0.5 text-xs" style={{ color: "var(--muted-foreground)" }}>
+                        {isAchievementsLoading
+                          ? "Loading achievement progress..."
+                          : achievementsSummary?.total
+                            ? "Track milestone unlocks and overall trophy progress."
+                            : "View your trophy cabinet and milestone progress."}
+                      </p>
+                      <div
+                        className="mt-2 h-1.5 overflow-hidden rounded-full"
+                        style={{ background: "color-mix(in srgb, var(--border) 70%, transparent)" }}
+                      >
+                        <div
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{
+                            width: `${achievementsProgress}%`,
+                            background: "linear-gradient(90deg, var(--primary), var(--accent-color))",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </Link>
                 <div className="px-3 py-2" style={{ borderTop: "1px solid var(--border)" }}>
                   <p className="text-[11px] font-medium uppercase tracking-wider mb-2" style={{ color: "var(--muted-foreground)" }}>Theme</p>
