@@ -21,11 +21,11 @@ async function main() {
   }
   console.log("Notera Admin ID:", noteraAdmin.id, "Name:", noteraAdmin.name)
 
-  // Find Koda Admin
+  // Find old Koda Admin
   const kodaAdmin = await p.user.findFirst({
     where: { email: "admin@koda.app" },
   })
-  console.log("Koda Admin ID:", kodaAdmin?.id, "Name:", kodaAdmin?.name)
+  console.log("Old Koda Admin ID:", kodaAdmin?.id, "Name:", kodaAdmin?.name)
 
   // 1. Promote Notera Admin to OWNER in hub
   await p.spaceMember.update({
@@ -41,12 +41,12 @@ async function main() {
   })
   console.log("✅ Hub ownership transferred to Notera Admin")
 
-  // 3. Remove Koda Admin from hub
+  // 3. Remove old Koda Admin from hub
   if (kodaAdmin) {
     await p.spaceMember.deleteMany({
       where: { userId: kodaAdmin.id, spaceId: hub.id },
     })
-    console.log("✅ Koda Admin removed from hub")
+    console.log("✅ Old Koda Admin removed from hub")
   }
 
   // Show updated members

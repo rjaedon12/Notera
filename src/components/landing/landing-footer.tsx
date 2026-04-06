@@ -12,9 +12,9 @@ export function LandingFooter() {
           <div className="col-span-2 sm:col-span-1">
             <div className="flex items-center gap-2 mb-4">
               <div className="h-6 w-6 flex-shrink-0" aria-hidden="true">
-                <Image src="/koda-logo.svg" alt="" width={24} height={24} className="h-6 w-6" />
+                <Image src="/notera-logo.svg" alt="" width={24} height={24} className="h-6 w-6" />
               </div>
-              <span className="font-heading font-bold text-sm" style={{ color: "var(--landing-fg)" }}>Koda</span>
+              <span className="font-heading font-bold text-sm" style={{ color: "var(--landing-fg)" }}>Notera</span>
             </div>
             <p className="text-xs leading-relaxed" style={{ color: "var(--landing-subtle)" }}>
               The all in one education and productivity app.
@@ -48,7 +48,7 @@ export function LandingFooter() {
         {/* Bottom bar */}
         <div className="mt-12 pt-6" style={{ borderTop: "1px solid var(--landing-border)" }}>
           <p className="text-xs" style={{ color: "var(--landing-subtle)" }}>
-            &copy; {new Date().getFullYear()} Koda. All rights reserved.
+            &copy; {new Date().getFullYear()} Notera. All rights reserved.
           </p>
         </div>
       </div>

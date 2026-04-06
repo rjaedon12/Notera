@@ -39,13 +39,13 @@ export function Header() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <Image
-            src="/koda-logo.svg"
-            alt="Koda logo"
+            src="/notera-logo.svg"
+            alt="Notera logo"
             width={32}
             height={32}
             className="h-8 w-8"
           />
-          <span className="font-bold text-xl hidden sm:block">Koda</span>
+          <span className="font-bold text-xl hidden sm:block">Notera</span>
         </Link>
 
         {/* Search Bar - Desktop */}
