@@ -1,121 +1,35 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- Apple squircle clip: rx=115 ≈ 22.5% of 512, matching iOS icon rounding -->
-    <clipPath id="icon-clip">
-      <rect width="512" height="512" rx="115" ry="115"/>
-    </clipPath>
-
-    <!-- Background deep-navy gradient (top-left lighter → bottom-right darker) -->
-    <linearGradient id="bg" x1="56" y1="48" x2="448" y2="464" gradientUnits="userSpaceOnUse">
-      <stop offset="0"    stop-color="#1C3658"/>
-      <stop offset="0.55" stop-color="#112B4A"/>
-      <stop offset="1"    stop-color="#091D36"/>
+    <linearGradient id="sparkGrad" x1="32" y1="32" x2="224" y2="224" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#34AAFF"/>
+      <stop offset="45%" stop-color="#007AFF"/>
+      <stop offset="100%" stop-color="#5856D6"/>
     </linearGradient>
-
-    <!-- Radial glow in upper-left area -->
-    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
-      gradientTransform="translate(164 120) rotate(42.5) scale(336 368)">
-      <stop offset="0"    stop-color="#5A7FA9" stop-opacity="0.34"/>
-      <stop offset="0.42" stop-color="#456B94" stop-opacity="0.12"/>
-      <stop offset="1"    stop-color="#091B32" stop-opacity="0"/>
-    </radialGradient>
-
-    <!-- N ribbon main fill (white → light steel) -->
-    <linearGradient id="ribbon-fill" x1="98" y1="103" x2="394" y2="403" gradientUnits="userSpaceOnUse">
-      <stop offset="0"    stop-color="#F8FCFF"/>
-      <stop offset="0.45" stop-color="#E7EFF6"/>
-      <stop offset="1"    stop-color="#C8D6E3"/>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0C0C16"/>
+      <stop offset="100%" stop-color="#060609"/>
     </linearGradient>
-
-    <!-- N ribbon specular highlight -->
-    <linearGradient id="ribbon-highlight" x1="118" y1="139" x2="314" y2="323" gradientUnits="userSpaceOnUse">
-      <stop offset="0"    stop-color="#FFFFFF" stop-opacity="0.92"/>
-      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0.42"/>
-      <stop offset="1"    stop-color="#FFFFFF" stop-opacity="0.06"/>
+    <linearGradient id="specular" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="white" stop-opacity="0.18"/>
+      <stop offset="50%" stop-color="white" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
     </linearGradient>
-
-    <!-- N ribbon depth shadow fill -->
-    <linearGradient id="ribbon-shadow-fill" x1="150" y1="185" x2="380" y2="397" gradientUnits="userSpaceOnUse">
-      <stop offset="0"    stop-color="#0D1E34" stop-opacity="0.44"/>
-      <stop offset="1"    stop-color="#061120" stop-opacity="0.08"/>
-    </linearGradient>
-
-    <!-- Drop shadow for the N ribbon -->
-    <filter id="ribbon-drop" x="26" y="75" width="460" height="400"
-      filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="28" stdDeviation="18" flood-color="#020711" flood-opacity="0.30"/>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
     </filter>
   </defs>
-
-  <!-- Everything clipped to Apple squircle shape -->
-  <g clip-path="url(#icon-clip)">
-
-    <!-- Background -->
-    <rect width="512" height="512" fill="url(#bg)"/>
-    <rect width="512" height="512" fill="url(#glow)"/>
-
-    <!-- Subtle frosted inner border -->
-    <rect x="1.5" y="1.5" width="509" height="509" rx="113.5"
-      fill="none" stroke="#7F9DBE" stroke-opacity="0.20" stroke-width="3"/>
-
-    <!-- Left pillar side-plane depth (gives 3D slab feel) -->
-    <path d="M110 223 C110 173 144 139 184 139
-             C164 155 156 175 156 199
-             V297
-             C156 321 146 343 130 361
-             C116 347 110 327 110 307 Z"
-      fill="#DDE8F1" fill-opacity="0.55"/>
-
-    <!-- Right pillar side-plane depth -->
-    <path d="M360 149 C382 161 394 183 394 209
-             V303
-             C394 325 382 343 362 355
-             C350 343 344 327 344 307
-             V197 C344 179 350 163 360 149 Z"
-      fill="#D7E3ED" fill-opacity="0.50"/>
-
-    <!-- N ambient shadow (depth layer below ribbon) -->
-    <path d="M118 351 V189
-             C118 153 160 133 184 161
-             L322 325
-             C346 355 394 337 394 297
-             V161"
-      fill="none"
-      stroke="url(#ribbon-shadow-fill)"
-      stroke-width="88"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      opacity="0.85"/>
-
-    <!-- N ribbon — main fill + specular highlight -->
-    <g filter="url(#ribbon-drop)">
-      <path d="M118 351 V189
-               C118 153 160 133 184 161
-               L322 325
-               C346 355 394 337 394 297
-               V161"
-        fill="none"
-        stroke="url(#ribbon-fill)"
-        stroke-width="72"
-        stroke-linecap="round"
-        stroke-linejoin="round"/>
-      <path d="M118 351 V189
-               C118 153 160 133 184 161
-               L322 325
-               C346 355 394 337 394 297
-               V161"
-        fill="none"
-        stroke="url(#ribbon-highlight)"
-        stroke-width="27"
-        stroke-linecap="round"
-        stroke-linejoin="round"/>
-    </g>
-
-    <!-- Four-pointed sparkle (bottom-right corner detail) -->
-    <g transform="translate(392,419)" opacity="0.87">
-      <path d="M0,-19 L4.5,-4.5 L19,0 L4.5,4.5 L0,19 L-4.5,4.5 L-19,0 L-4.5,-4.5 Z"
-        fill="white"/>
-    </g>
-
-  </g>
+  <!-- Background -->
+  <rect width="256" height="256" rx="52" fill="url(#bgGrad)"/>
+  <!-- Subtle outer rim -->
+  <rect width="256" height="256" rx="52" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1.5"/>
+  <!-- Ambient glow behind spark (blurred, low opacity) -->
+  <path d="M128 30 L157 99 L226 128 L157 157 L128 226 L99 157 L30 128 L99 99 Z"
+        fill="url(#sparkGrad)" opacity="0.20" filter="url(#glow)"/>
+  <!-- Main spark mark -->
+  <path d="M128 30 L157 99 L226 128 L157 157 L128 226 L99 157 L30 128 L99 99 Z"
+        fill="url(#sparkGrad)"/>
+  <!-- Upper-left specular highlight for glass depth -->
+  <path d="M128 30 L157 99 L226 128 L157 157 L128 226 L99 157 L30 128 L99 99 Z"
+        fill="url(#specular)"/>
 </svg>

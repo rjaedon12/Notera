@@ -28,7 +28,7 @@ export function LandingNavbar() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5">
           <div className="h-7 w-7 flex-shrink-0" aria-hidden="true">
-            <Image src="/notera-logo.svg" alt="" width={28} height={28} className="h-7 w-7" />
+            <Image src="/notera-logo.png" alt="" width={28} height={28} className="h-7 w-7" />
           </div>
           <span className="font-heading font-bold text-[1.1rem]" style={{ color: "var(--landing-fg)", letterSpacing: "-0.03em" }}>
             Notera
