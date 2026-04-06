@@ -21,27 +21,27 @@
     </radialGradient>
 
     <!-- N ribbon main fill (white → light steel) -->
-    <linearGradient id="ribbon-fill" x1="132" y1="108" x2="428" y2="408" gradientUnits="userSpaceOnUse">
+    <linearGradient id="ribbon-fill" x1="98" y1="103" x2="394" y2="403" gradientUnits="userSpaceOnUse">
       <stop offset="0"    stop-color="#F8FCFF"/>
       <stop offset="0.45" stop-color="#E7EFF6"/>
       <stop offset="1"    stop-color="#C8D6E3"/>
     </linearGradient>
 
     <!-- N ribbon specular highlight -->
-    <linearGradient id="ribbon-highlight" x1="152" y1="144" x2="348" y2="328" gradientUnits="userSpaceOnUse">
+    <linearGradient id="ribbon-highlight" x1="118" y1="139" x2="314" y2="323" gradientUnits="userSpaceOnUse">
       <stop offset="0"    stop-color="#FFFFFF" stop-opacity="0.92"/>
       <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0.42"/>
       <stop offset="1"    stop-color="#FFFFFF" stop-opacity="0.06"/>
     </linearGradient>
 
     <!-- N ribbon depth shadow fill -->
-    <linearGradient id="ribbon-shadow-fill" x1="184" y1="190" x2="414" y2="402" gradientUnits="userSpaceOnUse">
+    <linearGradient id="ribbon-shadow-fill" x1="150" y1="185" x2="380" y2="397" gradientUnits="userSpaceOnUse">
       <stop offset="0"    stop-color="#0D1E34" stop-opacity="0.44"/>
       <stop offset="1"    stop-color="#061120" stop-opacity="0.08"/>
     </linearGradient>
 
     <!-- Drop shadow for the N ribbon -->
-    <filter id="ribbon-drop" x="60" y="80" width="460" height="400"
+    <filter id="ribbon-drop" x="26" y="75" width="460" height="400"
       filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
       <feDropShadow dx="0" dy="28" stdDeviation="18" flood-color="#020711" flood-opacity="0.30"/>
     </filter>
@@ -59,27 +59,27 @@
       fill="none" stroke="#7F9DBE" stroke-opacity="0.20" stroke-width="3"/>
 
     <!-- Left pillar side-plane depth (gives 3D slab feel) -->
-    <path d="M144 228 C144 178 178 144 218 144
-             C198 160 190 180 190 204
-             V302
-             C190 326 180 348 164 366
-             C150 352 144 332 144 312 Z"
+    <path d="M110 223 C110 173 144 139 184 139
+             C164 155 156 175 156 199
+             V297
+             C156 321 146 343 130 361
+             C116 347 110 327 110 307 Z"
       fill="#DDE8F1" fill-opacity="0.55"/>
 
     <!-- Right pillar side-plane depth -->
-    <path d="M394 154 C416 166 428 188 428 214
-             V308
-             C428 330 416 348 396 360
-             C384 348 378 332 378 312
-             V202 C378 184 384 168 394 154 Z"
+    <path d="M360 149 C382 161 394 183 394 209
+             V303
+             C394 325 382 343 362 355
+             C350 343 344 327 344 307
+             V197 C344 179 350 163 360 149 Z"
       fill="#D7E3ED" fill-opacity="0.50"/>
 
     <!-- N ambient shadow (depth layer below ribbon) -->
-    <path d="M152 356 V194
-             C152 158 194 138 218 166
-             L356 330
-             C380 360 428 342 428 302
-             V166"
+    <path d="M118 351 V189
+             C118 153 160 133 184 161
+             L322 325
+             C346 355 394 337 394 297
+             V161"
       fill="none"
       stroke="url(#ribbon-shadow-fill)"
       stroke-width="88"
@@ -89,21 +89,21 @@
 
     <!-- N ribbon — main fill + specular highlight -->
     <g filter="url(#ribbon-drop)">
-      <path d="M152 356 V194
-               C152 158 194 138 218 166
-               L356 330
-               C380 360 428 342 428 302
-               V166"
+      <path d="M118 351 V189
+               C118 153 160 133 184 161
+               L322 325
+               C346 355 394 337 394 297
+               V161"
         fill="none"
         stroke="url(#ribbon-fill)"
         stroke-width="72"
         stroke-linecap="round"
         stroke-linejoin="round"/>
-      <path d="M152 356 V194
-               C152 158 194 138 218 166
-               L356 330
-               C380 360 428 342 428 302
-               V166"
+      <path d="M118 351 V189
+               C118 153 160 133 184 161
+               L322 325
+               C346 355 394 337 394 297
+               V161"
         fill="none"
         stroke="url(#ribbon-highlight)"
         stroke-width="27"
@@ -112,7 +112,7 @@
     </g>
 
     <!-- Four-pointed sparkle (bottom-right corner detail) -->
-    <g transform="translate(426,424)" opacity="0.87">
+    <g transform="translate(392,419)" opacity="0.87">
       <path d="M0,-19 L4.5,-4.5 L19,0 L4.5,4.5 L0,19 L-4.5,4.5 L-19,0 L-4.5,-4.5 Z"
         fill="white"/>
     </g>
