@@ -1,49 +1,121 @@
-<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="panel-bg" x1="28" y1="24" x2="224" y2="232" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#1A3454"/>
-      <stop offset="0.55" stop-color="#102847"/>
-      <stop offset="1" stop-color="#091B32"/>
+    <!-- Apple squircle clip: rx=115 ≈ 22.5% of 512, matching iOS icon rounding -->
+    <clipPath id="icon-clip">
+      <rect width="512" height="512" rx="115" ry="115"/>
+    </clipPath>
+
+    <!-- Background deep-navy gradient (top-left lighter → bottom-right darker) -->
+    <linearGradient id="bg" x1="56" y1="48" x2="448" y2="464" gradientUnits="userSpaceOnUse">
+      <stop offset="0"    stop-color="#1C3658"/>
+      <stop offset="0.55" stop-color="#112B4A"/>
+      <stop offset="1"    stop-color="#091D36"/>
     </linearGradient>
-    <radialGradient id="panel-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(82 60) rotate(42.5) scale(168 184)">
-      <stop offset="0" stop-color="#5A7FA9" stop-opacity="0.34"/>
+
+    <!-- Radial glow in upper-left area -->
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+      gradientTransform="translate(164 120) rotate(42.5) scale(336 368)">
+      <stop offset="0"    stop-color="#5A7FA9" stop-opacity="0.34"/>
       <stop offset="0.42" stop-color="#456B94" stop-opacity="0.12"/>
-      <stop offset="1" stop-color="#091B32" stop-opacity="0"/>
+      <stop offset="1"    stop-color="#091B32" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="ribbon-fill" x1="66" y1="54" x2="214" y2="204" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#F8FCFF"/>
+
+    <!-- N ribbon main fill (white → light steel) -->
+    <linearGradient id="ribbon-fill" x1="132" y1="108" x2="428" y2="408" gradientUnits="userSpaceOnUse">
+      <stop offset="0"    stop-color="#F8FCFF"/>
       <stop offset="0.45" stop-color="#E7EFF6"/>
-      <stop offset="1" stop-color="#C8D6E3"/>
+      <stop offset="1"    stop-color="#C8D6E3"/>
     </linearGradient>
-    <linearGradient id="ribbon-highlight" x1="76" y1="72" x2="174" y2="164" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.92"/>
+
+    <!-- N ribbon specular highlight -->
+    <linearGradient id="ribbon-highlight" x1="152" y1="144" x2="348" y2="328" gradientUnits="userSpaceOnUse">
+      <stop offset="0"    stop-color="#FFFFFF" stop-opacity="0.92"/>
       <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0.42"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.08"/>
+      <stop offset="1"    stop-color="#FFFFFF" stop-opacity="0.06"/>
     </linearGradient>
-    <linearGradient id="ribbon-shadow-fill" x1="92" y1="95" x2="207" y2="201" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#0D1E34" stop-opacity="0.44"/>
-      <stop offset="1" stop-color="#061120" stop-opacity="0.08"/>
+
+    <!-- N ribbon depth shadow fill -->
+    <linearGradient id="ribbon-shadow-fill" x1="184" y1="190" x2="414" y2="402" gradientUnits="userSpaceOnUse">
+      <stop offset="0"    stop-color="#0D1E34" stop-opacity="0.44"/>
+      <stop offset="1"    stop-color="#061120" stop-opacity="0.08"/>
     </linearGradient>
-    <filter id="panel-shadow" x="0" y="0" width="256" height="256" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#020712" flood-opacity="0.36"/>
-    </filter>
-    <filter id="ribbon-shadow" x="36" y="38" width="200" height="200" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="14" stdDeviation="10" flood-color="#020712" flood-opacity="0.30"/>
+
+    <!-- Drop shadow for the N ribbon -->
+    <filter id="ribbon-drop" x="60" y="80" width="460" height="400"
+      filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="28" stdDeviation="18" flood-color="#020711" flood-opacity="0.30"/>
     </filter>
   </defs>
 
-  <g filter="url(#panel-shadow)">
-    <rect x="12" y="12" width="232" height="232" rx="52" fill="url(#panel-bg)"/>
-    <rect x="12" y="12" width="232" height="232" rx="52" fill="url(#panel-glow)"/>
-    <rect x="13.25" y="13.25" width="229.5" height="229.5" rx="50.75" stroke="#7F9DBE" stroke-opacity="0.22" stroke-width="1.5"/>
-  </g>
+  <!-- Everything clipped to Apple squircle shape -->
+  <g clip-path="url(#icon-clip)">
 
-  <path d="M76 178V97C76 79 97 69 109 83L178 165C190 180 214 171 214 151V83" fill="none" stroke="url(#ribbon-shadow-fill)" stroke-width="44" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-  <path d="M72 114C72 89 89 72 109 72C99 80 95 90 95 102V151C95 163 90 174 82 183C75 176 72 166 72 156V114Z" fill="#DDE8F1" fill-opacity="0.58"/>
-  <path d="M197 77C208 83 214 94 214 107V154C214 165 208 174 198 180C192 174 189 166 189 156V101C189 92 192 84 197 77Z" fill="#D7E3ED" fill-opacity="0.52"/>
+    <!-- Background -->
+    <rect width="512" height="512" fill="url(#bg)"/>
+    <rect width="512" height="512" fill="url(#glow)"/>
 
-  <g filter="url(#ribbon-shadow)">
-    <path d="M76 178V97C76 79 97 69 109 83L178 165C190 180 214 171 214 151V83" fill="none" stroke="url(#ribbon-fill)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M76 178V97C76 79 97 69 109 83L178 165C190 180 214 171 214 151V83" fill="none" stroke="url(#ribbon-highlight)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Subtle frosted inner border -->
+    <rect x="1.5" y="1.5" width="509" height="509" rx="113.5"
+      fill="none" stroke="#7F9DBE" stroke-opacity="0.20" stroke-width="3"/>
+
+    <!-- Left pillar side-plane depth (gives 3D slab feel) -->
+    <path d="M144 228 C144 178 178 144 218 144
+             C198 160 190 180 190 204
+             V302
+             C190 326 180 348 164 366
+             C150 352 144 332 144 312 Z"
+      fill="#DDE8F1" fill-opacity="0.55"/>
+
+    <!-- Right pillar side-plane depth -->
+    <path d="M394 154 C416 166 428 188 428 214
+             V308
+             C428 330 416 348 396 360
+             C384 348 378 332 378 312
+             V202 C378 184 384 168 394 154 Z"
+      fill="#D7E3ED" fill-opacity="0.50"/>
+
+    <!-- N ambient shadow (depth layer below ribbon) -->
+    <path d="M152 356 V194
+             C152 158 194 138 218 166
+             L356 330
+             C380 360 428 342 428 302
+             V166"
+      fill="none"
+      stroke="url(#ribbon-shadow-fill)"
+      stroke-width="88"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      opacity="0.85"/>
+
+    <!-- N ribbon — main fill + specular highlight -->
+    <g filter="url(#ribbon-drop)">
+      <path d="M152 356 V194
+               C152 158 194 138 218 166
+               L356 330
+               C380 360 428 342 428 302
+               V166"
+        fill="none"
+        stroke="url(#ribbon-fill)"
+        stroke-width="72"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+      <path d="M152 356 V194
+               C152 158 194 138 218 166
+               L356 330
+               C380 360 428 342 428 302
+               V166"
+        fill="none"
+        stroke="url(#ribbon-highlight)"
+        stroke-width="27"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+    </g>
+
+    <!-- Four-pointed sparkle (bottom-right corner detail) -->
+    <g transform="translate(426,424)" opacity="0.87">
+      <path d="M0,-19 L4.5,-4.5 L19,0 L4.5,4.5 L0,19 L-4.5,4.5 L-19,0 L-4.5,-4.5 Z"
+        fill="white"/>
+    </g>
+
   </g>
 </svg>
