@@ -65,9 +65,18 @@ interface LeaderboardEntry {
   streak: number; longestStreak: number; role: string
 }
 
+interface HubUnitMaterial {
+  id: string; label: string; type: string; addedAt: string
+  flashcardSet?: { id: string; title: string } | null
+  questionBank?: { id: string; title: string; quizType: string | null } | null
+  dbqPrompt?: { id: string; title: string } | null
+  addedBy: { name: string | null }
+}
+
 interface HubUnit {
   id: string; unitNumber: number; title: string
   dateRange: string | null; overview: string | null; orderIndex: number
+  materials?: HubUnitMaterial[]
 }
 
 interface HubQuizLink {
@@ -87,6 +96,7 @@ interface SpaceData {
   leaderboard: LeaderboardEntry[]
   hubSlug?: string | null
   isPublic?: boolean
+  hubInfoText?: string | null
   hubUnits?: HubUnit[]
   hubQuizLinks?: HubQuizLink[]
 }
@@ -183,7 +193,10 @@ export default function SpaceDetailPage({ params }: PageProps) {
 
   const currentMember = space?.members.find((m) => m.user.id === session?.user?.id)
   const isOwner = currentMember?.role === "OWNER"
+  const isGlobalAdmin = currentMember?.user.role === "ADMIN"
+  const isGlobalTeacher = currentMember?.user.role === "TEACHER"
   const isModerator = currentMember?.role === "MODERATOR" || currentMember?.role === "OWNER"
+    || (!!space?.hubSlug && (isGlobalAdmin || isGlobalTeacher))
   const isClassroom = space?.type === "CLASSROOM"
   const isHub = !!space?.hubSlug
   const bannerColor = space?.bannerColor || getDefaultBannerColor(spaceId)
@@ -405,6 +418,25 @@ function StreamTab({
   const [title, setTitle] = useState("")
   const [message, setMessage] = useState("")
 
+  /* Hub info editing state */
+  const [editingInfo, setEditingInfo] = useState(false)
+  const [infoText, setInfoText] = useState(space.hubInfoText || "")
+  const saveInfoText = useMutation({
+    mutationFn: async (text: string) => {
+      const res = await fetch(`/api/spaces/${spaceId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hubInfoText: text }),
+      })
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Failed") }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["space", spaceId] })
+      setEditingInfo(false)
+    },
+  })
+
   const createAnnouncement = useMutation({
     mutationFn: async () => {
       const res = await fetch(`/api/spaces/${spaceId}/announcements`, {
@@ -524,27 +556,60 @@ function StreamTab({
 
       {/* Sidebar */}
       <div className="space-y-4">
-        {/* Upcoming */}
-        <div className="rounded-xl border border-border bg-card p-4">
-          <h3 className="font-semibold text-sm text-foreground mb-3">Upcoming</h3>
-          {upcoming.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No work due soon!</p>
-          ) : (
-            <div className="space-y-2">
-              {upcoming.map((a) => (
-                <div key={a.id} className="flex items-center gap-2 text-xs">
-                  <ClipboardList className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="truncate text-foreground">{a.title}</p>
-                    <p className="text-muted-foreground">
-                      Due {new Date(a.dueDate!).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                    </p>
-                  </div>
-                </div>
-              ))}
+        {/* Info (hub) or Upcoming (classroom) */}
+        {space.hubSlug ? (
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-sm text-foreground">Info</h3>
+              {isModerator && !editingInfo && (
+                <button onClick={() => { setInfoText(space.hubInfoText || ""); setEditingInfo(true) }} className="text-muted-foreground hover:text-foreground">
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
-          )}
-        </div>
+            {editingInfo ? (
+              <div className="space-y-2">
+                <textarea
+                  value={infoText}
+                  onChange={(e) => setInfoText(e.target.value)}
+                  rows={4}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] resize-none"
+                  placeholder="Add info about exam dates, resources, etc."
+                  autoFocus
+                />
+                <div className="flex gap-2 justify-end">
+                  <Button variant="ghost" size="sm" onClick={() => setEditingInfo(false)}>Cancel</Button>
+                  <Button size="sm" disabled={saveInfoText.isPending} onClick={() => saveInfoText.mutate(infoText.trim())}>Save</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-xs text-muted-foreground whitespace-pre-wrap">
+                {space.hubInfoText || "No info added yet."}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-border bg-card p-4">
+            <h3 className="font-semibold text-sm text-foreground mb-3">Upcoming</h3>
+            {upcoming.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No work due soon!</p>
+            ) : (
+              <div className="space-y-2">
+                {upcoming.map((a) => (
+                  <div key={a.id} className="flex items-center gap-2 text-xs">
+                    <ClipboardList className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate text-foreground">{a.title}</p>
+                      <p className="text-muted-foreground">
+                        Due {new Date(a.dueDate!).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Quick stats */}
         <div className="rounded-xl border border-border bg-card p-4">
@@ -998,6 +1063,10 @@ function ClassworkTab({
   const [expandedUnit, setExpandedUnit] = useState<string | null>(null)
   const [editingUnit, setEditingUnit] = useState<string | null>(null)
   const [editOverview, setEditOverview] = useState("")
+  const [addingMaterialUnit, setAddingMaterialUnit] = useState<string | null>(null)
+  const [materialSearch, setMaterialSearch] = useState("")
+  const [materialType, setMaterialType] = useState<"flashcardSet" | "quiz" | "dbq">("flashcardSet")
+  const [materialLabel, setMaterialLabel] = useState("")
 
   const updateUnit = useMutation({
     mutationFn: async ({ unitId, overview }: { unitId: string; overview: string }) => {
@@ -1013,6 +1082,50 @@ function ClassworkTab({
       queryClient.invalidateQueries({ queryKey: ["space", spaceId] })
       setEditingUnit(null)
     },
+  })
+
+  const { data: materialResults = [] } = useQuery<{ id: string; title: string; subtitle: string }[]>({
+    queryKey: ["content-search", spaceId, materialType, materialSearch],
+    queryFn: async () => {
+      const res = await fetch(`/api/spaces/${spaceId}/content-search?q=${encodeURIComponent(materialSearch)}&type=${materialType}`)
+      if (!res.ok) return []
+      return res.json()
+    },
+    enabled: !!addingMaterialUnit && materialSearch.length >= 2,
+  })
+
+  const addMaterial = useMutation({
+    mutationFn: async ({ unitId, contentId }: { unitId: string; contentId: string }) => {
+      const body: Record<string, string> = { unitId, label: materialLabel.trim() || "Linked material", type: materialType }
+      if (materialType === "flashcardSet") body.flashcardSetId = contentId
+      else if (materialType === "quiz") body.questionBankId = contentId
+      else body.dbqPromptId = contentId
+      const res = await fetch(`/api/spaces/${spaceId}/unit-materials`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Failed") }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["space", spaceId] })
+      setAddingMaterialUnit(null)
+      setMaterialSearch("")
+      setMaterialLabel("")
+    },
+  })
+
+  const removeMaterial = useMutation({
+    mutationFn: async (materialId: string) => {
+      const res = await fetch(`/api/spaces/${spaceId}/unit-materials`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ materialId }),
+      })
+      if (!res.ok) throw new Error("Failed")
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["space", spaceId] }) },
   })
 
   const units = space.hubUnits || []
@@ -1081,6 +1194,117 @@ function ClassworkTab({
                           </button>
                         )}
                       </div>
+                    )}
+
+                    {/* Unit Materials */}
+                    {(unit.materials && unit.materials.length > 0) && (
+                      <div className="mt-4 space-y-2">
+                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Materials</h4>
+                        {unit.materials.map((mat) => {
+                          const href = mat.flashcardSet ? `/sets/${mat.flashcardSet.id}`
+                            : mat.questionBank ? `/quizzes/${mat.questionBank.id}`
+                            : mat.dbqPrompt ? `/dbq/${mat.dbqPrompt.id}` : "#"
+                          const contentTitle = mat.flashcardSet?.title || mat.questionBank?.title || mat.dbqPrompt?.title || "Untitled"
+                          const typeIcon = mat.type === "flashcardSet" ? BookOpen : mat.type === "dbq" ? FileText : HelpCircle
+                          const TypeIcon = typeIcon
+                          return (
+                            <div key={mat.id} className="flex items-center gap-2 group">
+                              <Link href={href} className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                                <TypeIcon className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <span className="text-sm font-medium text-foreground truncate block">{mat.label}</span>
+                                  <span className="text-xs text-muted-foreground truncate block">{contentTitle}</span>
+                                </div>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-border text-muted-foreground uppercase">
+                                  {mat.type === "flashcardSet" ? "Set" : mat.type === "quiz" ? "Quiz" : "DBQ"}
+                                </span>
+                              </Link>
+                              {isModerator && (
+                                <button
+                                  onClick={() => { if (confirm("Remove this material?")) removeMaterial.mutate(mat.id) }}
+                                  className="p-1 rounded text-red-500 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {/* Add Material UI */}
+                    {isModerator && addingMaterialUnit === unit.id && (
+                      <div className="mt-4 rounded-lg border border-border bg-card p-3 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-semibold text-foreground">Add material to Unit {unit.unitNumber}</h4>
+                          <button onClick={() => { setAddingMaterialUnit(null); setMaterialSearch(""); setMaterialLabel("") }} className="text-muted-foreground hover:text-foreground">
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                        <Input
+                          placeholder="Label (e.g. Unit 1 Review Quiz)"
+                          value={materialLabel}
+                          onChange={(e) => setMaterialLabel(e.target.value)}
+                          className="h-8 text-xs"
+                        />
+                        <div className="flex gap-1.5">
+                          {([["flashcardSet", "Study Set", BookOpen], ["quiz", "Quiz", HelpCircle], ["dbq", "DBQ", FileText]] as const).map(([key, lbl, Icon]) => (
+                            <button
+                              key={key}
+                              onClick={() => { setMaterialType(key as "flashcardSet" | "quiz" | "dbq"); setMaterialSearch("") }}
+                              className={cn(
+                                "flex items-center gap-1 px-2 py-1 text-[10px] rounded-full border transition-all",
+                                materialType === key
+                                  ? "bg-[var(--accent-color)] text-white border-[var(--accent-color)]"
+                                  : "border-border text-muted-foreground hover:border-foreground"
+                              )}
+                            >
+                              <Icon className="h-2.5 w-2.5" /> {lbl}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                          <Input
+                            placeholder={`Search for a ${materialType === "flashcardSet" ? "study set" : materialType === "quiz" ? "quiz" : "DBQ"}...`}
+                            value={materialSearch}
+                            onChange={(e) => setMaterialSearch(e.target.value)}
+                            className="pl-8 h-8 text-xs"
+                          />
+                        </div>
+                        {materialResults.length > 0 && (
+                          <div className="max-h-36 overflow-y-auto rounded-lg border border-border divide-y divide-border">
+                            {materialResults.map((r) => (
+                              <button
+                                key={r.id}
+                                onClick={() => addMaterial.mutate({ unitId: unit.id, contentId: r.id })}
+                                disabled={addMaterial.isPending}
+                                className="w-full flex items-center gap-2 px-2.5 py-2 text-left hover:bg-muted transition-colors"
+                              >
+                                <div className="min-w-0">
+                                  <p className="text-xs font-medium text-foreground truncate">{r.title}</p>
+                                  <p className="text-[10px] text-muted-foreground truncate">{r.subtitle}</p>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {materialSearch.length >= 2 && materialResults.length === 0 && (
+                          <p className="text-[10px] text-muted-foreground text-center py-1">No results</p>
+                        )}
+                        {addMaterial.isError && <p className="text-[10px] text-red-500">{(addMaterial.error as Error).message}</p>}
+                      </div>
+                    )}
+
+                    {isModerator && addingMaterialUnit !== unit.id && (
+                      <button
+                        onClick={() => { setAddingMaterialUnit(unit.id); setMaterialLabel(""); setMaterialSearch("") }}
+                        className="flex items-center gap-1 mt-3 text-xs font-medium hover:underline"
+                        style={{ color: "var(--accent-color)" }}
+                      >
+                        <Plus className="h-3 w-3" /> Add material
+                      </button>
                     )}
                   </div>
                 )}

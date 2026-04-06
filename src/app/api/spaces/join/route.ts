@@ -70,7 +70,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Auto-assign role: STUDENT for classrooms, MEMBER for collaborative spaces
-    const joinRole = space.type === "CLASSROOM" ? "STUDENT" : "MEMBER"
+    // Global ADMIN/TEACHER users get MODERATOR in hub spaces
+    let joinRole: "STUDENT" | "MEMBER" | "MODERATOR" = space.type === "CLASSROOM" ? "STUDENT" : "MEMBER"
+    if (space.hubSlug) {
+      const joiningUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true },
+      })
+      if (joiningUser?.role === "ADMIN" || joiningUser?.role === "TEACHER") {
+        joinRole = "MODERATOR"
+      }
+    }
 
     // Atomic: create member + send notification to space owner
     await prisma.$transaction([

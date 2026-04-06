@@ -110,6 +110,17 @@ export async function GET(
       hubUnits = await prisma.hubUnit.findMany({
         where: { hubSlug: space.hubSlug },
         orderBy: { orderIndex: "asc" },
+        include: {
+          materials: {
+            include: {
+              flashcardSet: { select: { id: true, title: true } },
+              questionBank: { select: { id: true, title: true, quizType: true } },
+              dbqPrompt: { select: { id: true, title: true } },
+              addedBy: { select: { id: true, name: true } },
+            },
+            orderBy: { addedAt: "desc" },
+          },
+        },
       })
 
       hubQuizLinks = await prisma.hubQuizLink.findMany({
@@ -194,11 +205,18 @@ export async function PATCH(
       where: {
         spaceId,
         userId: session.user.id,
-        role: { in: ["OWNER", "MODERATOR"] },
       },
+      include: { user: { select: { role: true } } },
     })
 
-    if (!membership) {
+    const space_for_patch = await prisma.space.findUnique({ where: { id: spaceId }, select: { hubSlug: true } })
+    const canEdit = membership && (
+      membership.role === "OWNER" ||
+      membership.role === "MODERATOR" ||
+      (space_for_patch?.hubSlug && (membership.user.role === "ADMIN" || membership.user.role === "TEACHER"))
+    )
+
+    if (!canEdit) {
       return NextResponse.json(
         { error: "Only owners and moderators can update a space" },
         { status: 403 }
@@ -210,6 +228,7 @@ export async function PATCH(
     if (typeof body.description === "string") data.description = body.description || null
     if (typeof body.bannerColor === "string") data.bannerColor = body.bannerColor || null
     if (typeof body.bannerImage === "string") data.bannerImage = body.bannerImage || null
+    if (typeof body.hubInfoText === "string") data.hubInfoText = body.hubInfoText
 
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: "No fields to update" }, { status: 400 })

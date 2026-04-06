@@ -66,10 +66,16 @@ export async function POST(
       where: {
         spaceId,
         userId: session.user.id,
-        role: { in: ["OWNER", "MODERATOR"] },
       },
+      include: { user: { select: { role: true } } },
     })
-    if (!membership) {
+    const spaceInfo = await prisma.space.findUnique({ where: { id: spaceId }, select: { hubSlug: true } })
+    const canPost = membership && (
+      membership.role === "OWNER" ||
+      membership.role === "MODERATOR" ||
+      (spaceInfo?.hubSlug && (membership.user.role === "ADMIN" || membership.user.role === "TEACHER"))
+    )
+    if (!canPost) {
       return NextResponse.json(
         { error: "Only owners and moderators can post announcements" },
         { status: 403 }

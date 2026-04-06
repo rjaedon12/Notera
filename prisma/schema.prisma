@@ -146,6 +146,7 @@ model User {
   spaceAnnouncements SpaceAnnouncement[] @relation("SpaceAnnouncementAuthor")
   spaceComments      SpaceComment[]      @relation("SpaceCommentAuthor")
   hubQuizLinksAdded  HubQuizLink[]       @relation("HubQuizLinkAdder")
+  hubUnitMaterialsAdded HubUnitMaterial[] @relation("HubUnitMaterialAdder")
 }
 
 // ─── Admin Audit Log ─────────────────────────────────────
@@ -211,6 +212,7 @@ model FlashcardSet {
   progress  StudyProgress[]
   spaceSets SpaceSet[]
   spaceAssignments SpaceAssignment[]
+  hubUnitMaterials HubUnitMaterial[]
   starredBy StarredSet[]
   savedBy   SavedSet[]
   comments  Comment[]
@@ -311,6 +313,7 @@ model Space {
   bannerImage String?   // URL to uploaded image
   hubSlug     String?   @unique // non-null only for special hubs (e.g. "ap-world-history")
   isPublic    Boolean   @default(false) // true = anyone can join without invite code
+  hubInfoText String?   // editable info text for hub sidebar (exam date, etc.)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -497,6 +500,7 @@ model QuestionBank {
   attempts  QuizAttempt[]
   spaceAssignments SpaceAssignment[]
   hubQuizLinks     HubQuizLink[]
+  hubUnitMaterials HubUnitMaterial[]
 
   @@index([categoryId])
 }
@@ -691,6 +695,7 @@ model DBQPrompt {
   essays    DBQEssay[]
   spaceAssignments SpaceAssignment[]
   hubQuizLinks     HubQuizLink[]
+  hubUnitMaterials HubUnitMaterial[]
 
   @@index([categoryId])
 }
@@ -958,8 +963,36 @@ model HubUnit {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  materials  HubUnitMaterial[]
+
   @@unique([hubSlug, unitNumber])
   @@index([hubSlug, orderIndex])
+}
+
+// ─── Hub Unit Materials (link content to specific units) ──
+
+model HubUnitMaterial {
+  id        String   @id @default(cuid())
+  label     String   // display tag/label e.g. "Unit 1 Review Quiz"
+  type      String   // "flashcardSet" | "quiz" | "dbq"
+  addedAt   DateTime @default(now())
+
+  unitId    String
+  unit      HubUnit  @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  flashcardSetId String?
+  flashcardSet   FlashcardSet? @relation(fields: [flashcardSetId], references: [id], onDelete: Cascade)
+
+  questionBankId String?
+  questionBank   QuestionBank? @relation(fields: [questionBankId], references: [id], onDelete: Cascade)
+
+  dbqPromptId String?
+  dbqPrompt   DBQPrompt? @relation(fields: [dbqPromptId], references: [id], onDelete: Cascade)
+
+  addedById String
+  addedBy   User @relation("HubUnitMaterialAdder", fields: [addedById], references: [id], onDelete: Cascade)
+
+  @@index([unitId])
 }
 
 // ─── Hub Quiz Links (link quizzes to hub practice tabs) ──

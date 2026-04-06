@@ -102,8 +102,9 @@ const AP_WORLD_UNITS = [
 async function main() {
   console.log("🌍 Seeding AP World History Hub...\n")
 
-  // Find the admin user
-  const admin = await prisma.user.findFirst({ where: { role: "ADMIN" } })
+  // Find the Notera admin user
+  const admin = await prisma.user.findFirst({ where: { email: "admin@notera.com" } })
+    || await prisma.user.findFirst({ where: { role: "ADMIN" } })
   if (!admin) {
     console.error("❌ No admin user found. Run the main seed first.")
     process.exit(1)
