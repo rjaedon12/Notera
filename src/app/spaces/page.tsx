@@ -236,9 +236,15 @@ export default function SpacesPage() {
                       className="rounded-xl border border-border overflow-hidden bg-card"
                     >
                       <div
-                        className="relative px-6 py-5 flex items-center justify-between"
-                        style={{ background: hub.bannerColor || "linear-gradient(135deg, #1e3a5f 0%, #2d6a4f 100%)" }}
+                        className="relative px-6 py-5 flex items-center justify-between overflow-hidden"
+                        style={hub.bannerImage ? undefined : { background: hub.bannerColor || "linear-gradient(135deg, #1e3a5f 0%, #2d6a4f 100%)" }}
                       >
+                        {hub.bannerImage && (
+                          <>
+                            <img src={hub.bannerImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/50" />
+                          </>
+                        )}
                         <div className="flex items-center gap-4 min-w-0">
                           <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-2xl"
                             style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}>
@@ -567,24 +573,30 @@ function SpaceCard({
     <Link href={`/spaces/${space.id}`} className="block group">
       <div className="rounded-xl border border-border overflow-hidden bg-card transition-shadow hover:shadow-lg">
         {/* Colored banner */}
-        <div className="relative px-5 pt-5 pb-4" style={{ background: color.bg }}>
-          <div className="flex items-start justify-between">
+        <div className="relative px-5 pt-5 pb-4 overflow-hidden" style={space.bannerImage ? undefined : { background: color.bg }}>
+          {space.bannerImage && (
+            <>
+              <img src={space.bannerImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/45" />
+            </>
+          )}
+          <div className="relative flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-lg truncate group-hover:underline" style={{ color: color.text }}>
+              <h3 className="font-semibold text-lg truncate group-hover:underline" style={{ color: space.bannerImage ? "#fff" : color.text }}>
                 {space.name}
               </h3>
               {space.description && (
-                <p className="text-sm truncate mt-0.5 opacity-80" style={{ color: color.text }}>
+                <p className="text-sm truncate mt-0.5 opacity-80" style={{ color: space.bannerImage ? "#fff" : color.text }}>
                   {space.description}
                 </p>
               )}
-              <p className="text-xs mt-2 opacity-70" style={{ color: color.text }}>
+              <p className="text-xs mt-2 opacity-70" style={{ color: space.bannerImage ? "#fff" : color.text }}>
                 {ownerName}
               </p>
             </div>
             <div
               className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ml-3"
-              style={{ background: "rgba(255,255,255,0.2)", color: color.text }}
+              style={{ background: "rgba(255,255,255,0.2)", color: space.bannerImage ? "#fff" : color.text }}
             >
               {ownerName.charAt(0).toUpperCase()}
             </div>
@@ -593,7 +605,7 @@ function SpaceCard({
             <button
               onClick={(e) => onCopy(space.inviteCode, e)}
               className="absolute bottom-2 right-3 flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono transition-all"
-              style={{ background: "rgba(255,255,255,0.15)", color: color.text, backdropFilter: "blur(4px)" }}
+              style={{ background: "rgba(255,255,255,0.15)", color: space.bannerImage ? "#fff" : color.text, backdropFilter: "blur(4px)" }}
             >
               {copiedCode === space.inviteCode
                 ? <><Check className="h-3 w-3" /> Copied</>
