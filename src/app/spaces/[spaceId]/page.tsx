@@ -101,7 +101,7 @@ interface SpaceData {
   hubQuizLinks?: HubQuizLink[]
 }
 
-type TabKey = "stream" | "classwork" | "people" | "leaderboard" | "dbqs" | "frqs" | "mcqs"
+type TabKey = "stream" | "classwork" | "people" | "leaderboard" | "dbqs" | "frqs" | "mcqs" | "leqs"
 
 /* ── Nice banner presets (name + gradient) ── */
 const BANNER_PRESETS = [
@@ -258,7 +258,8 @@ export default function SpaceDetailPage({ params }: PageProps) {
         { key: "stream", label: "Stream" },
         { key: "classwork", label: "Materials" },
         { key: "dbqs", label: "DBQs" },
-        { key: "frqs", label: "FRQs" },
+        { key: "frqs", label: "SAQ" },
+        { key: "leqs", label: "LEQ" },
         { key: "mcqs", label: "MCQs" },
         { key: "people", label: "People" },
         { key: "leaderboard", label: "Leaderboard" },
@@ -391,6 +392,9 @@ export default function SpaceDetailPage({ params }: PageProps) {
       )}
       {activeTab === "frqs" && (
         <HubQuizTab tabType="frq" space={space} isModerator={isModerator} spaceId={spaceId} />
+      )}
+      {activeTab === "leqs" && (
+        <HubQuizTab tabType="leq" space={space} isModerator={isModerator} spaceId={spaceId} />
       )}
       {activeTab === "mcqs" && (
         <HubQuizTab tabType="mcq" space={space} isModerator={isModerator} spaceId={spaceId} />
@@ -1910,7 +1914,7 @@ function LeaderboardTab({
 function HubQuizTab({
   tabType, space, isModerator, spaceId,
 }: {
-  tabType: "dbq" | "frq" | "mcq"; space: SpaceData; isModerator: boolean; spaceId: string
+  tabType: "dbq" | "frq" | "mcq" | "leq"; space: SpaceData; isModerator: boolean; spaceId: string
 }) {
   const queryClient = useQueryClient()
   const [showAdd, setShowAdd] = useState(false)
@@ -1918,7 +1922,8 @@ function HubQuizTab({
 
   const labels: Record<string, { title: string; empty: string; searchType: string }> = {
     dbq: { title: "DBQ Practice", empty: "No DBQ prompts linked yet.", searchType: "dbq" },
-    frq: { title: "FRQ Practice", empty: "No FRQ quizzes linked yet.", searchType: "quiz" },
+    frq: { title: "SAQ Practice", empty: "No SAQ quizzes linked yet.", searchType: "quiz" },
+    leq: { title: "LEQ Practice", empty: "No LEQ quizzes linked yet.", searchType: "quiz" },
     mcq: { title: "MCQ Practice", empty: "No MCQ quizzes linked yet.", searchType: "quiz" },
   }
   const cfg = labels[tabType]
@@ -1978,7 +1983,7 @@ function HubQuizTab({
         </h2>
         {isModerator && (
           <Button size="sm" variant="outline" onClick={() => setShowAdd(!showAdd)}>
-            <Plus className="h-4 w-4 mr-1.5" /> Add {tabType.toUpperCase()}
+            <Plus className="h-4 w-4 mr-1.5" /> Add {tabType === "frq" ? "SAQ" : tabType === "leq" ? "LEQ" : tabType.toUpperCase()}
           </Button>
         )}
       </div>
@@ -1988,7 +1993,7 @@ function HubQuizTab({
         <div className="rounded-xl border border-border bg-card p-4 animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-sm text-foreground">
-              Link a {tabType === "dbq" ? "DBQ prompt" : tabType === "frq" ? "quiz (FRQ)" : "quiz (MCQ)"}
+              Link a {tabType === "dbq" ? "DBQ prompt" : tabType === "frq" ? "quiz (SAQ)" : tabType === "leq" ? "quiz (LEQ)" : "quiz (MCQ)"}
             </h3>
             <button onClick={() => { setShowAdd(false); setSearchQuery("") }} className="text-muted-foreground hover:text-foreground">
               <X className="h-4 w-4" />

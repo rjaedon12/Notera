@@ -56,8 +56,8 @@ export async function POST(
     const { spaceId } = await params
     const { questionBankId, dbqPromptId, tabType } = await request.json()
 
-    if (!tabType || !["dbq", "frq", "mcq"].includes(tabType)) {
-      return NextResponse.json({ error: "Invalid tabType (must be dbq, frq, or mcq)" }, { status: 400 })
+    if (!tabType || !["dbq", "frq", "mcq", "leq"].includes(tabType)) {
+      return NextResponse.json({ error: "Invalid tabType (must be dbq, frq, mcq, or leq)" }, { status: 400 })
     }
 
     if (!questionBankId && !dbqPromptId) {
