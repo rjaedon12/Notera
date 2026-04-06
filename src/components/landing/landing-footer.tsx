@@ -11,8 +11,8 @@ export function LandingFooter() {
           {/* Brand */}
           <div className="col-span-2 sm:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <div className="h-6 w-6 flex-shrink-0" aria-hidden="true">
-                <Image src="/notera-logo.png" alt="" width={24} height={24} className="h-6 w-6 rounded-[22%]" />
+              <div className="h-6 w-6 flex-shrink-0 overflow-hidden rounded-[22%]" aria-hidden="true">
+                <Image src="/notera-logo.png" alt="" width={24} height={24} className="h-6 w-6" />
               </div>
               <span className="font-heading font-bold text-sm" style={{ color: "var(--landing-fg)" }}>Notera</span>
             </div>

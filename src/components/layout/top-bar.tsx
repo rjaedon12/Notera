@@ -124,8 +124,8 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           </button>
           
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="h-8 w-8 flex-shrink-0 logo-spark" aria-hidden="true">
-              <Image src="/notera-logo.png" alt="" width={32} height={32} className="h-8 w-8 rounded-[22%]" />
+            <div className="h-8 w-8 flex-shrink-0 logo-spark overflow-hidden rounded-[22%]" aria-hidden="true">
+              <Image src="/notera-logo.png" alt="" width={32} height={32} className="h-8 w-8" />
             </div>
             <span className="font-heading font-bold text-[1.15rem] tracking-tight" style={{ color: "var(--foreground)", letterSpacing: "-0.03em" }}>Notera</span>
           </Link>

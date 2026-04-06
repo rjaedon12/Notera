@@ -38,13 +38,15 @@ export function Header() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <Image
-            src="/notera-logo.png"
-            alt="Notera logo"
-            width={32}
-            height={32}
-            className="h-8 w-8 rounded-[22%]"
-          />
+          <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-[22%]">
+            <Image
+              src="/notera-logo.png"
+              alt="Notera logo"
+              width={32}
+              height={32}
+              className="h-8 w-8"
+            />
+          </div>
           <span className="font-bold text-xl hidden sm:block">Notera</span>
         </Link>
 
