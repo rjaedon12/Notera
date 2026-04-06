@@ -43,7 +43,7 @@ export function Header() {
             alt="Notera logo"
             width={32}
             height={32}
-            className="h-8 w-8"
+            className="h-8 w-8 rounded-[22%]"
           />
           <span className="font-bold text-xl hidden sm:block">Notera</span>
         </Link>

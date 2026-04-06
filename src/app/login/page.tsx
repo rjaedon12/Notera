@@ -50,7 +50,7 @@ export default function LoginPage() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5">
             <div className="h-7 w-7 flex-shrink-0" aria-hidden="true">
-              <Image src="/notera-logo.png" alt="" width={28} height={28} className="h-7 w-7" />
+              <Image src="/notera-logo.png" alt="" width={28} height={28} className="h-7 w-7 rounded-[22%]" />
             </div>
             <span className="font-heading font-bold text-[1.1rem]" style={{ color: "#1A1A1A", letterSpacing: "-0.03em" }}>
               Notera
@@ -85,7 +85,7 @@ export default function LoginPage() {
           <div className="lg:hidden mb-10">
             <Link href="/" className="flex items-center gap-2.5">
               <div className="h-7 w-7 flex-shrink-0" aria-hidden="true">
-                <Image src="/notera-logo.png" alt="" width={28} height={28} className="h-7 w-7" />
+                <Image src="/notera-logo.png" alt="" width={28} height={28} className="h-7 w-7 rounded-[22%]" />
               </div>
               <span className="font-heading font-bold text-[1.1rem]" style={{ color: "#1A1A1A", letterSpacing: "-0.03em" }}>
                 Notera
