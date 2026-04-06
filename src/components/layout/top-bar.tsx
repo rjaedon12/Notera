@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useQuery } from "@tanstack/react-query"
 import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
@@ -124,26 +125,9 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           
           <Link href="/" className="flex items-center gap-2.5">
             <div className="h-8 w-8 flex-shrink-0 logo-spark" aria-hidden="true">
-              <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-8">
-                <defs>
-                  <linearGradient id="topbar-spark" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stopColor="#60A5FA"/>
-                    <stop offset="45%" stopColor="#1D4ED8"/>
-                    <stop offset="100%" stopColor="#7C3AED"/>
-                  </linearGradient>
-                  <linearGradient id="topbar-specular" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
-                    <stop offset="0%" stopColor="white" stopOpacity={0.22}/>
-                    <stop offset="55%" stopColor="white" stopOpacity={0.04}/>
-                    <stop offset="100%" stopColor="white" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <rect width="32" height="32" rx="7" fill="#070E1C"/>
-                <rect width="32" height="32" rx="7" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={0.75}/>
-                <path d="M16 4 L19.5 12.5 L28 16 L19.5 19.5 L16 28 L12.5 19.5 L4 16 L12.5 12.5 Z" fill="url(#topbar-spark)"/>
-                <path d="M16 4 L19.5 12.5 L28 16 L19.5 19.5 L16 28 L12.5 19.5 L4 16 L12.5 12.5 Z" fill="url(#topbar-specular)"/>
-              </svg>
+              <Image src="/koda-logo.svg" alt="" width={32} height={32} className="h-8 w-8" />
             </div>
-            <span className="font-heading font-bold text-[1.15rem] tracking-tight" style={{ color: "var(--foreground)", letterSpacing: "-0.03em" }}>Notera</span>
+            <span className="font-heading font-bold text-[1.15rem] tracking-tight" style={{ color: "var(--foreground)", letterSpacing: "-0.03em" }}>Koda</span>
           </Link>
         </div>
 

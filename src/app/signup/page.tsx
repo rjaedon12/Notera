@@ -4,6 +4,7 @@ import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { Loader2 } from "lucide-react"
 import toast from "react-hot-toast"
 
@@ -43,7 +44,7 @@ export default function SignupPage() {
         toast.error("Account created but failed to sign in. Please try logging in.")
         router.push("/login")
       } else {
-        toast.success("Welcome to Notera!")
+        toast.success("Welcome to Koda!")
         router.push("/")
         router.refresh()
       }
@@ -65,13 +66,10 @@ export default function SignupPage() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5">
             <div className="h-7 w-7 flex-shrink-0" aria-hidden="true">
-              <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7">
-                <rect width="32" height="32" rx="7" fill="#1A1A1A"/>
-                <path d="M16 4 L19.5 12.5 L28 16 L19.5 19.5 L16 28 L12.5 19.5 L4 16 L12.5 12.5 Z" fill="#FAF9F6"/>
-              </svg>
+              <Image src="/koda-logo.svg" alt="" width={28} height={28} className="h-7 w-7" />
             </div>
             <span className="font-heading font-bold text-[1.1rem]" style={{ color: "#1A1A1A", letterSpacing: "-0.03em" }}>
-              Notera
+              Koda
             </span>
           </Link>
         </div>
@@ -91,7 +89,7 @@ export default function SignupPage() {
         </div>
 
         <p className="text-xs" style={{ color: "#8A8A8A" }}>
-          &copy; {new Date().getFullYear()} Notera
+          &copy; {new Date().getFullYear()} Koda
         </p>
       </div>
 
@@ -102,13 +100,10 @@ export default function SignupPage() {
           <div className="lg:hidden mb-10">
             <Link href="/" className="flex items-center gap-2.5">
               <div className="h-7 w-7 flex-shrink-0" aria-hidden="true">
-                <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7">
-                  <rect width="32" height="32" rx="7" fill="#1A1A1A"/>
-                  <path d="M16 4 L19.5 12.5 L28 16 L19.5 19.5 L16 28 L12.5 19.5 L4 16 L12.5 12.5 Z" fill="#FAF9F6"/>
-                </svg>
+                <Image src="/koda-logo.svg" alt="" width={28} height={28} className="h-7 w-7" />
               </div>
               <span className="font-heading font-bold text-[1.1rem]" style={{ color: "#1A1A1A", letterSpacing: "-0.03em" }}>
-                Notera
+                Koda
               </span>
             </Link>
           </div>

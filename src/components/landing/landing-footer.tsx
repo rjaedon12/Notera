@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 
 export function LandingFooter() {
   return (
@@ -11,12 +12,9 @@ export function LandingFooter() {
           <div className="col-span-2 sm:col-span-1">
             <div className="flex items-center gap-2 mb-4">
               <div className="h-6 w-6 flex-shrink-0" aria-hidden="true">
-                <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-6 w-6">
-                  <rect width="32" height="32" rx="7" fill="#1D4ED8"/>
-                  <path d="M16 4 L19.5 12.5 L28 16 L19.5 19.5 L16 28 L12.5 19.5 L4 16 L12.5 12.5 Z" fill="#FFFFFF"/>
-                </svg>
+                <Image src="/koda-logo.svg" alt="" width={24} height={24} className="h-6 w-6" />
               </div>
-              <span className="font-heading font-bold text-sm" style={{ color: "var(--landing-fg)" }}>Notera</span>
+              <span className="font-heading font-bold text-sm" style={{ color: "var(--landing-fg)" }}>Koda</span>
             </div>
             <p className="text-xs leading-relaxed" style={{ color: "var(--landing-subtle)" }}>
               The all in one education and productivity app.
@@ -50,7 +48,7 @@ export function LandingFooter() {
         {/* Bottom bar */}
         <div className="mt-12 pt-6" style={{ borderTop: "1px solid var(--landing-border)" }}>
           <p className="text-xs" style={{ color: "var(--landing-subtle)" }}>
-            &copy; {new Date().getFullYear()} Notera. All rights reserved.
+            &copy; {new Date().getFullYear()} Koda. All rights reserved.
           </p>
         </div>
       </div>

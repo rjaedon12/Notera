@@ -1,22 +1,49 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="spark" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#34AAFF"/>
-      <stop offset="45%" stop-color="#007AFF"/>
-      <stop offset="100%" stop-color="#5856D6"/>
+    <linearGradient id="panel-bg" x1="28" y1="24" x2="224" y2="232" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1A3454"/>
+      <stop offset="0.55" stop-color="#102847"/>
+      <stop offset="1" stop-color="#091B32"/>
     </linearGradient>
-    <linearGradient id="specular" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
-      <stop offset="0%" stop-color="white" stop-opacity="0.22"/>
-      <stop offset="55%" stop-color="white" stop-opacity="0.04"/>
-      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    <radialGradient id="panel-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(82 60) rotate(42.5) scale(168 184)">
+      <stop offset="0" stop-color="#5A7FA9" stop-opacity="0.34"/>
+      <stop offset="0.42" stop-color="#456B94" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#091B32" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ribbon-fill" x1="66" y1="54" x2="214" y2="204" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F8FCFF"/>
+      <stop offset="0.45" stop-color="#E7EFF6"/>
+      <stop offset="1" stop-color="#C8D6E3"/>
     </linearGradient>
+    <linearGradient id="ribbon-highlight" x1="76" y1="72" x2="174" y2="164" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.92"/>
+      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.08"/>
+    </linearGradient>
+    <linearGradient id="ribbon-shadow-fill" x1="92" y1="95" x2="207" y2="201" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0D1E34" stop-opacity="0.44"/>
+      <stop offset="1" stop-color="#061120" stop-opacity="0.08"/>
+    </linearGradient>
+    <filter id="panel-shadow" x="0" y="0" width="256" height="256" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#020712" flood-opacity="0.36"/>
+    </filter>
+    <filter id="ribbon-shadow" x="36" y="38" width="200" height="200" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="14" stdDeviation="10" flood-color="#020712" flood-opacity="0.30"/>
+    </filter>
   </defs>
-  <!-- Near-black rounded square background -->
-  <rect width="32" height="32" rx="7" fill="#080810"/>
-  <!-- Subtle rim -->
-  <rect width="32" height="32" rx="7" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="0.75"/>
-  <!-- 4-pointed spark mark -->
-  <path d="M16 4 L19.5 12.5 L28 16 L19.5 19.5 L16 28 L12.5 19.5 L4 16 L12.5 12.5 Z" fill="url(#spark)"/>
-  <!-- Upper-left specular -->
-  <path d="M16 4 L19.5 12.5 L28 16 L19.5 19.5 L16 28 L12.5 19.5 L4 16 L12.5 12.5 Z" fill="url(#specular)"/>
+
+  <g filter="url(#panel-shadow)">
+    <rect x="12" y="12" width="232" height="232" rx="52" fill="url(#panel-bg)"/>
+    <rect x="12" y="12" width="232" height="232" rx="52" fill="url(#panel-glow)"/>
+    <rect x="13.25" y="13.25" width="229.5" height="229.5" rx="50.75" stroke="#7F9DBE" stroke-opacity="0.22" stroke-width="1.5"/>
+  </g>
+
+  <path d="M76 178V97C76 79 97 69 109 83L178 165C190 180 214 171 214 151V83" fill="none" stroke="url(#ribbon-shadow-fill)" stroke-width="44" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+  <path d="M72 114C72 89 89 72 109 72C99 80 95 90 95 102V151C95 163 90 174 82 183C75 176 72 166 72 156V114Z" fill="#DDE8F1" fill-opacity="0.58"/>
+  <path d="M197 77C208 83 214 94 214 107V154C214 165 208 174 198 180C192 174 189 166 189 156V101C189 92 192 84 197 77Z" fill="#D7E3ED" fill-opacity="0.52"/>
+
+  <g filter="url(#ribbon-shadow)">
+    <path d="M76 178V97C76 79 97 69 109 83L178 165C190 180 214 171 214 151V83" fill="none" stroke="url(#ribbon-fill)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M76 178V97C76 79 97 69 109 83L178 165C190 180 214 171 214 151V83" fill="none" stroke="url(#ribbon-highlight)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
 </svg>
