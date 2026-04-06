@@ -245,7 +245,7 @@ export default function SpacesPage() {
                             <div className="absolute inset-0 bg-black/50" />
                           </>
                         )}
-                        <div className="flex items-center gap-4 min-w-0">
+                        <div className="relative flex items-center gap-4 min-w-0">
                           <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-2xl"
                             style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}>
                             🌍
@@ -260,7 +260,7 @@ export default function SpacesPage() {
                             </p>
                           </div>
                         </div>
-                        <div className="ml-4 shrink-0">
+                        <div className="relative ml-4 shrink-0">
                           {isMember ? (
                             <Link href={`/spaces/${hub.id}`}>
                               <Button size="sm" variant="secondary" className="gap-1.5 font-medium">
@@ -604,7 +604,7 @@ function SpaceCard({
           {isOwner && space.inviteCode && (
             <button
               onClick={(e) => onCopy(space.inviteCode, e)}
-              className="absolute bottom-2 right-3 flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono transition-all"
+              className="absolute bottom-2 right-3 z-10 flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono transition-all"
               style={{ background: "rgba(255,255,255,0.15)", color: space.bannerImage ? "#fff" : color.text, backdropFilter: "blur(4px)" }}
             >
               {copiedCode === space.inviteCode
