@@ -14,6 +14,7 @@ import {
   FileText, HelpCircle, Calendar, ExternalLink, Search, X,
   MoreVertical, Settings, UserPlus, Pencil, Palette, MessageCircle,
   Reply, Send, Image as ImageIcon, CheckCircle2,
+  Globe, ChevronDown, ChevronRight, Shield, GraduationCap,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -64,6 +65,18 @@ interface LeaderboardEntry {
   streak: number; longestStreak: number; role: string
 }
 
+interface HubUnit {
+  id: string; unitNumber: number; title: string
+  dateRange: string | null; overview: string | null; orderIndex: number
+}
+
+interface HubQuizLink {
+  id: string; tabType: string
+  questionBank?: { id: string; title: string; quizType: string | null } | null
+  dbqPrompt?: { id: string; title: string } | null
+  addedBy: { name: string | null }
+}
+
 interface SpaceData {
   id: string; name: string; description: string | null
   type: "COLLABORATIVE" | "CLASSROOM"; inviteCode: string; createdAt: string
@@ -72,9 +85,13 @@ interface SpaceData {
   members: SpaceMemberData[]; sets: SpaceSet[]
   assignments: SpaceAssignment[]; announcements: SpaceAnnouncementData[]
   leaderboard: LeaderboardEntry[]
+  hubSlug?: string | null
+  isPublic?: boolean
+  hubUnits?: HubUnit[]
+  hubQuizLinks?: HubQuizLink[]
 }
 
-type TabKey = "stream" | "classwork" | "people" | "leaderboard"
+type TabKey = "stream" | "classwork" | "people" | "leaderboard" | "dbqs" | "frqs" | "mcqs"
 
 /* ── Nice banner presets (name + gradient) ── */
 const BANNER_PRESETS = [
@@ -168,6 +185,7 @@ export default function SpaceDetailPage({ params }: PageProps) {
   const isOwner = currentMember?.role === "OWNER"
   const isModerator = currentMember?.role === "MODERATOR" || currentMember?.role === "OWNER"
   const isClassroom = space?.type === "CLASSROOM"
+  const isHub = !!space?.hubSlug
   const bannerColor = space?.bannerColor || getDefaultBannerColor(spaceId)
   const bannerImage = space?.bannerImage
 
@@ -222,12 +240,22 @@ export default function SpaceDetailPage({ params }: PageProps) {
   }
 
   /* ── Tab config ── */
-  const tabs: { key: TabKey; label: string }[] = [
-    { key: "stream", label: "Stream" },
-    { key: "classwork", label: isClassroom ? "Classwork" : "Materials" },
-    { key: "people", label: "People" },
-    { key: "leaderboard", label: "Leaderboard" },
-  ]
+  const tabs: { key: TabKey; label: string }[] = isHub
+    ? [
+        { key: "stream", label: "Stream" },
+        { key: "classwork", label: "Materials" },
+        { key: "dbqs", label: "DBQs" },
+        { key: "frqs", label: "FRQs" },
+        { key: "mcqs", label: "MCQs" },
+        { key: "people", label: "People" },
+        { key: "leaderboard", label: "Leaderboard" },
+      ]
+    : [
+        { key: "stream", label: "Stream" },
+        { key: "classwork", label: isClassroom ? "Classwork" : "Materials" },
+        { key: "people", label: "People" },
+        { key: "leaderboard", label: "Leaderboard" },
+      ]
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 sm:px-6">
@@ -343,10 +371,19 @@ export default function SpaceDetailPage({ params }: PageProps) {
         <StreamTab space={space} isModerator={isModerator} spaceId={spaceId} isClassroom={!!isClassroom} userId={session?.user?.id || ""} />
       )}
       {activeTab === "classwork" && (
-        <ClassworkTab space={space} isModerator={isModerator} spaceId={spaceId} isClassroom={!!isClassroom} />
+        <ClassworkTab space={space} isModerator={isModerator} spaceId={spaceId} isClassroom={!!isClassroom} isHub={isHub} />
+      )}
+      {activeTab === "dbqs" && (
+        <HubQuizTab tabType="dbq" space={space} isModerator={isModerator} spaceId={spaceId} />
+      )}
+      {activeTab === "frqs" && (
+        <HubQuizTab tabType="frq" space={space} isModerator={isModerator} spaceId={spaceId} />
+      )}
+      {activeTab === "mcqs" && (
+        <HubQuizTab tabType="mcq" space={space} isModerator={isModerator} spaceId={spaceId} />
       )}
       {activeTab === "people" && (
-        <PeopleTab space={space} session={session} isOwner={!!isOwner} />
+        <PeopleTab space={space} session={session} isOwner={!!isOwner} isHub={isHub} spaceId={spaceId} />
       )}
       {activeTab === "leaderboard" && (
         <LeaderboardTab space={space} session={session} />
@@ -951,16 +988,107 @@ function SpaceSettingsModal({
    Classwork / Materials Tab — Sets + Assignments with search
    ═══════════════════════════════════════════════════════════════ */
 function ClassworkTab({
-  space, isModerator, spaceId, isClassroom,
+  space, isModerator, spaceId, isClassroom, isHub,
 }: {
-  space: SpaceData; isModerator: boolean; spaceId: string; isClassroom: boolean
+  space: SpaceData; isModerator: boolean; spaceId: string; isClassroom: boolean; isHub: boolean
 }) {
   const queryClient = useQueryClient()
   const [showAddSet, setShowAddSet] = useState(false)
   const [showCreateAssignment, setShowCreateAssignment] = useState(false)
+  const [expandedUnit, setExpandedUnit] = useState<string | null>(null)
+  const [editingUnit, setEditingUnit] = useState<string | null>(null)
+  const [editOverview, setEditOverview] = useState("")
+
+  const updateUnit = useMutation({
+    mutationFn: async ({ unitId, overview }: { unitId: string; overview: string }) => {
+      const res = await fetch(`/api/spaces/${spaceId}/units`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ unitId, overview }),
+      })
+      if (!res.ok) throw new Error("Failed to update")
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["space", spaceId] })
+      setEditingUnit(null)
+    },
+  })
+
+  const units = space.hubUnits || []
 
   return (
     <div className="space-y-8">
+      {/* Hub Units Section */}
+      {isHub && units.length > 0 && (
+        <section>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+            AP Curriculum Units
+          </h2>
+          <div className="space-y-2">
+            {units.map((unit) => (
+              <div key={unit.id} className="rounded-xl border border-border bg-card overflow-hidden">
+                <button
+                  onClick={() => setExpandedUnit(expandedUnit === unit.id ? null : unit.id)}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors"
+                >
+                  {expandedUnit === unit.id
+                    ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                    : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
+                  <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{unit.unitNumber}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm text-foreground">{unit.title}</p>
+                    {unit.dateRange && (
+                      <p className="text-xs text-muted-foreground">{unit.dateRange}</p>
+                    )}
+                  </div>
+                </button>
+                {expandedUnit === unit.id && (
+                  <div className="px-4 pb-4 border-t border-border pt-3">
+                    {editingUnit === unit.id ? (
+                      <div className="space-y-3">
+                        <textarea
+                          value={editOverview}
+                          onChange={(e) => setEditOverview(e.target.value)}
+                          rows={5}
+                          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] resize-none"
+                        />
+                        <div className="flex gap-2 justify-end">
+                          <Button variant="ghost" size="sm" onClick={() => setEditingUnit(null)}>Cancel</Button>
+                          <Button
+                            size="sm"
+                            disabled={updateUnit.isPending}
+                            onClick={() => updateUnit.mutate({ unitId: unit.id, overview: editOverview })}
+                          >
+                            {updateUnit.isPending ? "Saving..." : "Save"}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                          {unit.overview || "No overview yet."}
+                        </p>
+                        {isModerator && (
+                          <button
+                            onClick={() => { setEditingUnit(unit.id); setEditOverview(unit.overview || "") }}
+                            className="flex items-center gap-1 mt-3 text-xs font-medium hover:underline"
+                            style={{ color: "var(--accent-color)" }}
+                          >
+                            <Pencil className="h-3 w-3" /> Edit overview
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
       {/* Actions bar */}
       {isModerator && (
         <div className="flex items-center gap-2">
@@ -1371,12 +1499,28 @@ function AssignmentRow({
    People Tab
    ═══════════════════════════════════════════════════════════════ */
 function PeopleTab({
-  space, session, isOwner,
+  space, session, isOwner, isHub, spaceId,
 }: {
-  space: SpaceData; session: { user: { id: string } } | null; isOwner: boolean
+  space: SpaceData; session: { user: { id: string } } | null; isOwner: boolean; isHub: boolean; spaceId: string
 }) {
+  const queryClient = useQueryClient()
   const teachers = space.members.filter((m) => m.role === "OWNER" || m.role === "MODERATOR")
   const students = space.members.filter((m) => m.role === "MEMBER" || m.role === "STUDENT")
+
+  const changeRole = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: "MODERATOR" | "STUDENT" }) => {
+      const res = await fetch(`/api/spaces/${spaceId}/members/${userId}/role`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      })
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Failed") }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["space", spaceId] })
+    },
+  })
 
   return (
     <div className="space-y-6">
@@ -1390,7 +1534,10 @@ function PeopleTab({
         </div>
         <div className="space-y-1">
           {teachers.map((m) => (
-            <PersonRow key={m.userId} member={m} isMe={m.user.id === session?.user?.id} />
+            <PersonRow key={m.userId} member={m} isMe={m.user.id === session?.user?.id}
+              showDemote={isHub && isOwner && m.role === "MODERATOR"}
+              onDemote={() => changeRole.mutate({ userId: m.userId, role: "STUDENT" })}
+            />
           ))}
         </div>
       </section>
@@ -1406,7 +1553,10 @@ function PeopleTab({
           </div>
           <div className="space-y-1">
             {students.map((m) => (
-              <PersonRow key={m.userId} member={m} isMe={m.user.id === session?.user?.id} />
+              <PersonRow key={m.userId} member={m} isMe={m.user.id === session?.user?.id}
+                showPromote={isHub && isOwner}
+                onPromote={() => changeRole.mutate({ userId: m.userId, role: "MODERATOR" })}
+              />
             ))}
           </div>
         </section>
@@ -1415,7 +1565,13 @@ function PeopleTab({
   )
 }
 
-function PersonRow({ member: m, isMe }: { member: SpaceMemberData; isMe: boolean }) {
+function PersonRow({
+  member: m, isMe, showPromote, showDemote, onPromote, onDemote,
+}: {
+  member: SpaceMemberData; isMe: boolean
+  showPromote?: boolean; showDemote?: boolean
+  onPromote?: () => void; onDemote?: () => void
+}) {
   return (
     <div className={cn("flex items-center gap-3 px-3 py-2.5 rounded-lg", isMe && "bg-muted/50")}>
       <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden">
@@ -1437,6 +1593,24 @@ function PersonRow({ member: m, isMe }: { member: SpaceMemberData; isMe: boolean
         <span className="flex items-center gap-0.5 text-xs text-orange-500">
           <Flame className="h-3 w-3" /> {m.user.streak}
         </span>
+      )}
+      {showPromote && !isMe && (
+        <button
+          onClick={onPromote}
+          className="flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          title="Promote to Teacher"
+        >
+          <Shield className="h-3 w-3" /> Promote
+        </button>
+      )}
+      {showDemote && !isMe && (
+        <button
+          onClick={onDemote}
+          className="flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-border text-red-500 hover:bg-red-500/10 transition-colors"
+          title="Demote to Student"
+        >
+          <GraduationCap className="h-3 w-3" /> Demote
+        </button>
       )}
     </div>
   )
@@ -1502,6 +1676,183 @@ function LeaderboardTab({
           </div>
         )
       })}
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Hub Quiz Tab — Reusable for DBQs, FRQs, MCQs
+   ═══════════════════════════════════════════════════════════════ */
+function HubQuizTab({
+  tabType, space, isModerator, spaceId,
+}: {
+  tabType: "dbq" | "frq" | "mcq"; space: SpaceData; isModerator: boolean; spaceId: string
+}) {
+  const queryClient = useQueryClient()
+  const [showAdd, setShowAdd] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+
+  const labels: Record<string, { title: string; empty: string; searchType: string }> = {
+    dbq: { title: "DBQ Practice", empty: "No DBQ prompts linked yet.", searchType: "dbq" },
+    frq: { title: "FRQ Practice", empty: "No FRQ quizzes linked yet.", searchType: "quiz" },
+    mcq: { title: "MCQ Practice", empty: "No MCQ quizzes linked yet.", searchType: "quiz" },
+  }
+  const cfg = labels[tabType]
+
+  const links = (space.hubQuizLinks || []).filter((l) => l.tabType === tabType)
+
+  const { data: searchResults = [] } = useQuery<{ id: string; title: string; subtitle: string }[]>({
+    queryKey: ["content-search", spaceId, cfg.searchType, searchQuery],
+    queryFn: async () => {
+      const res = await fetch(`/api/spaces/${spaceId}/content-search?q=${encodeURIComponent(searchQuery)}&type=${cfg.searchType}`)
+      if (!res.ok) return []
+      return res.json()
+    },
+    enabled: showAdd && searchQuery.length >= 2,
+  })
+
+  const addLink = useMutation({
+    mutationFn: async (contentId: string) => {
+      const body: Record<string, string> = { tabType }
+      if (tabType === "dbq") body.dbqPromptId = contentId
+      else body.questionBankId = contentId
+      const res = await fetch(`/api/spaces/${spaceId}/hub-links`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Failed") }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["space", spaceId] })
+      setShowAdd(false)
+      setSearchQuery("")
+    },
+  })
+
+  const removeLink = useMutation({
+    mutationFn: async (linkId: string) => {
+      const res = await fetch(`/api/spaces/${spaceId}/hub-links`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ linkId }),
+      })
+      if (!res.ok) throw new Error("Failed")
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["space", spaceId] })
+    },
+  })
+
+  return (
+    <div className="space-y-4">
+      {/* Header + add button */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">
+          {cfg.title}
+        </h2>
+        {isModerator && (
+          <Button size="sm" variant="outline" onClick={() => setShowAdd(!showAdd)}>
+            <Plus className="h-4 w-4 mr-1.5" /> Add {tabType.toUpperCase()}
+          </Button>
+        )}
+      </div>
+
+      {/* Search panel */}
+      {showAdd && (
+        <div className="rounded-xl border border-border bg-card p-4 animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-sm text-foreground">
+              Link a {tabType === "dbq" ? "DBQ prompt" : tabType === "frq" ? "quiz (FRQ)" : "quiz (MCQ)"}
+            </h3>
+            <button onClick={() => { setShowAdd(false); setSearchQuery("") }} className="text-muted-foreground hover:text-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={`Search for a ${tabType === "dbq" ? "DBQ" : "quiz"}...`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+              autoFocus
+            />
+          </div>
+          {searchResults.length > 0 && (
+            <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-border divide-y divide-border">
+              {searchResults.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => addLink.mutate(r.id)}
+                  disabled={addLink.isPending}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-muted transition-colors"
+                >
+                  {tabType === "dbq"
+                    ? <FileText className="h-4 w-4 text-indigo-500 shrink-0" />
+                    : <HelpCircle className="h-4 w-4 text-indigo-500 shrink-0" />}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{r.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">{r.subtitle}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+          {searchQuery.length >= 2 && searchResults.length === 0 && (
+            <p className="text-xs text-muted-foreground mt-2 text-center py-2">No results for &ldquo;{searchQuery}&rdquo;</p>
+          )}
+          {addLink.isError && <p className="text-xs text-red-500 mt-2">{(addLink.error as Error).message}</p>}
+        </div>
+      )}
+
+      {/* Linked items */}
+      {links.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border p-12 text-center">
+          {tabType === "dbq"
+            ? <FileText className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+            : <HelpCircle className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />}
+          <p className="text-sm text-muted-foreground">
+            {isModerator ? cfg.empty + " Click \"Add\" to link content." : cfg.empty}
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {links.map((link) => {
+            const title = link.questionBank?.title || link.dbqPrompt?.title || "Untitled"
+            const href = link.dbqPrompt ? `/dbq/${link.dbqPrompt.id}` : link.questionBank ? `/quizzes/${link.questionBank.id}` : "#"
+            const Icon = link.dbqPrompt ? FileText : HelpCircle
+            return (
+              <div key={link.id} className="rounded-xl border border-border bg-card p-4 hover:shadow-md transition-shadow group relative">
+                <Link href={href} className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
+                    <Icon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-sm text-foreground truncate">{title}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Added by {link.addedBy.name || "Admin"}
+                    </p>
+                  </div>
+                </Link>
+                {isModerator && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault(); e.stopPropagation()
+                      if (confirm("Remove this from the hub?")) removeLink.mutate(link.id)
+                    }}
+                    className="absolute top-2 right-2 p-1.5 rounded-lg text-red-500 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Remove"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

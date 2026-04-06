@@ -7,7 +7,7 @@ function generateInviteCode(): string {
   return randomBytes(3).toString("hex").toUpperCase() // 6-char hex code
 }
 
-// GET /api/spaces — get user's spaces
+// GET /api/spaces — get user's spaces + public hubs
 export async function GET() {
   try {
     const session = await auth()
@@ -15,25 +15,39 @@ export async function GET() {
       return Response.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const spaces = await prisma.space.findMany({
-      where: {
-        members: {
-          some: { userId: session.user.id },
-        },
-      },
-      include: {
-        owner: { select: { id: true, name: true, email: true, role: true } },
-        _count: { select: { members: true, sets: true, assignments: true } },
-        members: {
-          include: {
-            user: { select: { id: true, name: true, image: true } },
+    const [spaces, hubs] = await Promise.all([
+      prisma.space.findMany({
+        where: {
+          members: {
+            some: { userId: session.user.id },
           },
         },
-      },
-      orderBy: { createdAt: "desc" },
-    })
+        include: {
+          owner: { select: { id: true, name: true, email: true, role: true } },
+          _count: { select: { members: true, sets: true, assignments: true } },
+          members: {
+            include: {
+              user: { select: { id: true, name: true, image: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      // Fetch public hubs the user may or may not have joined
+      prisma.space.findMany({
+        where: { isPublic: true, hubSlug: { not: null } },
+        include: {
+          owner: { select: { id: true, name: true, email: true, role: true } },
+          _count: { select: { members: true, sets: true, assignments: true } },
+          members: {
+            where: { userId: session.user.id },
+            select: { userId: true },
+          },
+        },
+      }),
+    ])
 
-    return Response.json(spaces)
+    return Response.json({ spaces, hubs })
   } catch (error) {
     console.error("Get spaces error:", error)
     return Response.json({ error: "Internal server error" }, { status: 500 })

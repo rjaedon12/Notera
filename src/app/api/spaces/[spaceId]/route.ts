@@ -102,7 +102,28 @@ export async function GET(
       }))
       .sort((a, b) => b.streak - a.streak)
 
-    return NextResponse.json({ ...space, leaderboard })
+    // If this is a hub space, include hub-specific data
+    let hubUnits: unknown[] = []
+    let hubQuizLinks: unknown[] = []
+
+    if (space.hubSlug) {
+      hubUnits = await prisma.hubUnit.findMany({
+        where: { hubSlug: space.hubSlug },
+        orderBy: { orderIndex: "asc" },
+      })
+
+      hubQuizLinks = await prisma.hubQuizLink.findMany({
+        where: { spaceId: space.id },
+        include: {
+          questionBank: { select: { id: true, title: true, subject: true, description: true, quizType: true, _count: { select: { questions: true } } } },
+          dbqPrompt: { select: { id: true, title: true, subject: true, era: true, question: true, _count: { select: { documents: true } } } },
+          addedBy: { select: { id: true, name: true } },
+        },
+        orderBy: { addedAt: "desc" },
+      })
+    }
+
+    return NextResponse.json({ ...space, leaderboard, hubUnits, hubQuizLinks })
   } catch (error) {
     console.error("Error fetching space:", error)
     return NextResponse.json(

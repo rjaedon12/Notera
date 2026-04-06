@@ -22,6 +22,7 @@ import {
   AlignLeft,
   LogIn,
   Sparkles,
+  Globe,
 } from "lucide-react"
 
 interface Space {
@@ -32,9 +33,11 @@ interface Space {
   inviteCode: string
   bannerColor: string | null
   bannerImage: string | null
+  hubSlug?: string | null
+  isPublic?: boolean
   createdAt: string
   _count: { members: number; sets: number; assignments: number }
-  members: { role: string; user: { id: string; name: string | null } }[]
+  members: { role?: string; userId?: string; user?: { id: string; name: string | null } }[]
   owner: { id: string; name: string | null; role: string }
 }
 
@@ -69,7 +72,7 @@ export default function SpacesPage() {
 
   const isTeacher = session?.user?.role === "TEACHER" || session?.user?.role === "ADMIN"
 
-  const { data: spaces = [], isLoading } = useQuery<Space[]>({
+  const { data, isLoading } = useQuery<{ spaces: Space[]; hubs: Space[] }>({
     queryKey: ["spaces"],
     queryFn: async () => {
       const res = await fetch("/api/spaces")
@@ -78,6 +81,9 @@ export default function SpacesPage() {
     },
     enabled: !!session?.user,
   })
+
+  const spaces = data?.spaces ?? []
+  const hubs = data?.hubs ?? []
 
   const createSpace = useMutation({
     mutationFn: async () => {
@@ -116,6 +122,24 @@ export default function SpacesPage() {
       queryClient.invalidateQueries({ queryKey: ["spaces"] })
       setJoinCode("")
       setShowJoin(false)
+    },
+  })
+
+  const joinHub = useMutation({
+    mutationFn: async (spaceId: string) => {
+      const res = await fetch("/api/spaces/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ spaceId }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Failed to join")
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["spaces"] })
     },
   })
 
@@ -193,10 +217,70 @@ export default function SpacesPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-48 rounded-xl" />)}
         </div>
-      ) : spaces.length === 0 ? (
+      ) : spaces.length === 0 && hubs.length === 0 ? (
         <EmptyState isTeacher={isTeacher} onCreate={() => setShowCreate(true)} onJoin={() => setShowJoin(true)} />
       ) : (
         <div className="space-y-8">
+          {/* Featured Public Hubs */}
+          {hubs.length > 0 && (
+            <section>
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
+                <Globe className="h-3.5 w-3.5" /> Featured Hubs
+              </h2>
+              <div className="space-y-3">
+                {hubs.map((hub) => {
+                  const isMember = hub.members.length > 0
+                  return (
+                    <div
+                      key={hub.id}
+                      className="rounded-xl border border-border overflow-hidden bg-card"
+                    >
+                      <div
+                        className="relative px-6 py-5 flex items-center justify-between"
+                        style={{ background: hub.bannerColor || "linear-gradient(135deg, #1e3a5f 0%, #2d6a4f 100%)" }}
+                      >
+                        <div className="flex items-center gap-4 min-w-0">
+                          <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-2xl"
+                            style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}>
+                            🌍
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-semibold text-lg text-white truncate">{hub.name}</h3>
+                            {hub.description && (
+                              <p className="text-sm text-white/70 truncate mt-0.5">{hub.description}</p>
+                            )}
+                            <p className="text-xs text-white/50 mt-1">
+                              {hub._count.members} member{hub._count.members !== 1 ? "s" : ""} · {hub._count.sets} set{hub._count.sets !== 1 ? "s" : ""}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="ml-4 shrink-0">
+                          {isMember ? (
+                            <Link href={`/spaces/${hub.id}`}>
+                              <Button size="sm" variant="secondary" className="gap-1.5 font-medium">
+                                Open <ChevronRight className="h-3.5 w-3.5" />
+                              </Button>
+                            </Link>
+                          ) : (
+                            <Button
+                              size="sm"
+                              className="gap-1.5 font-medium bg-white text-gray-900 hover:bg-white/90"
+                              onClick={() => joinHub.mutate(hub.id)}
+                              disabled={joinHub.isPending}
+                            >
+                              <LogIn className="h-3.5 w-3.5" />
+                              {joinHub.isPending ? "Joining…" : "Join"}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </section>
+          )}
+
           {classrooms.length > 0 && (
             <section>
               {collaborative.length > 0 && (
@@ -476,7 +560,7 @@ function SpaceCard({
   const color = space.bannerColor
     ? { bg: space.bannerColor, text: "#fff" }
     : fallbackColor
-  const isOwner = space.members.some((m) => m.user.id === userId && m.role === "OWNER")
+  const isOwner = space.members.some((m) => m.user?.id === userId && m.role === "OWNER")
   const ownerName = space.owner.name || "Unknown"
 
   return (

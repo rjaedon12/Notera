@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { buildRateLimitKey, createRateLimitResponse, takeRateLimit } from "@/lib/rate-limit"
 
-// POST /api/spaces/join — join space by { inviteCode }
+// POST /api/spaces/join — join space by { inviteCode } or { spaceId } (for public hubs)
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
@@ -11,26 +11,46 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { inviteCode } = await request.json()
+    const body = await request.json()
+    const { inviteCode, spaceId: publicSpaceId } = body
 
-    if (!inviteCode || typeof inviteCode !== "string") {
+    // Either inviteCode or spaceId (for public hubs) is required
+    if (!inviteCode && !publicSpaceId) {
       return Response.json(
-        { error: "Invite code is required" },
+        { error: "Invite code or space ID is required" },
         { status: 400 }
       )
     }
 
-    const space = await prisma.space.findUnique({
-      where: { inviteCode: inviteCode.toUpperCase() },
-      include: {
-        members: {
-          where: { userId: session.user.id },
-        },
-      },
-    })
+    let space;
 
-    if (!space) {
-      return Response.json({ error: "Invalid invite code" }, { status: 404 })
+    if (publicSpaceId && typeof publicSpaceId === "string") {
+      // Public hub join — no invite code needed
+      space = await prisma.space.findUnique({
+        where: { id: publicSpaceId },
+        include: {
+          members: {
+            where: { userId: session.user.id },
+          },
+        },
+      })
+      if (!space || !space.isPublic) {
+        return Response.json({ error: "Space not found or not public" }, { status: 404 })
+      }
+    } else if (inviteCode && typeof inviteCode === "string") {
+      space = await prisma.space.findUnique({
+        where: { inviteCode: inviteCode.toUpperCase() },
+        include: {
+          members: {
+            where: { userId: session.user.id },
+          },
+        },
+      })
+      if (!space) {
+        return Response.json({ error: "Invalid invite code" }, { status: 404 })
+      }
+    } else {
+      return Response.json({ error: "Invalid request" }, { status: 400 })
     }
 
     // Already a member?

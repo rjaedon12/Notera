@@ -145,6 +145,7 @@ model User {
   spaceAssignments SpaceAssignment[] @relation("AssignmentCreator")
   spaceAnnouncements SpaceAnnouncement[] @relation("SpaceAnnouncementAuthor")
   spaceComments      SpaceComment[]      @relation("SpaceCommentAuthor")
+  hubQuizLinksAdded  HubQuizLink[]       @relation("HubQuizLinkAdder")
 }
 
 // ─── Admin Audit Log ─────────────────────────────────────
@@ -308,6 +309,8 @@ model Space {
   type        SpaceType @default(COLLABORATIVE)
   bannerColor String?   // CSS gradient or hex
   bannerImage String?   // URL to uploaded image
+  hubSlug     String?   @unique // non-null only for special hubs (e.g. "ap-world-history")
+  isPublic    Boolean   @default(false) // true = anyone can join without invite code
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -319,6 +322,7 @@ model Space {
   assignments   SpaceAssignment[]
   announcements SpaceAnnouncement[]
   notePages     NotePage[]
+  hubQuizLinks  HubQuizLink[]
 }
 
 model SpaceMember {
@@ -487,9 +491,12 @@ model QuestionBank {
   categoryId String?
   category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
+  quizType  String?  // "mcq" | "frq" — null for untagged banks
+
   questions Question[]
   attempts  QuizAttempt[]
   spaceAssignments SpaceAssignment[]
+  hubQuizLinks     HubQuizLink[]
 
   @@index([categoryId])
 }
@@ -683,6 +690,7 @@ model DBQPrompt {
   documents DBQDocument[]
   essays    DBQEssay[]
   spaceAssignments SpaceAssignment[]
+  hubQuizLinks     HubQuizLink[]
 
   @@index([categoryId])
 }
@@ -935,4 +943,43 @@ model WhiteboardShareLink {
 
   @@index([token])
   @@index([boardId])
+}
+
+// ─── Hub Units (AP curriculum unit overviews) ────────────
+
+model HubUnit {
+  id         String   @id @default(cuid())
+  hubSlug    String   // e.g. "ap-world-history"
+  unitNumber Int
+  title      String
+  dateRange  String   // e.g. "c. 1200–1450"
+  overview   String   // markdown content, editable by admin/teachers
+  orderIndex Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([hubSlug, unitNumber])
+  @@index([hubSlug, orderIndex])
+}
+
+// ─── Hub Quiz Links (link quizzes to hub practice tabs) ──
+
+model HubQuizLink {
+  id      String   @id @default(cuid())
+  tabType String   // "dbq" | "frq" | "mcq"
+  addedAt DateTime @default(now())
+
+  spaceId String
+  space   Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  questionBankId String?
+  questionBank   QuestionBank? @relation(fields: [questionBankId], references: [id], onDelete: Cascade)
+
+  dbqPromptId String?
+  dbqPrompt   DBQPrompt? @relation(fields: [dbqPromptId], references: [id], onDelete: Cascade)
+
+  addedById String
+  addedBy   User @relation("HubQuizLinkAdder", fields: [addedById], references: [id], onDelete: Cascade)
+
+  @@index([spaceId, tabType])
 }
